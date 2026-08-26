@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이 삼각형, 이등변일까?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#FFF3D6; --bg2:#FFE3B3; --bg3:#FFD9C7;
+    --ink:#2B2438; --ink-soft:#6b6178;
+    --card:#FFFDF7;
+    --yes:#06A77D; --yes-soft:#DFF6EE;
+    --no:#F2545B; --no-soft:#FDE6E4;
+    --unknown:#6C63FF; --unknown-soft:#EAE8FF;
+    --grid-line: rgba(43,36,56,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+  body{
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    height:100vh;
+    background: radial-gradient(circle at 15% 10%, #FFF9E8 0%, transparent 45%),
+                radial-gradient(circle at 85% 90%, #FFE0D0 0%, transparent 50%),
+                linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 45%, var(--bg3) 100%);
+    display:flex; align-items:center; justify-content:center;
+    padding:14px;
+  }
+  .app{width:100%; max-width:430px; max-height:100%;}
+  h1,h2,h3{font-family:'Fredoka', sans-serif; margin:0;}
+  .card{
+    background:var(--card);
+    border-radius:24px;
+    box-shadow:0 10px 0 rgba(43,36,56,0.08), 0 16px 32px rgba(43,36,56,0.10);
+    border:3px solid var(--ink);
+    padding:18px 20px;
+    position:relative;
+  }
+  /* start */
+  .start-emoji{font-size:38px; line-height:1; margin-bottom:4px;}
+  .start-title{font-size:22px; font-weight:700; margin-bottom:8px;}
+  .start-desc{font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:12px;}
+  .rule-row{
+    display:flex; gap:8px; align-items:flex-start;
+    background:#FFF8EC; border:2px dashed #E9C98A; border-radius:14px;
+    padding:9px 11px; margin-bottom:8px; font-size:12.5px; line-height:1.45;
+  }
+  .rule-row b{font-family:'Fredoka'; font-weight:600;}
+  .btn{
+    font-family:'Fredoka', sans-serif; font-weight:600; font-size:16px;
+    border:3px solid var(--ink); border-radius:14px; padding:11px 18px;
+    cursor:pointer; background:var(--ink); color:#fff;
+    box-shadow:0 5px 0 rgba(43,36,56,0.35);
+    transition:transform .08s ease, box-shadow .08s ease;
+    width:100%;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(43,36,56,0.35);}
+  .btn-primary{margin-top:4px;}
+
+  /* quiz */
+  .top-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+  .qcount{font-family:'Fredoka'; font-weight:600; font-size:13.5px; color:var(--ink-soft);}
+  .progress-track{background:#F1E9D8; border-radius:999px; height:8px; width:100%; overflow:hidden; border:2px solid var(--ink);}
+  .progress-fill{background:linear-gradient(90deg,#FFC24B,#F2545B); height:100%; border-radius:999px; transition:width .3s ease;}
+  .score-pill{font-family:'Fredoka'; font-weight:600; font-size:12px; background:var(--ink); color:#fff; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .stage{
+    position:relative; height:min(34vh,190px);
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px), #FFFDF4;
+    background-size:18px 18px;
+    border:2px solid #EFE3C6; border-radius:16px;
+    margin:8px 0 6px 0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stage svg{width:100%; height:100%; display:block;}
+  .scale-note{text-align:center; font-size:11px; color:var(--ink-soft); margin-bottom:10px;}
+  .question-text{font-family:'Fredoka'; font-weight:600; font-size:16.5px; text-align:center; margin:2px 0 12px 0;}
+  .choices{display:flex; gap:8px; height:60px;}
+  .choice-btn{
+    flex:1; font-family:'Fredoka'; font-weight:600; font-size:14.5px;
+    border-radius:14px; cursor:pointer; text-align:center;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .choice-btn.yes{background:var(--yes-soft); color:#046651; border:3px solid var(--yes); box-shadow:0 4px 0 #046651;}
+  .choice-btn.no{background:var(--no-soft); color:#9c1f26; border:3px solid var(--no); box-shadow:0 4px 0 #9c1f26;}
+  .choice-btn.unknown{background:var(--unknown-soft); color:#3b34a8; border:3px solid var(--unknown); box-shadow:0 4px 0 #3b34a8;}
+  .choice-btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
+  .feedback-inline{
+    flex:1; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    font-family:'Fredoka'; font-weight:700; font-size:16px; border:3px solid var(--ink);
+    animation:pop .25s ease;
+  }
+  .feedback-inline.right{background:var(--yes-soft); color:#046651; border-color:var(--yes);}
+  .feedback-inline.wrong{background:var(--no-soft); color:#9c1f26; border-color:var(--no);}
+  @keyframes pop{from{transform:scale(.85); opacity:0;} to{transform:scale(1); opacity:1;}}
+
+  /* result */
+  .result-emoji{font-size:40px; text-align:center; margin-bottom:2px;}
+  .result-score{font-family:'Fredoka'; font-weight:700; font-size:34px; text-align:center; margin:0;}
+  .result-sub{text-align:center; color:var(--ink-soft); font-size:13px; margin-bottom:10px;}
+  .result-msg{
+    text-align:center; font-family:'Fredoka'; font-weight:600; font-size:14.5px;
+    background:#FFF8EC; border:2px dashed #E9C98A; border-radius:14px; padding:9px; margin-bottom:12px;
+  }
+  .breakdown{display:flex; gap:6px; margin-bottom:12px;}
+  .bd-item{flex:1; text-align:center; border-radius:12px; padding:7px 4px; border:2px solid var(--ink);}
+  .bd-item .n{font-family:'Fredoka'; font-weight:700; font-size:17px;}
+  .bd-item .l{font-size:10px; color:var(--ink-soft);}
+  .bd-yes{background:var(--yes-soft);} .bd-no{background:var(--no-soft);} .bd-unknown{background:var(--unknown-soft);}
+  .review-grid{display:grid; grid-template-columns:repeat(10,1fr); gap:5px; margin-bottom:14px;}
+  .dot{aspect-ratio:1; border-radius:7px; border:2px solid var(--ink); display:flex; align-items:center; justify-content:center; font-family:'Fredoka'; font-weight:600; font-size:10px; color:#fff;}
+  .dot.right{background:var(--yes);} .dot.wrong{background:var(--no);}
+</style>
+</head>
+<body>
+<div class="app"><div class="card" id="cardRoot"></div></div>
+
+<script>
+/* ---------------------------------------------------------
+   문제 데이터
+   side 인덱스: side0=v0-v1, side1=v1-v2, side2=v2-v0
+   각 인덱스: angle0@v0(side1의 대각), angle1@v1(side2의 대각), angle2@v2(side0의 대각)
+   mode: ALL_SIDES / TWO_SIDES / ONE_SIDE / THREE_ANGLES / SAS / SIDE_ANGLE_ADJ
+--------------------------------------------------------- */
+const LABELS = { yes:'맞다', no:'아니다', unknown:'모른다' };
+
+/* ---------------------------------------------------------
+   문제 생성기: 매 게임마다 숫자/모양이 달라지도록 랜덤 생성
+   side 인덱스: side0=v0-v1, side1=v1-v2, side2=v2-v0
+--------------------------------------------------------- */
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+function genAllSidesEqualPair(){
+  const a = randInt(4,13);
+  let hi = Math.min(a+4, 2*a-1);
+  let lo = Math.max(1, a-4);
+  if(lo>hi) lo = hi;
+  const c = Math.max(1, randInt(lo,hi));
+  return { mode:'ALL_SIDES', sides:[a,a,c], visSides:[1,1,1], answer:'yes' };
+}
+function genEquilateral(){
+  const a = randInt(4,13);
+  return { mode:'ALL_SIDES', sides:[a,a,a], visSides:[1,1,1], answer:'yes' };
+}
+function genTwoSidesEqualYes(){
+  const a = randInt(4,13);
+  return { mode:'TWO_SIDES', sides:[a,a,null], visSides:[1,1,0], answer:'yes' };
+}
+function genSAS(){
+  const a = randInt(4,12);
+  const ang = randInt(30,110);
+  return { mode:'SAS', sides:[a,a,null], includedAngleIdx:1, includedAngleDeg:ang, visSides:[1,1,0], visAngleIdx:1, answer:'yes' };
+}
+function genThreeAnglesTwoEqual(){
+  const eq = randInt(20,75);
+  const third = 180 - 2*eq;
+  const arr = shuffle([eq, eq, third]);
+  return { mode:'THREE_ANGLES', angles:arr, answer:'yes' };
+}
+
+function genAllSidesAllDifferent(){
+  let a,b,c, tries=0;
+  do{
+    const base = randInt(5,11);
+    const set = new Set();
+    while(set.size<3){ set.add(base + randInt(-3,3)); }
+    [a,b,c] = [...set];
+    tries++;
+  } while((a+b<=c || a+c<=b || b+c<=a) && tries<20);
+  if(a+b<=c || a+c<=b || b+c<=a){ a=5; b=6; c=7; }
+  return { mode:'ALL_SIDES', sides:[a,b,c], visSides:[1,1,1], answer:'no' };
+}
+function genThreeAnglesAllDifferent(){
+  let a0,a1,a2, tries=0;
+  do{
+    a0 = randInt(35,105);
+    a1 = randInt(35,105);
+    a2 = 180-a0-a1;
+    tries++;
+  } while((a2<25||a2>120||a0===a1||a1===a2||a0===a2) && tries<50);
+  if(a2<25||a2>120||a0===a1||a1===a2||a0===a2){ a0=50; a1=60; a2=70; }
+  return { mode:'THREE_ANGLES', angles:[a0,a1,a2], answer:'no' };
+}
+
+function genTwoSidesDiffUnknown(){
+  let a,b;
+  do{ a=randInt(4,13); b=randInt(4,13); } while(a===b);
+  const hiddenPos = randInt(0,2);
+  const vals=[a,b];
+  const sides=[null,null,null], vis=[1,1,1];
+  let vi=0;
+  for(let i=0;i<3;i++){ if(i===hiddenPos){ sides[i]=null; vis[i]=0; } else { sides[i]=vals[vi++]; } }
+  return { mode:'TWO_SIDES', sides, visSides:vis, answer:'unknown' };
+}
+function genOneSideUnknown(){
+  const a = randInt(4,14);
+  const pos = randInt(0,2);
+  const sides=[null,null,null]; sides[pos]=a;
+  const vis=[0,0,0]; vis[pos]=1;
+  return { mode:'ONE_SIDE', sides, visSides:vis, answer:'unknown' };
+}
+function genSideAngleAdj(){
+  const a = randInt(5,12);
+  const ang = randInt(25,110);
+  return { mode:'SIDE_ANGLE_ADJ', sides:[a,null,null], includedAngleIdx:1, includedAngleDeg:ang, visSides:[1,0,0], visAngleIdx:1, answer:'unknown' };
+}
+
+const YES_GENS = [genAllSidesEqualPair, genEquilateral, genTwoSidesEqualYes, genSAS, genThreeAnglesTwoEqual];
+const NO_GENS = [genAllSidesAllDifferent, genThreeAnglesAllDifferent];
+const UNKNOWN_GENS = [genTwoSidesDiffUnknown, genOneSideUnknown, genSideAngleAdj];
+
+function pick(arr){ return arr[randInt(0, arr.length-1)]; }
+
+function generateQuestionSet(){
+  const counts = shuffle(['yes','yes','yes','yes','yes','yes','yes','no','no','no','no','no','no','unknown','unknown','unknown','unknown','unknown','unknown','unknown']);
+  const list = counts.map(cat=>{
+    if(cat==='yes') return pick(YES_GENS)();
+    if(cat==='no') return pick(NO_GENS)();
+    return pick(UNKNOWN_GENS)();
+  });
+  return shuffle(list);
+}
+
+/* ---------------------------------------------------------
+   기하 계산: 부분 정보로부터 실제 변의 길이(cm) 3개를 확정
+--------------------------------------------------------- */
+function solveSides(q){
+  let s;
+  if(q.mode==='ALL_SIDES'){
+    s = q.sides.slice();
+  } else if(q.mode==='TWO_SIDES'){
+    s = q.sides.slice();
+    const nullIdx = s.findIndex(v=>v===null);
+    const others = s.filter(v=>v!==null);
+    let target = (others[0]+others[1])/2;
+    if(others[0]===others[1]) target = others[0]+1;
+    const lo = Math.abs(others[0]-others[1])+0.5;
+    const hi = others[0]+others[1]-0.5;
+    if(target<=lo) target = lo+0.5;
+    if(target>=hi) target = hi-0.5;
+    s[nullIdx] = Math.round(target*10)/10;
+  } else if(q.mode==='ONE_SIDE'){
+    s = q.sides.slice();
+    const knownIdx = s.findIndex(v=>v!==null);
+    const k = s[knownIdx];
+    const rest = [0,1,2].filter(i=>i!==knownIdx);
+    s[rest[0]] = k+1;
+    s[rest[1]] = Math.max(1,k-1);
+  } else if(q.mode==='THREE_ANGLES'){
+    const [a0,a1,a2] = q.angles;
+    const base = 8; // side0 (v0-v1), a2의 대각
+    const twoR = base / Math.sin(a2*Math.PI/180);
+    s = [ base, twoR*Math.sin(a0*Math.PI/180), twoR*Math.sin(a1*Math.PI/180) ];
+  } else if(q.mode==='SAS'){
+    s = q.sides.slice();
+    const nullIdx = s.findIndex(v=>v===null);
+    const knownIdxs = [0,1,2].filter(i=>i!==nullIdx);
+    const a = s[knownIdxs[0]], b = s[knownIdxs[1]];
+    const ang = q.includedAngleDeg*Math.PI/180;
+    s[nullIdx] = Math.round(Math.sqrt(a*a+b*b-2*a*b*Math.cos(ang))*10)/10;
+  } else if(q.mode==='SIDE_ANGLE_ADJ'){
+    s = q.sides.slice();
+    const knownIdx = s.findIndex(v=>v!==null);
+    const a = s[knownIdx];
+    const other = Math.max(1, a-1);
+    const m = q.includedAngleIdx;
+    const adj = [(m-1+3)%3, m];
+    const otherIdx = adj.find(i=>i!==knownIdx);
+    const thirdIdx = [0,1,2].find(i=>i!==knownIdx && i!==otherIdx);
+    s[otherIdx] = other;
+    const ang = q.includedAngleDeg*Math.PI/180;
+    s[thirdIdx] = Math.round(Math.sqrt(a*a+other*other-2*a*other*Math.cos(ang))*10)/10;
+  }
+  return s;
+}
+
+function toDeg(r){ return r*180/Math.PI; }
+
+/* s0,s1,s2 로부터 정점 좌표(임의 단위) 계산 */
+function trianglePoints(s){
+  const [s0,s1,s2] = s;
+  // v0=(0,0), v1=(s0,0), angle0 = v0에서 side0,side2 사이 각
+  const cosA0 = (s0*s0+s2*s2-s1*s1)/(2*s0*s2);
+  const a0 = Math.acos(Math.max(-1,Math.min(1,cosA0)));
+  const v0=[0,0], v1=[s0,0], v2=[s2*Math.cos(a0), s2*Math.sin(a0)];
+  return [v0,v1,v2];
+}
+
+function rotatePoints(points, thetaDeg){
+  const t = thetaDeg*Math.PI/180;
+  const cx = (points[0][0]+points[1][0]+points[2][0])/3;
+  const cy = (points[0][1]+points[1][1]+points[2][1])/3;
+  return points.map(([x,y])=>{
+    const dx=x-cx, dy=y-cy;
+    return [ cx + dx*Math.cos(t) - dy*Math.sin(t), cy + dx*Math.sin(t) + dy*Math.cos(t) ];
+  });
+}
+
+function fitToViewbox(points, VBW, VBH, margin){
+  const xs=points.map(p=>p[0]), ys=points.map(p=>p[1]);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const w=(maxX-minX)||1, h=(maxY-minY)||1;
+  const scale = Math.min((VBW-2*margin)/w, (VBH-2*margin)/h);
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  const vcx=VBW/2, vcy=VBH/2;
+  return points.map(p=>[ (p[0]-cx)*scale+vcx, (p[1]-cy)*scale+vcy ]);
+}
+
+function fmtLen(v){
+  const r = Math.round(v*10)/10;
+  return (Number.isInteger(r) ? r : r.toFixed(1)) + 'cm';
+}
+
+function normalizeAngle(a){
+  while(a>Math.PI) a-=2*Math.PI;
+  while(a<-Math.PI) a+=2*Math.PI;
+  return a;
+}
+
+function angleMarkup(i, proj, degVal){
+  const p = proj[i];
+  const prev = proj[(i+2)%3];
+  const next = proj[(i+1)%3];
+  const aStart = Math.atan2(prev[1]-p[1], prev[0]-p[0]);
+  const aEndRaw = Math.atan2(next[1]-p[1], next[0]-p[0]);
+  const delta = normalizeAngle(aEndRaw - aStart);
+  const r = 22;
+  const steps = 14;
+  let d = '';
+  for(let k=0;k<=steps;k++){
+    const a = aStart + delta*k/steps;
+    const x = p[0]+r*Math.cos(a), y = p[1]+r*Math.sin(a);
+    d += (k===0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+  }
+  const arc = `<path d="${d.trim()}" fill="none" stroke="#D9A441" stroke-width="2.5" stroke-linecap="round"></path>`;
+
+  const cx = (proj[0][0]+proj[1][0]+proj[2][0])/3;
+  const cy = (proj[0][1]+proj[1][1]+proj[2][1])/3;
+  const dir0=[cx-p[0], cy-p[1]];
+  const len=Math.hypot(dir0[0],dir0[1])||1;
+  const dir=[dir0[0]/len, dir0[1]/len];
+  const lx=p[0]+dir[0]*36, ly=p[1]+dir[1]*36;
+  const text = `<text x="${lx}" y="${ly+4}" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="12" fill="#B8863C">${degVal}°</text>`;
+
+  return arc + text;
+}
+
+function buildTriangleSVG(q, seedIdx){
+  const trueSides = solveSides(q);
+  let pts = trianglePoints(trueSides);
+  pts = rotatePoints(pts, (seedIdx*53) % 360);
+  const VBW=300, VBH=200, margin=46;
+  const proj = fitToViewbox(pts, VBW, VBH, margin);
+  const cx = (proj[0][0]+proj[1][0]+proj[2][0])/3;
+  const cy = (proj[0][1]+proj[1][1]+proj[2][1])/3;
+
+  const visSides = q.visSides || [0,0,0];
+  const pointsStr = proj.map(p=>p.join(',')).join(' ');
+
+  let sideLabels = '';
+  for(let i=0;i<3;i++){
+    if(!visSides[i]) continue;
+    const p1=proj[i], p2=proj[(i+1)%3];
+    const mid=[(p1[0]+p2[0])/2, (p1[1]+p2[1])/2];
+    const dir0=[mid[0]-cx, mid[1]-cy];
+    const len=Math.hypot(dir0[0],dir0[1])||1;
+    const dir=[dir0[0]/len, dir0[1]/len];
+    const lx=mid[0]+dir[0]*20, ly=mid[1]+dir[1]*20;
+    const text = fmtLen(q.sides[i]);
+    sideLabels += `<g>
+      <rect x="${lx-22}" y="${ly-12}" width="44" height="20" rx="10" fill="#FFFDF4" stroke="#2B2438" stroke-width="1.5"></rect>
+      <text x="${lx}" y="${ly+3}" text-anchor="middle" font-family="Fredoka" font-weight="600" font-size="11.5" fill="#2B2438">${text}</text>
+    </g>`;
+  }
+
+  let angleLabels = '';
+  if(q.mode==='THREE_ANGLES'){
+    q.angles.forEach((val,i)=>{
+      angleLabels += angleMarkup(i, proj, val);
+    });
+  } else if(q.visAngleIdx !== undefined){
+    angleLabels += angleMarkup(q.visAngleIdx, proj, q.includedAngleDeg);
+  }
+
+  let dots = '';
+  proj.forEach(p=>{ dots += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#2B2438"></circle>`; });
+
+  return `<svg viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${pointsStr}" fill="#FFEFC2" stroke="#2B2438" stroke-width="4" stroke-linejoin="round"></polygon>
+    ${dots}${angleLabels}${sideLabels}
+  </svg>`;
+}
+
+/* ---------------------------------------------------------
+   상태 & 흐름
+--------------------------------------------------------- */
+let questions=[], current=0, score=0, userAnswers=[], answeredThis=false, startTime=0;
+
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function startGame(){
+  questions = generateQuestionSet();
+  current=0; score=0; userAnswers=[];
+  startTime = Date.now();
+  renderQuiz();
+}
+
+function renderStart(){
+  document.getElementById('cardRoot').innerHTML = `
+    <div class="start-emoji">📐✨</div>
+    <div class="start-title">이 삼각형, 이등변일까?</div>
+    <div class="start-desc">삼각형이 하나씩 나와요. 주어진 변의 길이(와 각도)를 보고 이등변삼각형이 <b>맞는지</b>, <b>아닌지</b>, <b>알 수 없는지</b> 골라보세요.</div>
+    <div class="rule-row">📏 <span><b>규칙</b>: 두 변이 같다고 확실히 알면 "맞다", 세 변을 다 알고 모두 다르면 "아니다", 그 외엔 "모른다"예요.</span></div>
+    <div class="rule-row">🎯 <span>총 <b>20문제</b>! 다 풀면 정답률을 알려줄게요.</span></div>
+    <button class="btn btn-primary" id="startBtn">게임 시작하기 →</button>
+  `;
+  document.getElementById('startBtn').onclick = startGame;
+}
+
+function renderQuiz(){
+  answeredThis=false;
+  const q = questions[current];
+  const pct = Math.round((current)/questions.length*100);
+  document.getElementById('cardRoot').innerHTML = `
+    <div class="top-row">
+      <span class="qcount">문제 ${current+1} / ${questions.length}</span>
+      <span class="score-pill">맞은 개수 ${score}</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="stage">${buildTriangleSVG(q, current)}</div>
+    <div class="scale-note">※ 그림은 참고용이에요. 표시된 숫자로만 판단하세요.</div>
+    <div class="question-text">이 삼각형은 이등변삼각형일까요?</div>
+    <div class="choices" id="choicesRow">
+      <div class="choice-btn yes" data-ans="yes">맞다</div>
+      <div class="choice-btn no" data-ans="no">아니다</div>
+      <div class="choice-btn unknown" data-ans="unknown">모른다</div>
+    </div>
+  `;
+  document.querySelectorAll('.choice-btn').forEach(btn=>{
+    btn.onclick = ()=> onAnswer(btn.dataset.ans, q);
+  });
+}
+
+function onAnswer(choice, q){
+  if(answeredThis) return;
+  answeredThis = true;
+  const correct = (choice === q.answer);
+  if(correct) score++;
+  userAnswers.push({correct});
+
+  const row = document.getElementById('choicesRow');
+  row.innerHTML = `<div class="feedback-inline ${correct?'right':'wrong'}">
+    ${correct ? '정답이에요! 🎉' : '오답! 정답은 "'+LABELS[q.answer]+'"'}
+  </div>`;
+
+  setTimeout(()=>{
+    current++;
+    if(current >= questions.length) renderResult();
+    else renderQuiz();
+  }, 900);
+}
+
+function formatElapsed(ms){
+  const totalSec = Math.max(0, Math.round(ms/1000));
+  const m = Math.floor(totalSec/60);
+  const s = totalSec%60;
+  return m>0 ? `${m}분 ${s}초` : `${s}초`;
+}
+
+function renderResult(){
+  const total = questions.length;
+  const pct = Math.round(score/total*100);
+  const elapsed = formatElapsed(Date.now()-startTime);
+  let emoji, msg;
+  if(pct>=90){emoji='🏆'; msg='완벽해요! 이등변삼각형 판별 마스터!';}
+  else if(pct>=70){emoji='🌟'; msg='아주 잘했어요! 감이 확실히 잡혔네요.';}
+  else if(pct>=50){emoji='😊'; msg='꽤 잘했어요! 조금만 더 연습해봐요.';}
+  else {emoji='🌱'; msg='이제 시작이에요! "변의 길이"에 집중해서 다시 풀어볼까요?';}
+
+  const dots = userAnswers.map((a,i)=>`<div class="dot ${a.correct?'right':'wrong'}">${i+1}</div>`).join('');
+
+  document.getElementById('cardRoot').innerHTML = `
+    <div class="result-emoji">${emoji}</div>
+    <p class="result-score">${score} / ${total}</p>
+    <div class="result-sub">정답률 ${pct}% · 걸린 시간 ${elapsed}</div>
+    <div class="result-msg">${msg}</div>
+    <div class="review-grid">${dots}</div>
+    <button class="btn btn-primary" id="retryBtn">다시 도전하기 ↻</button>
+  `;
+  document.getElementById('retryBtn').onclick = startGame;
+}
+
+renderStart();
+</script>
+</body>
+</html>
