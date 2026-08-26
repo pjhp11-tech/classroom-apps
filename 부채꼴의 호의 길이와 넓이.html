@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>곡선 도형 카드 배열 프로그램</title>
+<style>
+  :root{
+    --panel-bg: #ffffff;
+    --page-bg: #eef1f6;
+    --accent: #3b6fe0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: "Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    background: var(--page-bg);
+    color:#222;
+  }
+  .app{
+    display:flex;
+    min-height:100vh;
+  }
+  /* ---------- Left panel ---------- */
+  .left-panel{
+    width:230px;
+    flex:0 0 230px;
+    background: var(--panel-bg);
+    padding:16px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+  }
+  .left-panel h2{
+    font-size:16px;
+    margin:0 0 4px 0;
+  }
+  .left-panel p.desc{
+    font-size:11.5px;
+    color:#666;
+    margin:0 0 12px 0;
+    line-height:1.5;
+  }
+  .tile-template{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+    padding:6px;
+    border-radius:8px;
+  }
+  .tile-template:hover{ background:#f4f6fb; }
+  .tile-template .tile-thumb{
+    width:64px;
+    height:64px;
+    flex:0 0 64px;
+    cursor:grab;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+  }
+  .tile-template .tile-thumb:active{ cursor:grabbing; }
+  .tile-template .tile-info{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .tile-template .tile-name{
+    font-size:13px;
+    font-weight:600;
+    color:#333;
+  }
+  .tile-template .tile-count{
+    font-size:12px;
+    color:var(--accent);
+    font-weight:600;
+  }
+  button{
+    cursor:pointer;
+    border:none;
+    border-radius:6px;
+    padding:10px 14px;
+    font-size:14px;
+    font-weight:600;
+    width:100%;
+  }
+  #resetBtn{
+    background:#e5e7eb;
+    color:#333;
+    margin-top:4px;
+  }
+  #resetBtn:hover{ background:#d1d5db; }
+
+  /* ---------- Main area ---------- */
+  .main-area{
+    flex:1;
+    padding:20px 24px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .main-area h1{
+    font-size:20px;
+    margin:0;
+  }
+  .section-title{
+    font-size:13px;
+    font-weight:700;
+    color:#555;
+    margin:0 0 6px 2px;
+  }
+
+  .grid-wrap{
+    background: var(--panel-bg);
+    border-radius:10px;
+    padding:14px;
+    overflow:auto;
+    max-height:75vh;
+  }
+  .grid{
+    display:grid;
+    gap:0px;
+    width:max-content;
+  }
+  .cell{
+    width:70px;
+    height:70px;
+    border:1px dashed #cbd3e0;
+    background:#fbfcfe;
+    position:relative;
+    margin:-1px 0 0 -1px;
+  }
+  .cell.filled{
+    border:1px solid transparent;
+  }
+  .cell.dragover{
+    background:#e8f0ff;
+    border-color: var(--accent);
+  }
+  .cell svg{
+    width:100%;
+    height:100%;
+    display:block;
+    overflow:visible;
+  }
+  .tile-instance{
+    width:100%;
+    height:100%;
+    position:relative;
+    cursor:grab;
+  }
+  .tile-instance:active{ cursor:grabbing; }
+  .tile-controls{
+    position:absolute;
+    top:2px;
+    right:2px;
+    display:flex;
+    gap:2px;
+    opacity:0;
+    transition:opacity .15s;
+  }
+  .cell:hover .tile-controls{ opacity:1; }
+  .tile-controls button{
+    width:20px;
+    height:20px;
+    padding:0;
+    font-size:12px;
+    line-height:1;
+    border-radius:4px;
+    background:rgba(255,255,255,0.9);
+    border:1px solid #999;
+    box-shadow:0 1px 2px rgba(0,0,0,0.2);
+  }
+  .tile-controls button:hover{ background:#fff; }
+
+  .result-panel{
+    position:fixed;
+    right:24px;
+    bottom:24px;
+    background: var(--panel-bg);
+    border-radius:12px;
+    padding:16px 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    min-width:230px;
+    border: 2px solid var(--accent);
+  }
+  .result-panel h3{
+    margin:0 0 8px 0;
+    font-size:14px;
+    color:#333;
+  }
+  .result-line{
+    font-size:14px;
+    margin:4px 0;
+  }
+  .result-line b{
+    display:inline-block;
+    width:52px;
+    color:var(--accent);
+  }
+  .result-approx{
+    color:#777;
+    font-size:12px;
+    margin-left:4px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ LEFT PANEL ============ -->
+  <div class="left-panel">
+    <h2>카드 선택</h2>
+    <p class="desc">카드를 오른쪽 배열판으로 드래그하세요.<br>배치 후 반시계 방향 회전(↺) 또는 카드 위에서 <b>R</b>키로도 회전할 수 있습니다.<br>카드 위에서 <b>Delete</b>키를 누르면 삭제됩니다.<br>(Ctrl+Z: 실행 취소)</p>
+    <div id="tileList"></div>
+    <button id="resetBtn">전체 지우기</button>
+  </div>
+
+  <!-- ============ MAIN AREA ============ -->
+  <div class="main-area">
+    <h1>곡선 도형 카드 배열 만들기</h1>
+
+    <div>
+      <div class="section-title">배열판 (카드를 드래그해서 배치 · 이동 · 회전하세요)</div>
+      <div class="grid-wrap">
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RESULT PANEL ============ -->
+  <div class="result-panel">
+    <h3>회색 도형의 둘레 / 넓이</h3>
+    <div class="result-line"><b>둘레</b><span id="perimeterVal">0</span></div>
+    <div class="result-line"><b>넓이</b><span id="areaVal">0</span></div>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================
+   1. 카드(타일) 정의  (5종)
+   - 정사각형 한 변 = 2
+   - 사분원 반지름 = 1 (변의 중점끼리 이어짐)
+   ========================================================= */
+const tileDefs = [
+  {label:'카드 1', bg:'gray',  arcs:['SW'],      notch:'white'},
+  {label:'카드 2', bg:'white', arcs:['SW'],      notch:'gray'},
+  {label:'카드 3', bg:'white', arcs:['NW','SE'], notch:'gray'},
+  {label:'카드 4', bg:'gray',  arcs:['NW','SE'], notch:'white'},
+  {label:'카드 5', bg:'gray',  arcs:[],          notch:null},
+];
+
+const CORNER_PATH = {
+  NW: "M0,0 L50,0 A50,50 0 0 1 0,50 Z",
+  NE: "M100,0 L50,0 A50,50 0 0 0 100,50 Z",
+  SW: "M0,100 L50,100 A50,50 0 0 0 0,50 Z",
+  SE: "M100,100 L50,100 A50,50 0 0 1 100,50 Z",
+};
+
+const COLOR_HEX = { gray: 'rgb(190,190,190)', white: '#ffffff' };
+
+// 시계 방향 순서 (회전 계산의 기준 순서)
+const CW_ORDER = ['NW','NE','SE','SW'];
+function rotateCorner(corner, steps){
+  const idx = CW_ORDER.indexOf(corner);
+  return CW_ORDER[(idx + steps + 400) % 4];
+}
+function getEffectiveDef(baseDef, rotation){
+  return {
+    bg: baseDef.bg,
+    notch: baseDef.notch,
+    arcs: baseDef.arcs.map(c => rotateCorner(c, rotation)),
+  };
+}
+
+// 카드 4면을 절반씩 나눈 색상 (둘레 계산 및 경계선 표시용)
+function getHalfColors(effDef){
+  const c = (corner)=> effDef.arcs.includes(corner) ? effDef.notch : effDef.bg;
+  return {
+    Nw:c('NW'), Ne:c('NE'),
+    Sw:c('SW'), Se:c('SE'),
+    Wn:c('NW'), Ws:c('SW'),
+    En:c('NE'), Es:c('SE'),
+  };
+}
+
+// 각 절반 변의 좌표 (100x100 기준)
+const HALF_LINE = {
+  Nw:[0,0,50,0],   Ne:[50,0,100,0],
+  Sw:[0,100,50,100], Se:[50,100,100,100],
+  Wn:[0,0,0,50],   Ws:[0,50,0,100],
+  En:[100,0,100,50], Es:[100,50,100,100],
+};
+
+const BORDER_STROKE = '#111';
+const BORDER_WIDTH = 6;
+
+// 모든 카드는 항상 정사각형 테두리 + 부채꼴 테두리를 같은 굵기로 표시한다.
+// (exposure 인자는 더 이상 렌더링에 쓰이지 않고, 둘레 계산에서만 사용된다)
+function tileSVGString(effDef){
+  const bgColor = COLOR_HEX[effDef.bg];
+  let arcsSVG = '';
+  for(const corner of effDef.arcs){
+    arcsSVG += `<path d="${CORNER_PATH[corner]}" fill="${COLOR_HEX[effDef.notch]}" stroke="${BORDER_STROKE}" stroke-width="${BORDER_WIDTH}"/>`;
+  }
+  return `<svg viewBox="0 0 100 100">
+      <rect x="0" y="0" width="100" height="100" fill="${bgColor}"/>
+      ${arcsSVG}
+      <rect x="0" y="0" width="100" height="100" fill="none" stroke="${BORDER_STROKE}" stroke-width="${BORDER_WIDTH}"/>
+    </svg>`;
+}
+
+/* =========================================================
+   2. 상태값 + 실행취소(undo) 히스토리
+   ========================================================= */
+const GRID_ROWS = 8;
+const GRID_COLS = 12;
+let gridCells = Array.from({length:GRID_ROWS}, ()=> Array(GRID_COLS).fill(null));
+let uidCounter = 1;
+let historyStack = [];
+
+function cloneGrid(g){
+  return g.map(row => row.map(cell => cell ? {...cell} : null));
+}
+function pushHistory(){
+  historyStack.push(cloneGrid(gridCells));
+  if(historyStack.length > 60) historyStack.shift();
+}
+function undo(){
+  if(historyStack.length === 0) return;
+  gridCells = historyStack.pop();
+  renderGrid();
+  computeAndShowStats();
+}
+window.addEventListener('keydown', (e)=>{
+  const isUndo = (e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z');
+  if(isUndo){
+    e.preventDefault();
+    undo();
+    return;
+  }
+  const isRotateKey = !e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'r' || e.key === 'R');
+  if(isRotateKey && hoveredRC){
+    const {r,c} = hoveredRC;
+    const cell = gridCells[r][c];
+    if(cell){
+      e.preventDefault();
+      pushHistory();
+      cell.rotation = (cell.rotation + 3) % 4; // 반시계 방향
+      renderGrid();
+      computeAndShowStats();
+    }
+    return;
+  }
+  const isDeleteKey = (e.key === 'Delete' || e.key === 'Backspace');
+  if(isDeleteKey && hoveredRC){
+    const {r,c} = hoveredRC;
+    if(gridCells[r][c]){
+      e.preventDefault();
+      pushHistory();
+      gridCells[r][c] = null;
+      renderGrid();
+      computeAndShowStats();
+    }
+  }
+});
+
+// 마우스가 올라가 있는 배열판 칸(r,c)을 추적 (R 키 회전에 사용)
+let hoveredRC = null;
+
+/* =========================================================
+   3. 왼쪽 패널: 카드 템플릿 (드래그 소스, 개수 제한 없음)
+   ========================================================= */
+const tileListEl = document.getElementById('tileList');
+const countSpans = [];
+tileDefs.forEach((def, idx)=>{
+  const wrap = document.createElement('div');
+  wrap.className = 'tile-template';
+
+  const thumb = document.createElement('div');
+  thumb.className = 'tile-thumb';
+  thumb.draggable = true;
+  thumb.innerHTML = tileSVGString(getEffectiveDef(def, 0));
+  thumb.addEventListener('dragstart', (e)=>{
+    e.dataTransfer.setData('text/plain', `template:${idx}`);
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+
+  const info = document.createElement('div');
+  info.className = 'tile-info';
+  const name = document.createElement('div');
+  name.className = 'tile-name';
+  name.textContent = def.label;
+  const countEl = document.createElement('div');
+  countEl.className = 'tile-count';
+  countEl.textContent = '사용 중: 0장';
+  countSpans.push(countEl);
+  info.appendChild(name);
+  info.appendChild(countEl);
+
+  wrap.appendChild(thumb);
+  wrap.appendChild(info);
+  tileListEl.appendChild(wrap);
+});
+
+function updateCounts(){
+  const counts = new Array(tileDefs.length).fill(0);
+  for(let r=0;r<GRID_ROWS;r++){
+    for(let c=0;c<GRID_COLS;c++){
+      const cell = gridCells[r][c];
+      if(cell) counts[cell.typeIndex]++;
+    }
+  }
+  counts.forEach((n,i)=> countSpans[i].textContent = `사용 중: ${n}장`);
+}
+
+/* =========================================================
+   4. 초기화 버튼
+   ========================================================= */
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(gridCells.flat().some(c=>c!==null)){
+    const ok = confirm('배열판의 모든 카드를 지울까요?');
+    if(!ok) return;
+    pushHistory();
+    gridCells = Array.from({length:GRID_ROWS}, ()=> Array(GRID_COLS).fill(null));
+    renderGrid();
+    computeAndShowStats();
+  }
+});
+
+/* =========================================================
+   5. 경계선(테두리) 노출 계산 - 렌더링 + 둘레 계산 공용
+   ========================================================= */
+function getNeighborEffDef(r,c,dr,dc){
+  const rr = r+dr, cc = c+dc;
+  if(rr<0 || rr>=GRID_ROWS || cc<0 || cc>=GRID_COLS) return null;
+  const cell = gridCells[rr][cc];
+  if(!cell) return null;
+  return getEffectiveDef(tileDefs[cell.typeIndex], cell.rotation);
+}
+
+// 특정 칸의 8개 절반-변에 대해 "경계(다른 색과 접함)"인지 boolean으로 반환
+function computeExposure(r,c,effDef){
+  const half = getHalfColors(effDef);
+  const exposure = {};
+
+  const eastDef = getNeighborEffDef(r,c,0,1);
+  const eastHalf = eastDef ? getHalfColors(eastDef) : null;
+  exposure.En = half.En !== (eastHalf ? eastHalf.Wn : 'white');
+  exposure.Es = half.Es !== (eastHalf ? eastHalf.Ws : 'white');
+
+  const westDef = getNeighborEffDef(r,c,0,-1);
+  const westHalf = westDef ? getHalfColors(westDef) : null;
+  exposure.Wn = half.Wn !== (westHalf ? westHalf.En : 'white');
+  exposure.Ws = half.Ws !== (westHalf ? westHalf.Es : 'white');
+
+  const southDef = getNeighborEffDef(r,c,1,0);
+  const southHalf = southDef ? getHalfColors(southDef) : null;
+  exposure.Sw = half.Sw !== (southHalf ? southHalf.Nw : 'white');
+  exposure.Se = half.Se !== (southHalf ? southHalf.Ne : 'white');
+
+  const northDef = getNeighborEffDef(r,c,-1,0);
+  const northHalf = northDef ? getHalfColors(northDef) : null;
+  exposure.Nw = half.Nw !== (northHalf ? northHalf.Sw : 'white');
+  exposure.Ne = half.Ne !== (northHalf ? northHalf.Se : 'white');
+
+  return exposure;
+}
+
+/* =========================================================
+   6. 배열판 렌더링
+   ========================================================= */
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  grid.style.gridTemplateColumns = `repeat(${GRID_COLS}, 70px)`;
+  grid.innerHTML = '';
+  for(let r=0; r<GRID_ROWS; r++){
+    for(let c=0; c<GRID_COLS; c++){
+      const cellEl = document.createElement('div');
+      cellEl.className = 'cell';
+      cellEl.dataset.r = r;
+      cellEl.dataset.c = c;
+      const content = gridCells[r][c];
+
+      if(content){
+        cellEl.classList.add('filled');
+        const baseDef = tileDefs[content.typeIndex];
+        const effDef = getEffectiveDef(baseDef, content.rotation);
+
+        const inst = document.createElement('div');
+        inst.className = 'tile-instance';
+        inst.draggable = true;
+        inst.innerHTML = tileSVGString(effDef);
+
+        inst.addEventListener('dragstart', (e)=>{
+          e.dataTransfer.setData('text/plain', `move:${content.uid}`);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        const controls = document.createElement('div');
+        controls.className = 'tile-controls';
+
+        const rotateBtn = document.createElement('button');
+        rotateBtn.textContent = '↺';
+        rotateBtn.title = '90도 반시계 회전';
+        rotateBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          pushHistory();
+          content.rotation = (content.rotation + 3) % 4; // 반시계 방향
+          renderGrid();
+          computeAndShowStats();
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.title = '카드 삭제';
+        delBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          pushHistory();
+          gridCells[r][c] = null;
+          renderGrid();
+          computeAndShowStats();
+        });
+
+        controls.appendChild(rotateBtn);
+        controls.appendChild(delBtn);
+        inst.appendChild(controls);
+        cellEl.appendChild(inst);
+      }
+
+      cellEl.addEventListener('mouseenter', ()=>{ hoveredRC = {r,c}; });
+      cellEl.addEventListener('mouseleave', ()=>{
+        if(hoveredRC && hoveredRC.r===r && hoveredRC.c===c) hoveredRC = null;
+      });
+
+      cellEl.addEventListener('dragover', (e)=>{
+        e.preventDefault();
+        cellEl.classList.add('dragover');
+      });
+      cellEl.addEventListener('dragleave', ()=> cellEl.classList.remove('dragover'));
+      cellEl.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        cellEl.classList.remove('dragover');
+        const data = e.dataTransfer.getData('text/plain');
+        handleDrop(data, r, c);
+      });
+
+      grid.appendChild(cellEl);
+    }
+  }
+  updateCounts();
+}
+
+/* =========================================================
+   7. 드롭 처리
+   ========================================================= */
+function findInGrid(uid){
+  for(let r=0;r<GRID_ROWS;r++){
+    for(let c=0;c<GRID_COLS;c++){
+      if(gridCells[r][c] && gridCells[r][c].uid === uid) return {r,c};
+    }
+  }
+  return null;
+}
+
+function handleDrop(data, r, c){
+  if(!data) return;
+  if(data.startsWith('template:')){
+    if(gridCells[r][c]) return;
+    pushHistory();
+    const typeIndex = parseInt(data.split(':')[1]);
+    gridCells[r][c] = {uid: uidCounter++, typeIndex, rotation: 0};
+  } else if(data.startsWith('move:')){
+    const uid = parseInt(data.split(':')[1]);
+    const src = findInGrid(uid);
+    if(!src) return;
+    if(src.r === r && src.c === c) return;
+    pushHistory();
+    const moving = gridCells[src.r][src.c];
+    const target = gridCells[r][c];
+    gridCells[r][c] = moving;
+    gridCells[src.r][src.c] = target || null;
+  } else {
+    return;
+  }
+  renderGrid();
+  computeAndShowStats();
+}
+
+/* =========================================================
+   8. 둘레 / 넓이 계산
+   ========================================================= */
+function computeAndShowStats(){
+  let intArea = 0;
+  let piQuarterArea = 0;
+  let straightLen = 0;
+  let arcCount = 0;
+
+  for(let r=0;r<GRID_ROWS;r++){
+    for(let c=0;c<GRID_COLS;c++){
+      const cell = gridCells[r][c];
+      if(!cell) continue;
+      const baseDef = tileDefs[cell.typeIndex];
+      const def = getEffectiveDef(baseDef, cell.rotation);
+
+      if(def.bg === 'gray') intArea += 4;
+      for(const corner of def.arcs){
+        piQuarterArea += (def.notch === 'gray') ? 1 : -1;
+      }
+      arcCount += def.arcs.length;
+
+      const exposure = computeExposure(r,c,def);
+      // 내부(같은 칸 안) 중복 계산 방지: 동/남쪽만 세고, 북/서쪽은 이웃이 없을 때만 센다
+      if(exposure.En) straightLen += 1;
+      if(exposure.Es) straightLen += 1;
+      if(exposure.Sw) straightLen += 1;
+      if(exposure.Se) straightLen += 1;
+      const north = gridCells[r-1] ? gridCells[r-1][c] : null;
+      if(!north){
+        if(exposure.Nw) straightLen += 1;
+        if(exposure.Ne) straightLen += 1;
+      }
+      const west = gridCells[r][c-1] || null;
+      if(!west){
+        if(exposure.Wn) straightLen += 1;
+        if(exposure.Ws) straightLen += 1;
+      }
+    }
+  }
+
+  const areaVal = intArea + piQuarterArea * (Math.PI/4);
+  const perimVal = straightLen + arcCount * (Math.PI/2);
+
+  document.getElementById('areaVal').innerHTML =
+    formatExpr(intArea, piQuarterArea, 4) +
+    `<span class="result-approx">≈ ${areaVal.toFixed(2)}</span>`;
+  document.getElementById('perimeterVal').innerHTML =
+    formatExpr(straightLen, arcCount, 2) +
+    `<span class="result-approx">≈ ${perimVal.toFixed(2)}</span>`;
+}
+
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a || 1; }
+
+function formatExpr(intPart, piNum, piDenBase){
+  if(piNum === 0) return `${intPart}`;
+  let num = piNum, den = piDenBase;
+  const g = gcd(num, den);
+  num = num/g; den = den/g;
+  const neg = num < 0;
+  num = Math.abs(num);
+  let piStr = (den===1) ? (num===1 ? 'π' : `${num}π`) : (num===1 ? `π/${den}` : `${num}π/${den}`);
+  if(intPart === 0) return neg ? `-${piStr}` : `${piStr}`;
+  return `${intPart} ${neg ? '-' : '+'} ${piStr}`;
+}
+
+/* =========================================================
+   초기 렌더링
+   ========================================================= */
+renderGrid();
+computeAndShowStats();
+</script>
+</body>
+</html>

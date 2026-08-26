@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>점과 직선: 레이저 서바이벌</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6FAFF;
+    --grid:#DCEAF6;
+    --grid-strong:#C3DCF0;
+    --ink:#26313D;
+    --ink-soft:#5B6B7A;
+    --point:#FF6357;
+    --point-dark:#E14536;
+    --line:#12B3A6;
+    --line-dark:#0C8F85;
+    --warn:#FFC93D;
+    --danger:#FF3131;
+    --accent:#6C5CE7;
+    --accent-dark:#5847c9;
+    --safe:#2ECC71;
+    --card-bg:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+    background:var(--paper);
+    font-family:'Nanum Gothic', sans-serif;
+    color:var(--ink);
+    -webkit-user-select:none; user-select:none;
+  }
+  #app{ position:fixed; inset:0; width:100vw; height:100vh;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+      linear-gradient(var(--grid-strong) 1.5px, transparent 1.5px),
+      linear-gradient(90deg, var(--grid-strong) 1.5px, transparent 1.5px);
+    background-size: 28px 28px, 28px 28px, 140px 140px, 140px 140px;
+    background-position:-1px -1px;
+  }
+  .screen{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; }
+  .screen.active{ display:flex; }
+
+  /* ---------- MENU ---------- */
+  #menuScreen .title-wrap{ text-align:center; margin-bottom:18px; }
+  #menuScreen h1{
+    font-family:'Jua', sans-serif; font-size:clamp(30px,4vw,48px); margin:0 0 4px;
+    color:var(--ink);
+    letter-spacing:-0.5px;
+  }
+  #menuScreen h1 span.hl{ color:var(--accent); }
+  #menuScreen .subtitle{ font-size:16px; color:var(--ink-soft); margin:0; }
+
+  .mode-row{ display:flex; gap:22px; margin:18px 0 10px; }
+  .mode-card{
+    width:220px; padding:20px 16px 18px; background:var(--card-bg);
+    border:3px solid #E4ECF4; border-radius:22px; cursor:pointer;
+    box-shadow:0 6px 0 #E4ECF4; text-align:center; transition:transform .12s ease;
+  }
+  .mode-card:hover{ transform:translateY(-2px); }
+  .mode-card.selected{ border-color:var(--accent); box-shadow:0 6px 0 var(--accent-dark); transform:translateY(-3px); }
+  .mode-card .icon-box{ width:100%; height:88px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+  .mode-card h3{ font-family:'Jua',sans-serif; font-size:20px; margin:2px 0 6px; }
+  .mode-card p{ font-size:12.5px; color:var(--ink-soft); margin:0; line-height:1.5; }
+  .mode-card.point-card.selected h3{ color:var(--point-dark); }
+  .mode-card.line-card.selected h3{ color:var(--line-dark); }
+
+  #startBtn{
+    margin-top:14px; font-family:'Jua',sans-serif; font-size:22px; letter-spacing:1px;
+    padding:14px 46px; border:none; border-radius:18px; background:var(--accent); color:#fff;
+    cursor:pointer; box-shadow:0 6px 0 var(--accent-dark); transition:transform .08s ease;
+  }
+  #startBtn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--accent-dark); }
+
+  .rule-hint{ margin-top:16px; font-size:12.5px; color:var(--ink-soft); text-align:center; max-width:520px; line-height:1.6;}
+  .rule-hint b{ color:var(--ink); }
+
+  /* ---------- GAME ---------- */
+  #gameScreen{ display:none; }
+  #gameScreen.active{ display:block; }
+  #gameCanvas{ position:absolute; inset:0; width:100vw; height:100vh; display:block; background:transparent; }
+
+  #hud{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start; padding:18px 26px; pointer-events:none; }
+  #timerBox{ background:rgba(255,255,255,0.85); border:2px solid #E4ECF4; border-radius:16px; padding:8px 20px; text-align:center; box-shadow:0 3px 0 #E4ECF4;}
+  #timerBox .label{ font-size:11px; color:var(--ink-soft); letter-spacing:1px; }
+  #timerBox .value{ font-family:'Jua',sans-serif; font-size:34px; line-height:1.05; color:var(--ink);}
+  #levelBox{ background:rgba(255,255,255,0.85); border:2px solid #E4ECF4; border-radius:16px; padding:8px 18px; text-align:center; box-shadow:0 3px 0 #E4ECF4;}
+  #levelBox .label{ font-size:11px; color:var(--ink-soft); letter-spacing:1px;}
+  #levelBox .value{ font-family:'Jua',sans-serif; font-size:22px; color:var(--accent); }
+
+  #controlHint{
+    position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+    background:rgba(255,255,255,0.85); border:2px solid #E4ECF4; border-radius:999px;
+    padding:9px 22px; font-size:13px; color:var(--ink-soft); white-space:nowrap;
+    box-shadow:0 3px 0 #E4ECF4;
+  }
+  #hitFlash{ position:absolute; inset:0; background:var(--danger); opacity:0; pointer-events:none; transition:opacity .08s ease; }
+  #hitFlash.show{ opacity:0.35; }
+
+  /* ---------- RESULT ---------- */
+  #resultScreen .result-card{
+    background:var(--card-bg); border-radius:26px; padding:40px 56px; text-align:center;
+    border:3px solid #E4ECF4; box-shadow:0 8px 0 #E4ECF4;
+  }
+  #resultScreen h2{ font-family:'Jua',sans-serif; font-size:30px; margin:0 0 6px; color:var(--danger); }
+  #resultScreen .sub{ font-size:13px; color:var(--ink-soft); margin-bottom:14px; }
+  #finalTime{ font-family:'Jua',sans-serif; font-size:64px; color:var(--accent); margin:6px 0 18px; }
+  #finalLevel{ font-size:14px; color:var(--ink-soft); margin-bottom:22px; }
+  .result-btns{ display:flex; gap:14px; justify-content:center; }
+  .result-btns button{
+    font-family:'Jua',sans-serif; font-size:16px; padding:12px 24px; border:none; border-radius:14px;
+    cursor:pointer; color:#fff; box-shadow:0 5px 0 rgba(0,0,0,0.15); transition:transform .08s ease;
+  }
+  .result-btns button:active{ transform:translateY(4px); box-shadow:none; }
+  #retryBtn{ background:var(--accent); box-shadow:0 5px 0 var(--accent-dark); }
+  #menuBtn{ background:#B0BAC5; box-shadow:0 5px 0 #8b96a3; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- MENU -->
+  <div id="menuScreen" class="screen active">
+    <div class="title-wrap">
+      <h1>점과 <span class="hl">직선</span> 레이저 서바이벌</h1>
+      <p class="subtitle">깜빡이는 예고선을 보고, 레이저를 피해 최대한 오래 살아남으세요!</p>
+    </div>
+
+    <div class="mode-row">
+      <div class="mode-card point-card selected" data-mode="point">
+        <div class="icon-box">
+          <svg width="90" height="80" viewBox="0 0 90 80">
+            <line x1="8" y1="70" x2="82" y2="70" stroke="#C3DCF0" stroke-width="2"/>
+            <line x1="10" y1="8" x2="10" y2="72" stroke="#C3DCF0" stroke-width="2"/>
+            <circle cx="52" cy="34" r="9" fill="#FF6357"/>
+            <text x="62" y="30" font-family="Jua" font-size="14" fill="#E14536">P</text>
+          </svg>
+        </div>
+        <h3>점 모드</h3>
+        <p>화살표 또는 마우스로<br>점을 움직여 레이저를 피하세요.</p>
+      </div>
+
+      <div class="mode-card line-card" data-mode="line">
+        <div class="icon-box">
+          <svg width="90" height="80" viewBox="0 0 90 80">
+            <line x1="8" y1="70" x2="82" y2="70" stroke="#C3DCF0" stroke-width="2"/>
+            <line x1="10" y1="8" x2="10" y2="72" stroke="#C3DCF0" stroke-width="2"/>
+            <line x1="14" y1="58" x2="76" y2="18" stroke="#12B3A6" stroke-width="5" stroke-linecap="round"/>
+            <polygon points="14,58 22,58 15,68" fill="#12B3A6"/>
+            <polygon points="76,18 68,18 75,8" fill="#12B3A6"/>
+            <text x="58" y="46" font-family="Jua" font-size="14" fill="#0C8F85">l</text>
+          </svg>
+        </div>
+        <h3>직선 모드</h3>
+        <p>화살표(이동)+스페이스(회전)<br>또는 마우스(이동)+왼쪽클릭(회전)</p>
+      </div>
+    </div>
+
+    <button id="startBtn">게임 시작</button>
+
+    <p class="rule-hint">
+      레이저가 발사되기 전 <b>노란색 점선</b>으로 예고됩니다. 점 모드에서는 예고선 위에 있으면 맞고,
+      직선 모드에서는 <b>내 직선과 레이저가 화면 안에서 서로 만나지 않으면</b> 안전합니다(평행하거나, 교점이 화면 밖에 있으면 통과!).
+      두 모드 모두 화면 가장자리로 숨을 수 없도록 <b>보라색 점선 제한구역</b> 안에서만 움직일 수 있어요.
+      점 모드는 5초마다, 직선 모드는 10초마다 난이도가 올라갑니다!
+    </p>
+  </div>
+
+  <!-- GAME -->
+  <div id="gameScreen" class="screen">
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud">
+      <div id="timerBox"><div class="label">생존 시간</div><div class="value" id="timerValue">0.0초</div></div>
+      <div id="levelBox"><div class="label">난이도</div><div class="value" id="levelValue">Lv.1</div></div>
+    </div>
+    <div id="controlHint"></div>
+    <div id="hitFlash"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultScreen" class="screen">
+    <div class="result-card">
+      <h2>게임 종료!</h2>
+      <div class="sub">레이저에 맞았습니다</div>
+      <div id="finalTime">0.0초</div>
+      <div id="finalLevel">도달 난이도: Lv.1</div>
+      <div class="result-btns">
+        <button id="retryBtn">다시 도전하기</button>
+        <button id="menuBtn">메인 메뉴로</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- DOM ----------
+  const menuScreen = document.getElementById('menuScreen');
+  const gameScreen = document.getElementById('gameScreen');
+  const resultScreen = document.getElementById('resultScreen');
+  const startBtn = document.getElementById('startBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const menuBtn = document.getElementById('menuBtn');
+  const modeCards = document.querySelectorAll('.mode-card');
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const timerValue = document.getElementById('timerValue');
+  const levelValue = document.getElementById('levelValue');
+  const controlHint = document.getElementById('controlHint');
+  const hitFlash = document.getElementById('hitFlash');
+  const finalTime = document.getElementById('finalTime');
+  const finalLevel = document.getElementById('finalLevel');
+
+  let mode = 'point';
+  let W = 0, H = 0;
+
+  function resize(){
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W; canvas.height = H;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- AUDIO (simple synth beeps) ----------
+  let actx = null;
+  function ensureAudio(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+  function beep(freq, dur, type, vol){
+    if(!actx) return;
+    try{
+      const o = actx.createOscillator();
+      const g = actx.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      g.gain.value = vol || 0.12;
+      o.connect(g); g.connect(actx.destination);
+      const now = actx.currentTime;
+      g.gain.setValueAtTime(g.gain.value, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      o.start(now); o.stop(now + dur);
+    }catch(e){}
+  }
+
+  // ---------- MENU LOGIC ----------
+  modeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      modeCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      mode = card.dataset.mode;
+    });
+  });
+
+  startBtn.addEventListener('click', () => {
+    ensureAudio();
+    menuScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+    startGame();
+  });
+  retryBtn.addEventListener('click', () => {
+    resultScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+    startGame();
+  });
+  menuBtn.addEventListener('click', () => {
+    resultScreen.classList.remove('active');
+    menuScreen.classList.add('active');
+  });
+
+  // ---------- INPUT ----------
+  const keys = {};
+  let lastInput = 'keyboard';
+  let mouseX = 0, mouseY = 0, mouseDown = false;
+
+  window.addEventListener('keydown', e => {
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+    keys[e.code] = true;
+    if(e.code.startsWith('Arrow')) lastInput = 'keyboard';
+  });
+  window.addEventListener('keyup', e => { keys[e.code] = false; });
+  window.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    if(gameActive) lastInput = 'mouse';
+  });
+  window.addEventListener('mousedown', e => { if(e.button === 0){ mouseDown = true; if(gameActive) lastInput='mouse'; } });
+  window.addEventListener('mouseup', () => { mouseDown = false; });
+
+  // ---------- GAME STATE ----------
+  let gameActive = false;
+  let gameTime = 0;
+  let level = 0;
+  let lasers = [];
+  let player = {};
+  const FIRE_TIME = 0.4;
+  const POINT_RADIUS = 11;
+  const POINT_SPEED = 380;
+  const LINE_MOVE_SPEED = 300;
+  const ROT_SPEED = 1.9; // rad/s
+  const HIT_RADIUS_POINT = 20;
+  const BOUNDS_MARGIN = 2; // px tolerance for "inside the screen"
+
+  function lineIntersection(p1, p2, p3, p4){
+    const denom = (p1.x-p2.x)*(p3.y-p4.y) - (p1.y-p2.y)*(p3.x-p4.x);
+    if(Math.abs(denom) < 1e-6) return null; // parallel lines never meet
+    const t = ((p1.x-p3.x)*(p3.y-p4.y) - (p1.y-p3.y)*(p3.x-p4.x)) / denom;
+    return { x: p1.x + t*(p2.x-p1.x), y: p1.y + t*(p2.y-p1.y) };
+  }
+
+  function getPlayZone(){
+    const mx = W * 0.17, my = H * 0.17;
+    return { x0: mx, y0: my, x1: W - mx, y1: H - my };
+  }
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function getLineEndpoints(px, py, theta, w, h){
+    const dx = Math.cos(theta), dy = Math.sin(theta);
+    let ts = [];
+    if(Math.abs(dx) > 1e-6){ ts.push((0-px)/dx); ts.push((w-px)/dx); }
+    if(Math.abs(dy) > 1e-6){ ts.push((0-py)/dy); ts.push((h-py)/dy); }
+    let pts = ts.map(t => ({x:px+dx*t, y:py+dy*t, t:t}))
+                .filter(p => p.x >= -1 && p.x <= w+1 && p.y >= -1 && p.y <= h+1);
+    if(pts.length < 2) return [{x:px-dx*1000,y:py-dy*1000},{x:px+dx*1000,y:py+dy*1000}];
+    pts.sort((a,b) => a.t-b.t);
+    return [pts[0], pts[pts.length-1]];
+  }
+
+  function angleDiffMod(a, b){
+    let d = Math.abs(a-b) % Math.PI;
+    return Math.min(d, Math.PI - d);
+  }
+
+  function currentParams(){
+    if(mode === 'point'){
+      return {
+        laserCount: Math.min(1 + level, 6),
+        warnTime: Math.max(0.42, 1.5 - level*0.14)
+      };
+    } else {
+      return {
+        laserCount: 1,
+        warnTime: Math.max(0.38, 1.4 - level*0.14)
+      };
+    }
+  }
+
+  function makeLaser(startDelay){
+    return {
+      theta: 0, px:0, py:0, endpoints:null,
+      state: 'pending', timer: 0,
+      warnTime: 1.2, fireTime: FIRE_TIME,
+      nextDelay: startDelay !== undefined ? startDelay : (0.2 + Math.random()*0.7),
+      firedSound: false
+    };
+  }
+
+  function respawnLaser(laser){
+    laser.theta = Math.random() * Math.PI;
+    laser.px = 40 + Math.random() * (W - 80);
+    laser.py = 40 + Math.random() * (H - 80);
+    laser.endpoints = getLineEndpoints(laser.px, laser.py, laser.theta, W, H);
+    laser.warnTime = currentParams().warnTime;
+    laser.state = 'warning';
+    laser.timer = 0;
+    laser.firedSound = false;
+  }
+
+  function startGame(){
+    gameTime = 0; level = 0; lasers = [];
+    hitFlash.classList.remove('show');
+
+    if(mode === 'point'){
+      player = { x: W/2, y: H/2 };
+      controlHint.textContent = '⌨ 방향키 이동   또는   🖱 마우스로 이동   (보라색 점선 구역 안에서만 이동 가능)';
+    } else {
+      player = { cx: W/2, cy: H/2, angle: 0 };
+      controlHint.textContent = '⌨ 방향키 이동 + Space 반시계 회전   또는   🖱 마우스 이동 + 왼쪽버튼 꾹 눌러 회전   (보라색 점선 구역 안에서만 이동 가능)';
+    }
+
+    const params = currentParams();
+    for(let i=0;i<params.laserCount;i++){
+      lasers.push(makeLaser(0.4 + i*0.35 + Math.random()*0.3));
+    }
+
+    gameActive = true;
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function endGame(){
+    gameActive = false;
+    hitFlash.classList.add('show');
+    beep(120, 0.35, 'sawtooth', 0.18);
+    setTimeout(() => {
+      hitFlash.classList.remove('show');
+      gameScreen.classList.remove('active');
+      resultScreen.classList.add('active');
+      finalTime.textContent = gameTime.toFixed(1) + '초';
+      finalLevel.textContent = '도달 난이도: Lv.' + (level+1);
+    }, 420);
+  }
+
+  let lastTime = 0;
+  function loop(now){
+    if(!gameActive) return;
+    let dt = (now - lastTime) / 1000;
+    dt = Math.min(dt, 0.05);
+    lastTime = now;
+
+    update(dt);
+    render();
+
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt){
+    gameTime += dt;
+    const diffInterval = (mode === 'point') ? 5 : 10;
+    const newLevel = Math.floor(gameTime / diffInterval);
+    if(newLevel !== level){
+      level = newLevel;
+      beep(660, 0.15, 'sine', 0.1);
+      const params = currentParams();
+      while(lasers.length < params.laserCount){
+        lasers.push(makeLaser(0.3 + Math.random()*0.5));
+      }
+    }
+    timerValue.textContent = gameTime.toFixed(1) + '초';
+    levelValue.textContent = 'Lv.' + (level+1);
+
+    // --- player movement ---
+    if(mode === 'point'){
+      if(lastInput === 'keyboard'){
+        let vx=0, vy=0;
+        if(keys['ArrowLeft']) vx -= 1;
+        if(keys['ArrowRight']) vx += 1;
+        if(keys['ArrowUp']) vy -= 1;
+        if(keys['ArrowDown']) vy += 1;
+        const len = Math.hypot(vx,vy) || 1;
+        player.x += (vx/len) * POINT_SPEED * dt;
+        player.y += (vy/len) * POINT_SPEED * dt;
+      } else {
+        player.x = mouseX; player.y = mouseY;
+      }
+      player.x = clamp(player.x, POINT_RADIUS, W - POINT_RADIUS);
+      player.y = clamp(player.y, POINT_RADIUS, H - POINT_RADIUS);
+      const pzone = getPlayZone();
+      player.x = clamp(player.x, pzone.x0, pzone.x1);
+      player.y = clamp(player.y, pzone.y0, pzone.y1);
+    } else {
+      if(lastInput === 'keyboard'){
+        let vx=0, vy=0;
+        if(keys['ArrowLeft']) vx -= 1;
+        if(keys['ArrowRight']) vx += 1;
+        if(keys['ArrowUp']) vy -= 1;
+        if(keys['ArrowDown']) vy += 1;
+        const len = Math.hypot(vx,vy) || 1;
+        player.cx += (vx/len) * LINE_MOVE_SPEED * dt;
+        player.cy += (vy/len) * LINE_MOVE_SPEED * dt;
+      } else {
+        player.cx = mouseX; player.cy = mouseY;
+      }
+      player.cx = clamp(player.cx, 0, W);
+      player.cy = clamp(player.cy, 0, H);
+      const zone = getPlayZone();
+      player.cx = clamp(player.cx, zone.x0, zone.x1);
+      player.cy = clamp(player.cy, zone.y0, zone.y1);
+      if(keys['Space'] || mouseDown){
+        player.angle -= ROT_SPEED * dt;
+      }
+    }
+
+    // --- lasers ---
+    for(const laser of lasers){
+      if(laser.state === 'pending'){
+        laser.timer += dt;
+        if(laser.timer >= laser.nextDelay){
+          respawnLaser(laser);
+        }
+      } else if(laser.state === 'warning'){
+        laser.timer += dt;
+        if(laser.timer >= laser.warnTime){
+          laser.state = 'firing';
+          laser.timer = 0;
+          beep(880, 0.08, 'square', 0.07);
+        }
+      } else if(laser.state === 'firing'){
+        laser.timer += dt;
+        checkCollision(laser);
+        if(laser.timer >= laser.fireTime){
+          laser.state = 'pending';
+          laser.timer = 0;
+          laser.nextDelay = 0.3 + Math.random()*0.7;
+        }
+      }
+    }
+  }
+
+  function checkCollision(laser){
+    if(!gameActive) return;
+    if(mode === 'point'){
+      const dx = Math.cos(laser.theta), dy = Math.sin(laser.theta);
+      const dist = Math.abs((player.x - laser.px) * (-dy) + (player.y - laser.py) * dx);
+      if(dist < HIT_RADIUS_POINT){
+        endGame();
+      }
+    } else {
+      const [p1, p2] = getLineEndpoints(player.cx, player.cy, player.angle, W, H);
+      const [q1, q2] = laser.endpoints;
+      const hit = lineIntersection(p1, p2, q1, q2);
+      if(hit &&
+         hit.x >= -BOUNDS_MARGIN && hit.x <= W + BOUNDS_MARGIN &&
+         hit.y >= -BOUNDS_MARGIN && hit.y <= H + BOUNDS_MARGIN){
+        endGame();
+      }
+    }
+  }
+
+  // ---------- RENDER ----------
+  function drawLaser(laser){
+    if(laser.state !== 'warning' && laser.state !== 'firing') return;
+    const [p1, p2] = laser.endpoints;
+    ctx.save();
+    if(laser.state === 'warning'){
+      const pulse = Math.abs(Math.sin(performance.now()/130));
+      ctx.strokeStyle = 'rgba(255,201,61,' + (0.35 + pulse*0.5) + ')';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([14, 12]);
+      ctx.lineCap = 'round';
+    } else {
+      ctx.strokeStyle = '#FF3131';
+      ctx.shadowColor = '#FF3131';
+      ctx.shadowBlur = 22;
+      ctx.lineWidth = 9;
+      ctx.setLineDash([]);
+      ctx.lineCap = 'round';
+    }
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawArrowTip(x, y, theta, color){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(theta);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-14, 6);
+    ctx.lineTo(-14, -6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function render(){
+    ctx.clearRect(0, 0, W, H);
+
+    for(const laser of lasers) drawLaser(laser);
+
+    if(mode === 'line' || mode === 'point'){
+      const zone = getPlayZone();
+      ctx.save();
+      ctx.strokeStyle = 'rgba(108,92,231,0.55)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 8]);
+      ctx.strokeRect(zone.x0, zone.y0, zone.x1 - zone.x0, zone.y1 - zone.y0);
+      ctx.restore();
+    }
+
+    if(mode === 'point'){
+      ctx.save();
+      ctx.fillStyle = '#FF6357';
+      ctx.shadowColor = '#FF6357';
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, POINT_RADIUS, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = '#E14536';
+      ctx.font = '16px Jua, sans-serif';
+      ctx.fillText('P', player.x + 14, player.y - 12);
+      ctx.restore();
+    } else {
+      const [p1, p2] = getLineEndpoints(player.cx, player.cy, player.angle, W, H);
+      ctx.save();
+      ctx.strokeStyle = '#12B3A6';
+      ctx.shadowColor = '#12B3A6';
+      ctx.shadowBlur = 14;
+      ctx.lineWidth = 7;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.restore();
+
+      const angA = Math.atan2(p1.y - player.cy, p1.x - player.cx);
+      const angB = Math.atan2(p2.y - player.cy, p2.x - player.cx);
+      drawArrowTip(p1.x, p1.y, angA, '#0C8F85');
+      drawArrowTip(p2.x, p2.y, angB, '#0C8F85');
+
+      ctx.save();
+      ctx.fillStyle = '#0C8F85';
+      ctx.beginPath();
+      ctx.arc(player.cx, player.cy, 5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.font = '16px Jua, sans-serif';
+      ctx.fillText('l', player.cx + 10, player.cy - 10);
+      ctx.restore();
+    }
+  }
+
+})();
+</script>
+</body>
+</html>
