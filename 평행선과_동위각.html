@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>평행선과 동위각 — 생각 활동</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F9FB;
+    --panel:#FFFFFF;
+    --ink:#1E2A3A;
+    --sub:#64758A;
+    --line-l:#2B4C7E;
+    --line-m:#0E8F7F;
+    --line-n:#FF6B4A;
+    --ac:#FFB238;      /* a, c 짝 색 */
+    --ac-bg:#FFF3DC;
+    --bd:#3E9BDC;       /* b, d 짝 색 */
+    --bd-bg:#E3F2FC;
+    --accent:#FF6B4A;
+    --accent-ink:#B8391E;
+    --success:#1F9D5C;
+    --success-bg:#E4F7ED;
+    --danger:#E5533D;
+    --danger-bg:#FDEAE6;
+    --border:#E2EBF0;
+    --mint:#EAF7F2;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    min-height:100%;
+    margin:0;
+    overflow-x:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    background:
+      radial-gradient(circle at 8% 12%, #EAF4FF 0%, transparent 45%),
+      radial-gradient(circle at 95% 90%, #FDF3E7 0%, transparent 40%),
+      var(--bg);
+    font-family:'Noto Sans KR', sans-serif;
+    color:var(--ink);
+  }
+  .app{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto 1fr auto;
+    gap:clamp(8px,1.2vh,14px);
+    padding:clamp(10px,1.6vh,18px) clamp(14px,2vw,28px);
+  }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-shrink:0;
+  }
+  .badge{
+    width:42px;height:42px;border-radius:50%;
+    background:linear-gradient(145deg,#FF8A63,var(--accent));
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Gaegu',sans-serif;font-weight:700;font-size:20px;
+    box-shadow:0 4px 10px rgba(255,107,74,0.35);
+    flex-shrink:0;
+  }
+  .topbar h1{
+    font-family:'Gaegu',sans-serif;
+    font-weight:700;
+    font-size:clamp(20px,2.4vh,28px);
+    margin:0;
+    line-height:1.1;
+  }
+  .topbar p{
+    margin:2px 0 0;
+    font-size:clamp(11px,1.3vh,13px);
+    color:var(--sub);
+    font-weight:500;
+  }
+  .topbar .spacer{flex:1;}
+  .reset-btn{
+    border:1.5px solid var(--border);
+    background:#fff;
+    color:var(--sub);
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    padding:8px 14px;
+    border-radius:10px;
+    cursor:pointer;
+    display:flex;align-items:center;gap:6px;
+    transition:.15s;
+  }
+  .reset-btn:hover{border-color:var(--accent);color:var(--accent-ink);background:#FFF6F3;}
+
+  /* ---------- Main stage ---------- */
+  .stage{
+    display:grid;
+    grid-template-columns:1.28fr 1fr;
+    gap:clamp(10px,1.4vw,18px);
+    min-height:0;
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:clamp(10px,1.4vh,16px) clamp(12px,1.4vw,18px);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    box-shadow:0 6px 20px rgba(30,60,90,0.05);
+  }
+  .panel-title{
+    font-family:'Gaegu',sans-serif;
+    font-weight:700;
+    font-size:clamp(15px,1.9vh,18px);
+    margin:0 0 6px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .panel-title .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+  /* ---------- Diagram panel ---------- */
+  .diagram-wrap{
+    flex:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+  }
+  #stageSvg{width:100%;height:100%;max-height:100%;}
+  .status-chips{
+    position:absolute;
+    top:2px; left:2px;
+    display:flex; gap:6px; flex-wrap:wrap;
+  }
+  .status-chip{
+    font-size:11.5px; font-weight:700;
+    padding:4px 10px; border-radius:999px;
+    background:var(--border); color:var(--sub);
+    transition:.2s;
+  }
+  .status-chip.on-success{background:var(--success-bg); color:var(--success);}
+  .status-chip.on-danger{background:var(--danger-bg); color:var(--danger);}
+
+  .controls{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    padding-top:6px;
+    flex-shrink:0;
+    border-top:1px dashed var(--border);
+  }
+  .slider-row{display:flex;align-items:center;gap:10px;}
+  .slider-row label{
+    font-size:12px; font-weight:700; color:var(--sub);
+    width:150px; flex-shrink:0;
+  }
+  .slider-row input[type=range]{
+    flex:1;
+    accent-color:var(--accent);
+    height:4px;
+  }
+  .slider-row .val{
+    width:52px; text-align:right; font-weight:900; font-size:12.5px;
+    font-variant-numeric:tabular-nums;
+  }
+  .btn-row{display:flex; gap:8px; margin-top:2px;}
+  .pill-btn{
+    flex:1;
+    border:none;
+    border-radius:12px;
+    padding:9px 6px;
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:700;
+    font-size:12.5px;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .pill-btn.primary{background:linear-gradient(145deg,#FF8A63,var(--accent)); color:#fff; box-shadow:0 4px 10px rgba(255,107,74,.3);}
+  .pill-btn.primary:hover{transform:translateY(-1px); box-shadow:0 6px 14px rgba(255,107,74,.4);}
+  .pill-btn.ghost{background:var(--mint); color:#0E8F5C;}
+  .pill-btn.ghost:hover{background:#DCF3E6;}
+
+  /* ---------- Guide panel ---------- */
+  .steps{
+    display:flex; flex-direction:column; gap:6px;
+    font-size:12.5px; color:var(--ink);
+    margin-bottom:8px;
+  }
+  .step{
+    display:flex; gap:8px; align-items:flex-start;
+    background:#FAFCFE; border:1px solid var(--border);
+    border-radius:10px; padding:6px 9px;
+  }
+  .step .num{
+    flex-shrink:0; width:18px;height:18px;border-radius:50%;
+    background:var(--line-n); color:#fff; font-size:11px; font-weight:900;
+    display:flex;align-items:center;justify-content:center; margin-top:1px;
+  }
+  .step p{margin:0; line-height:1.35; color:var(--sub); font-weight:500;}
+  .step b{color:var(--ink);}
+
+  .quiz{
+    border-top:1px dashed var(--border);
+    padding-top:8px;
+    display:flex; flex-direction:column; gap:8px;
+    flex:1;
+    min-height:0;
+    overflow:auto;
+  }
+  .quiz-head{font-size:12px; color:var(--sub); font-weight:700;}
+  .quiz-row{
+    border-radius:12px;
+    padding:8px 10px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .quiz-row.pair-ac{background:var(--ac-bg);}
+  .quiz-row.pair-bd{background:var(--bd-bg);}
+  .quiz-text{font-size:13px; font-weight:700;}
+  .quiz-text .swatch{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
+  .pair-ac .swatch{background:var(--ac);}
+  .pair-bd .swatch{background:var(--bd);}
+  .chip-group{display:flex; gap:6px; flex-shrink:0;}
+  .chip{
+    border:1.5px solid #fff;
+    background:#fff;
+    border-radius:9px;
+    padding:6px 11px;
+    font-size:12px; font-weight:700; color:var(--sub);
+    cursor:pointer; transition:.12s;
+  }
+  .chip:hover{border-color:var(--accent);}
+  .chip.selected-correct{background:var(--success); color:#fff; border-color:var(--success);}
+  .chip.selected-wrong{background:var(--danger); color:#fff; border-color:var(--danger);}
+  .feedback{font-size:11px; font-weight:700; min-height:14px; padding-left:2px;}
+  .feedback.ok{color:var(--success);}
+  .feedback.bad{color:var(--danger);}
+
+  /* ---------- Conclusion bar ---------- */
+  .conclusion{
+    background:var(--mint);
+    border:1px solid #CFEBDC;
+    border-radius:16px;
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    gap:22px;
+    flex-shrink:0;
+  }
+  .conclusion h2{
+    font-family:'Gaegu',sans-serif;
+    font-size:clamp(15px,1.9vh,18px);
+    margin:0; flex-shrink:0; color:#0E7A50;
+  }
+  .rule{
+    display:flex; align-items:center; gap:8px;
+    font-size:clamp(11.5px,1.4vh,13px); font-weight:500; color:#20493A;
+  }
+  .rule .n{
+    width:20px;height:20px;border-radius:50%;
+    background:#0E8F5C; color:#fff; font-size:11px; font-weight:900;
+    display:flex;align-items:center;justify-content:center; flex-shrink:0;
+  }
+  .conclusion .div{width:1px; align-self:stretch; background:#CFEBDC;}
+
+  @media (max-width:880px){
+    .stage{grid-template-columns:1fr; min-width:0;}
+    .panel{min-width:0;}
+    .app{min-height:100vh; height:auto;}
+    .panel{min-height:0;}
+    .diagram-wrap{flex:0 0 auto; height:min(72vw,360px);}
+    .quiz{overflow:visible; flex:0 0 auto;}
+    .topbar{flex-wrap:wrap; row-gap:8px;}
+    .conclusion{flex-wrap:wrap; row-gap:8px;}
+    .conclusion .div{display:none;}
+    .btn-row{flex-wrap:wrap;}
+    .pill-btn{min-width:0; flex:1 1 100%;}
+    .slider-row{flex-wrap:wrap;}
+    .slider-row label{width:100%;}
+    .quiz-row{flex-wrap:wrap; row-gap:6px;}
+    .chip-group{min-width:0;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="badge">2</div>
+    <div>
+      <h1>평행선에는 어떤 성질이 있나요?</h1>
+      <p>중1 도형 · 평행선에서 동위각의 성질 탐구하기</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="reset-btn" id="resetBtn">↺ 처음으로</button>
+  </header>
+
+  <main class="stage">
+
+    <!-- LEFT: diagram -->
+    <section class="panel">
+      <h3 class="panel-title"><span class="dot"></span>함께해요 — 두 직선과 동위각</h3>
+
+      <div class="diagram-wrap">
+        <div class="status-chips">
+          <span class="status-chip" id="parallelChip">l ∦ m</span>
+          <span class="status-chip" id="equalChip">∠a ≠ ∠c</span>
+        </div>
+        <svg id="stageSvg" viewBox="0 0 640 420" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <div class="controls">
+        <div class="slider-row">
+          <label for="thetaSlider">직선 n의 기울기</label>
+          <input type="range" id="thetaSlider" min="50" max="130" value="68" step="1">
+          <span class="val" id="thetaVal">68°</span>
+        </div>
+        <div class="slider-row">
+          <label for="tiltSlider">직선 m 기울이기</label>
+          <input type="range" id="tiltSlider" min="-25" max="25" value="0" step="1">
+          <span class="val" id="tiltVal">0°</span>
+        </div>
+        <div class="btn-row">
+          <button class="pill-btn ghost" id="snapBtn">⇔ 평행으로 맞추기</button>
+          <button class="pill-btn primary" id="overlayBtn">🔍 투명필름 겹쳐보기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: guide + quiz -->
+    <section class="panel">
+      <h3 class="panel-title"><span class="dot" style="background:var(--line-m)"></span>활동 순서 &amp; 관찰</h3>
+
+      <div class="steps">
+        <div class="step">
+          <span class="num">1</span>
+          <p><b>m 기울기 슬라이더를 0°</b>(평행)에 맞추고, n의 기울기를 자유롭게 바꿔보자.</p>
+        </div>
+        <div class="step">
+          <span class="num">2</span>
+          <p><b>겹쳐보기</b> 버튼을 눌러 투명필름처럼 ∠c, ∠d를 ∠a, ∠b 위에 포개어 보자.</p>
+        </div>
+        <div class="step">
+          <span class="num">3</span>
+          <p>m을 기울여 평행이 <b>아닐 때</b>는 동위각이 어떻게 되는지도 확인해보자.</p>
+        </div>
+      </div>
+
+      <div class="quiz">
+        <div class="quiz-head">관찰한 것을 표시해 보자</div>
+
+        <div class="quiz-row pair-ac">
+          <div class="quiz-text"><span class="swatch"></span>∠a 와 ∠c 의 크기는</div>
+          <div class="chip-group" data-pair="ac">
+            <button class="chip" data-answer="same">같다</button>
+            <button class="chip" data-answer="diff">다르다</button>
+          </div>
+        </div>
+        <div class="feedback" id="fbAc"></div>
+
+        <div class="quiz-row pair-bd">
+          <div class="quiz-text"><span class="swatch"></span>∠b 와 ∠d 의 크기는</div>
+          <div class="chip-group" data-pair="bd">
+            <button class="chip" data-answer="same">같다</button>
+            <button class="chip" data-answer="diff">다르다</button>
+          </div>
+        </div>
+        <div class="feedback" id="fbBd"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="conclusion">
+    <h2>평행선과 동위각</h2>
+    <div class="div"></div>
+    <div class="rule"><span class="n">1</span>두 직선이 서로 평행하면 <b>동위각의 크기는 같다.</b></div>
+    <div class="div"></div>
+    <div class="rule"><span class="n">2</span>동위각의 크기가 같으면 <b>그 두 직선은 서로 평행하다.</b></div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById('stageSvg');
+  const P = {x:320, y:130};
+  const targetQY = 330;
+  const R = 46;
+
+  const thetaSlider = document.getElementById('thetaSlider');
+  const tiltSlider = document.getElementById('tiltSlider');
+  const thetaVal = document.getElementById('thetaVal');
+  const tiltVal = document.getElementById('tiltVal');
+  const parallelChip = document.getElementById('parallelChip');
+  const equalChip = document.getElementById('equalChip');
+
+  function toRad(d){ return d*Math.PI/180; }
+  function pt(cx,cy,r,angDeg){
+    const r_ = toRad(angDeg);
+    return [cx + r*Math.cos(r_), cy - r*Math.sin(r_)];
+  }
+  function wedgePath(cx,cy,r,a1,a2,steps){
+    steps = steps || 24;
+    let d = `M ${cx} ${cy} `;
+    for(let i=0;i<=steps;i++){
+      const ang = a1 + (a2-a1)*i/steps;
+      const [x,y] = pt(cx,cy,r,ang);
+      d += `L ${x.toFixed(2)} ${y.toFixed(2)} `;
+    }
+    d += "Z";
+    return d;
+  }
+  function el(tag, attrs){
+    const e = document.createElementNS(svgNS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // ---- build static-ish structure once, update attributes on render ----
+  svg.innerHTML = '';
+
+  const gLines = el('g',{});
+  const lLine = el('line',{stroke:'var(--line-l)','stroke-width':3.5,'stroke-linecap':'round'});
+  const nLine = el('line',{stroke:'var(--line-n)','stroke-width':3.5,'stroke-linecap':'round'});
+  const mLine = el('line',{stroke:'var(--line-m)','stroke-width':3.5,'stroke-linecap':'round'});
+  gLines.append(lLine, nLine, mLine);
+
+  const wedgeA = el('path',{fill:'var(--ac)','fill-opacity':0.55});
+  const wedgeB = el('path',{fill:'var(--bd)','fill-opacity':0.55});
+  const wedgeC = el('path',{fill:'var(--ac)','fill-opacity':0.55});
+  const wedgeD = el('path',{fill:'var(--bd)','fill-opacity':0.55});
+
+  const ghostGroup = el('g',{id:'ghost', opacity:0});
+  const ghostC = el('path',{fill:'var(--ac)','fill-opacity':0.85, stroke:'#fff','stroke-width':1});
+  const ghostD = el('path',{fill:'var(--bd)','fill-opacity':0.85, stroke:'#fff','stroke-width':1});
+  ghostGroup.append(ghostC, ghostD);
+
+  function labelText(text, x, y, size, weight, color){
+    const t = el('text',{x:x, y:y, 'font-size':size, 'font-weight':weight, fill:color,
+      'text-anchor':'middle', 'font-family':"'Noto Sans KR', sans-serif"});
+    t.textContent = text;
+    return t;
+  }
+
+  const lLabel = labelText('l', 0,0, 15, 800, 'var(--line-l)');
+  const mLabelEl = labelText('m', 0,0, 15, 800, 'var(--line-m)');
+  const nLabel = labelText('n', 0,0, 15, 800, 'var(--line-n)');
+
+  const laLabel = labelText('a', 0,0, 14, 900, '#8a5a00');
+  const lbLabel = labelText('b', 0,0, 14, 900, '#0E5C86');
+  const lcLabel = labelText('c', 0,0, 14, 900, '#8a5a00');
+  const ldLabel = labelText('d', 0,0, 14, 900, '#0E5C86');
+
+  const laDeg = labelText('', 0,0, 11, 700, '#8a5a00');
+  const lbDeg = labelText('', 0,0, 11, 700, '#0E5C86');
+  const lcDeg = labelText('', 0,0, 11, 700, '#8a5a00');
+  const ldDeg = labelText('', 0,0, 11, 700, '#0E5C86');
+
+  const pointP = el('circle',{r:3.5, fill:'var(--ink)'});
+  const pointQ = el('circle',{r:3.5, fill:'var(--ink)'});
+
+  svg.append(wedgeA, wedgeB, wedgeC, wedgeD, ghostGroup, gLines,
+    pointP, pointQ, lLabel, mLabelEl, nLabel,
+    laLabel, lbLabel, lcLabel, ldLabel, laDeg, lbDeg, lcDeg, ldDeg);
+
+  let state = { theta: 68, tilt: 0 };
+  let Q = {x:0,y:targetQY};
+
+  function render(){
+    const theta = state.theta, tilt = state.tilt;
+
+    // Q position: point on n at y = targetQY
+    const t = (targetQY - P.y) / Math.sin(toRad(theta));
+    Q.x = P.x - t*Math.cos(toRad(theta));
+    Q.y = targetQY;
+
+    // l line
+    lLine.setAttribute('x1', 40); lLine.setAttribute('y1', P.y);
+    lLine.setAttribute('x2', 600); lLine.setAttribute('y2', P.y);
+
+    // n line (extends beyond both)
+    const s = 55;
+    const [ax,ay] = [P.x + s*Math.cos(toRad(theta)), P.y - s*Math.sin(toRad(theta))];
+    const [bx,by] = [Q.x - s*Math.cos(toRad(theta)), Q.y + s*Math.sin(toRad(theta))];
+    nLine.setAttribute('x1', ax); nLine.setAttribute('y1', ay);
+    nLine.setAttribute('x2', bx); nLine.setAttribute('y2', by);
+
+    // m line through Q, tilt from horizontal
+    const mlen = 250;
+    const [mx1,my1] = [Q.x - mlen*Math.cos(toRad(tilt)), Q.y + mlen*Math.sin(toRad(tilt))];
+    const [mx2,my2] = [Q.x + mlen*Math.cos(toRad(tilt)), Q.y - mlen*Math.sin(toRad(tilt))];
+    mLine.setAttribute('x1', mx1); mLine.setAttribute('y1', my1);
+    mLine.setAttribute('x2', mx2); mLine.setAttribute('y2', my2);
+    mLine.setAttribute('x1', Math.max(40,Math.min(600,mx1)));
+
+    // clip m within box roughly (simple clamp not necessary visually, leave as is but shorten length near edges)
+    // points
+    pointP.setAttribute('cx', P.x); pointP.setAttribute('cy', P.y);
+    pointQ.setAttribute('cx', Q.x); pointQ.setAttribute('cy', Q.y);
+
+    // angles
+    const angA = theta;              // 0 -> theta
+    const angC = theta - tilt;       // tilt -> theta
+
+    wedgeA.setAttribute('d', wedgePath(P.x,P.y,R, 0, theta));
+    wedgeB.setAttribute('d', wedgePath(P.x,P.y,R, theta, 180));
+    wedgeC.setAttribute('d', wedgePath(Q.x,Q.y,R, tilt, theta));
+    wedgeD.setAttribute('d', wedgePath(Q.x,Q.y,R, theta, 180+tilt));
+
+    // labels
+    lLabel.setAttribute('x', 55); lLabel.setAttribute('y', P.y-10);
+    mLabelEl.setAttribute('x', Math.min(590,mx2-14)); mLabelEl.setAttribute('y', my2+2);
+    nLabel.setAttribute('x', ax+6); nLabel.setAttribute('y', ay-6);
+
+    const rl = R+24;
+    function place(labelEl, cx,cy, ang){
+      const [x,y] = pt(cx,cy,rl,ang);
+      labelEl.setAttribute('x', x); labelEl.setAttribute('y', y+4);
+    }
+    place(laLabel, P.x,P.y, theta/2);
+    place(lbLabel, P.x,P.y, (theta+180)/2);
+    place(lcLabel, Q.x,Q.y, (tilt+theta)/2);
+    place(ldLabel, Q.x,Q.y, (theta+180+tilt)/2);
+
+    const rd = R+40;
+    function placeDeg(labelEl, cx,cy, ang, val){
+      const [x,y] = pt(cx,cy,rd,ang);
+      labelEl.setAttribute('x', x); labelEl.setAttribute('y', y+4);
+      labelEl.textContent = Math.round(val)+'°';
+    }
+    placeDeg(laDeg, P.x,P.y, theta/2, angA);
+    placeDeg(lbDeg, P.x,P.y, (theta+180)/2, 180-angA);
+    placeDeg(lcDeg, Q.x,Q.y, (tilt+theta)/2, angC);
+    placeDeg(ldDeg, Q.x,Q.y, (theta+180+tilt)/2, 180-angC);
+
+    // ghost translate target (for overlay button), stored for later use
+    ghostGroup.dataset.dx = P.x - Q.x;
+    ghostGroup.dataset.dy = P.y - Q.y;
+    ghostC.setAttribute('d', wedgePath(Q.x,Q.y,R, tilt, theta));
+    ghostD.setAttribute('d', wedgePath(Q.x,Q.y,R, theta, 180+tilt));
+
+    // status chips
+    const isParallel = Math.abs(tilt) < 0.5;
+    const isEqual = Math.abs(tilt) < 0.5;
+    parallelChip.textContent = isParallel ? 'l ∥ m (평행)' : 'l ∦ m (평행 아님)';
+    parallelChip.className = 'status-chip ' + (isParallel?'on-success':'on-danger');
+    equalChip.textContent = isEqual ? '∠a = ∠c' : `∠a(${Math.round(angA)}°) ≠ ∠c(${Math.round(angC)}°)`;
+    equalChip.className = 'status-chip ' + (isEqual?'on-success':'on-danger');
+
+    thetaVal.textContent = Math.round(theta)+'°';
+    tiltVal.textContent = (tilt>0?'+':'')+Math.round(tilt)+'°';
+  }
+
+  thetaSlider.addEventListener('input', e=>{ state.theta = +e.target.value; render(); });
+  tiltSlider.addEventListener('input', e=>{ state.tilt = +e.target.value; render(); });
+
+  document.getElementById('snapBtn').addEventListener('click', ()=>{
+    state.tilt = 0; tiltSlider.value = 0; render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    state = {theta:68, tilt:0};
+    thetaSlider.value = 68; tiltSlider.value = 0;
+    resetQuiz();
+    render();
+  });
+
+  document.getElementById('overlayBtn').addEventListener('click', ()=>{
+    const dx = ghostGroup.dataset.dx, dy = ghostGroup.dataset.dy;
+    ghostGroup.style.transition = 'none';
+    ghostGroup.setAttribute('transform', 'translate(0,0)');
+    ghostGroup.setAttribute('opacity', '0.9');
+    // force reflow
+    void ghostGroup.getBoundingClientRect();
+    ghostGroup.style.transition = 'transform 0.9s cubic-bezier(.4,0,.2,1)';
+    requestAnimationFrame(()=>{
+      ghostGroup.setAttribute('transform', `translate(${dx},${dy})`);
+    });
+    clearTimeout(window.__ghostTimer);
+    window.__ghostTimer = setTimeout(()=>{
+      ghostGroup.style.transition = 'opacity 0.8s ease';
+      ghostGroup.setAttribute('opacity','0');
+    }, 2200);
+  });
+
+  // ---- Quiz ----
+  function resetQuiz(){
+    document.querySelectorAll('.chip').forEach(c=>{
+      c.classList.remove('selected-correct','selected-wrong');
+    });
+    document.getElementById('fbAc').textContent='';
+    document.getElementById('fbAc').className='feedback';
+    document.getElementById('fbBd').textContent='';
+    document.getElementById('fbBd').className='feedback';
+  }
+
+  document.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const group = chip.parentElement;
+      const pair = group.dataset.pair;
+      const answer = chip.dataset.answer;
+      const truthSame = Math.abs(state.tilt) < 0.5; // a=c and b=d both true iff parallel
+      const isCorrect = (answer==='same') === truthSame;
+
+      group.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected-correct','selected-wrong'));
+      chip.classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+
+      const fb = document.getElementById(pair==='ac'?'fbAc':'fbBd');
+      if(isCorrect){
+        fb.textContent = '✓ 맞아요! 지금 상태와 일치해요.';
+        fb.className = 'feedback ok';
+      } else {
+        const hint = truthSame ? '지금은 l ∥ m 이라 크기가 같아요.' : '지금은 평행이 아니라서 크기가 달라요.';
+        fb.textContent = '✗ 다시 확인해봐요 — ' + hint;
+        fb.className = 'feedback bad';
+      }
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
