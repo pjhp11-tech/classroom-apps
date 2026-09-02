@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대각선 탐구 — 사각형의 성질</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F1;
+    --paper-line:#E4DCC8;
+    --ink:#233238;
+    --ink-soft:#5B6B70;
+    --board:#1F4B44;
+    --board-soft:#2E6259;
+    --coral:#E4572E;
+    --segA:#D64550;
+    --segB:#2A6FB0;
+    --gold:#D9A441;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--paper-line) 1px, transparent 1px),
+      var(--paper);
+    background-size: 26px 26px, 26px 26px, auto;
+    color:var(--ink);
+    font-family:'Gowun Dodum', sans-serif;
+    font-size:14px;
+    height:100vh;
+    max-height:100vh;
+    overflow:hidden;
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+    padding:12px 16px;
+  }
+  h1,h2,h3, .title-font{ font-family:'Jua', sans-serif; font-weight:400; }
+
+  .app{
+    width:100%;
+    max-width:1180px;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  .card{
+    background:#fff;
+    border:1.5px solid var(--paper-line);
+    border-radius:var(--radius);
+    box-shadow:0 2px 0 rgba(35,50,56,0.05), 0 14px 34px -20px rgba(35,50,56,0.35);
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 280px 1fr;
+    gap:14px;
+    flex:1;
+    min-height:0;
+  }
+  @media (max-width:820px){ .layout{ grid-template-columns: 1fr; } }
+
+  /* ---------- left panel ---------- */
+  .panel{
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow-y:auto;
+  }
+  .panel h1{
+    font-size:17px;
+    margin:0 0 2px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel h1 .dot{ width:8px;height:8px;border-radius:50%;background:var(--coral); flex:none; }
+  .panel .sub{ font-size:11.5px; color:var(--ink-soft); margin:0 0 12px; line-height:1.5; }
+
+  .cond-list{ display:flex; flex-direction:column; gap:7px; margin-bottom:10px; }
+  .cond-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 9px;
+    border:1.6px solid var(--paper-line);
+    border-radius:10px;
+    cursor:pointer;
+    transition: border-color .15s ease, background .15s ease;
+    user-select:none;
+  }
+  .cond-row:hover{ border-color:var(--gold); background:#FFFBF0; }
+  .cond-row.checked{ border-color:var(--board); background:#F1F7F5; }
+  .cond-row input{ display:none; }
+
+  .checkbox-vis{
+    width:19px;height:19px;min-width:19px;
+    border-radius:6px;
+    border:2px solid #C9C2AC;
+    display:flex;align-items:center;justify-content:center;
+    background:#fff;
+    transition: all .12s ease;
+    flex:none;
+  }
+  .cond-row.checked .checkbox-vis{ background:var(--board); border-color:var(--board); }
+  .checkbox-vis svg{ width:12px;height:12px; opacity:0; transition:opacity .12s ease; }
+  .cond-row.checked .checkbox-vis svg{ opacity:1; }
+
+  .cond-icon{ width:34px; height:26px; flex:none; }
+  .cond-text{ flex:1; font-family:'Jua', sans-serif; font-size:13.5px; color:var(--ink); }
+
+  .divider{ height:1px; background:var(--paper-line); margin:10px 0; flex:none; }
+
+  .howto{ font-size:12px; color:var(--ink-soft); line-height:1.55; }
+  .howto b{ color:var(--ink); }
+  .legend-row{ display:flex; align-items:center; gap:7px; font-size:11.5px; margin-top:4px; color:var(--ink-soft); }
+  .legend-box{ margin-top:8px; }
+
+  .panel-actions{ display:flex; flex-direction:column; gap:7px; margin-top:12px; flex:none; }
+  .btn{
+    font-family:'Jua', sans-serif;
+    font-size:13px;
+    border:none;
+    border-radius:10px;
+    padding:9px 16px;
+    cursor:pointer;
+    transition: transform .08s ease, filter .12s ease;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn-board{ background:var(--board); color:#fff; }
+  .btn-board:hover{ filter:brightness(1.1); }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); border:1.5px solid var(--paper-line); }
+  .btn-ghost:hover{ border-color:var(--ink-soft); color:var(--ink); }
+
+  .hint-box{
+    margin:0 14px 12px auto;
+    align-self:flex-end;
+    width:auto;
+    max-width:78%;
+    border:1.5px dashed var(--gold);
+    border-radius:10px;
+    padding:8px 11px;
+    background:#FFFBF0;
+    flex:none;
+  }
+  .hint-box summary{
+    cursor:pointer; font-family:'Jua', sans-serif; font-size:12.5px; color:#8A6D1F;
+    list-style:none;
+    text-align:right;
+  }
+  .hint-box summary::-webkit-details-marker{ display:none; }
+  .hint-body{ margin-top:7px; font-size:12px; color:var(--ink-soft); line-height:1.55; text-align:left; }
+  .hint-body b{ color:var(--ink); }
+
+  /* ---------- right canvas ---------- */
+  .canvas-card{ display:flex; flex-direction:column; min-height:0; }
+  .canvas-wrap{
+    padding:12px;
+    position:relative;
+    flex:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #cv{
+    display:block;
+    width:auto;
+    height:auto;
+    max-width:100%;
+    max-height:100%;
+    aspect-ratio: 4 / 3;
+    border-radius:12px;
+    background:
+      linear-gradient(#EEF1F4 1px, transparent 1px),
+      linear-gradient(90deg, #EEF1F4 1px, transparent 1px),
+      #ffffff;
+    background-size:24px 24px, 24px 24px, auto;
+    touch-action:none;
+    cursor:grab;
+    border:1.5px solid #E7ECEF;
+  }
+  #cv.grabbing{ cursor:grabbing; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="layout">
+
+    <div class="card panel">
+      <h1><span class="dot"></span>대각선 탐구 — 사각형의 성질</h1>
+      <p class="sub">조건을 체크하면 두 대각선(빨강·파랑 선분)이 그 조건을 만족하도록 움직여요. 끝점과 가운데 점을 드래그해 보세요.</p>
+
+      <div class="cond-list">
+        <label class="cond-row" id="row-bisect">
+          <input type="checkbox" id="chk-bisect">
+          <svg class="cond-icon" viewBox="0 0 56 44">
+            <line x1="8" y1="10" x2="48" y2="34" stroke="#D64550" stroke-width="3" stroke-linecap="round"/>
+            <line x1="10" y1="34" x2="46" y2="10" stroke="#2A6FB0" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="28" cy="22" r="3.4" fill="#233238"/>
+          </svg>
+          <span class="cond-text">서로를 이등분한다</span>
+          <span class="checkbox-vis"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </label>
+
+        <label class="cond-row" id="row-equal">
+          <input type="checkbox" id="chk-equal">
+          <svg class="cond-icon" viewBox="0 0 56 44">
+            <line x1="8" y1="14" x2="48" y2="30" stroke="#D64550" stroke-width="3" stroke-linecap="round"/>
+            <line x1="10" y1="32" x2="46" y2="8" stroke="#2A6FB0" stroke-width="3" stroke-linecap="round"/>
+            <line x1="24" y1="17" x2="28" y2="23" stroke="#233238" stroke-width="2"/>
+            <line x1="24" y1="21" x2="28" y2="27" stroke="#233238" stroke-width="2"/>
+          </svg>
+          <span class="cond-text">길이가 같다</span>
+          <span class="checkbox-vis"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </label>
+
+        <label class="cond-row" id="row-perp">
+          <input type="checkbox" id="chk-perp">
+          <svg class="cond-icon" viewBox="0 0 56 44">
+            <line x1="8" y1="22" x2="48" y2="22" stroke="#D64550" stroke-width="3" stroke-linecap="round"/>
+            <line x1="28" y1="4" x2="28" y2="40" stroke="#2A6FB0" stroke-width="3" stroke-linecap="round"/>
+            <path d="M28 22 L28 15 L35 15" fill="none" stroke="#233238" stroke-width="2"/>
+          </svg>
+          <span class="cond-text">서로 수직이다</span>
+          <span class="checkbox-vis"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="howto">
+        <b>사용법</b><br>
+        ● 선분의 <b>끝점</b> 드래그 &rarr; 기울기·길이 변경<br>
+        ● 선분의 <b>가운데 점</b> 드래그 &rarr; 위치 이동
+      </div>
+
+      <div class="legend-box howto">
+        <div class="legend-row"><span style="font-size:15px;">╫</span> 같은 표시 = 길이가 같은 변</div>
+        <div class="legend-row"><span style="font-size:15px;">➤</span> 같은 표시(변의 1/3 지점) = 서로 평행한 변</div>
+        <div class="legend-row"><span style="font-size:15px;">⌐</span> 꼭짓점·교점의 작은 사각형 = 직각(90°)</div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn btn-board" id="btn-make">사각형 만들기</button>
+        <button class="btn btn-ghost" id="btn-reset">선분 초기화</button>
+      </div>
+    </div>
+
+    <div class="card canvas-card">
+      <div class="canvas-wrap">
+        <canvas id="cv" width="640" height="480"></canvas>
+      </div>
+      <details class="hint-box" id="hint-box">
+        <summary>💡 어떤 사각형이 되었는지 확인하기</summary>
+        <div class="hint-body" id="hint-body">사각형을 먼저 만들어보세요.</div>
+      </details>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- state ---------------- */
+  const conditions = { bisect:false, equal:false, perp:false };
+  const CANVAS_W = 640, CANVAS_H = 480;
+  const MARGIN = 46;
+
+  // segments represented as center C + half-vector d
+  let segA = { C:{x:0,y:0}, d:{x:0,y:0}, color:'#D64550' };
+  let segB = { C:{x:0,y:0}, d:{x:0,y:0}, color:'#2A6FB0' };
+  let quadMade = false;
+  let dragging = null; // {seg:'A'|'B', part:'e1'|'e2'|'c'}
+
+  /* ---------------- condition checkboxes ---------------- */
+  function wireCheckbox(rowId, chkId, key){
+    const row = document.getElementById(rowId);
+    const input = document.getElementById(chkId);
+    row.addEventListener('click', (e)=>{
+      e.preventDefault();
+      input.checked = !input.checked;
+      row.classList.toggle('checked', input.checked);
+      conditions[key] = input.checked;
+      onConditionsChanged(key);
+    });
+  }
+  wireCheckbox('row-bisect','chk-bisect','bisect');
+  wireCheckbox('row-equal','chk-equal','equal');
+  wireCheckbox('row-perp','chk-perp','perp');
+
+  function onConditionsChanged(changedKey){
+    if(changedKey==='bisect'){
+      if(conditions.bisect){
+        // merge centers so the two diagonals now share a midpoint
+        segB.C = { x:segA.C.x, y:segA.C.y };
+      }
+    }
+    applyConstraints('A');
+    draw();
+  }
+
+  /* ---------------- geometry helpers ---------------- */
+  function vlen(v){ return Math.hypot(v.x, v.y); }
+  function vnorm(v){ const l=vlen(v)||1; return {x:v.x/l, y:v.y/l}; }
+  function vangle(v){ return Math.atan2(v.y, v.x); }
+  function vfromAngle(a, m){ return {x:Math.cos(a)*m, y:Math.sin(a)*m}; }
+  function clampPt(p){
+    return {
+      x: Math.min(CANVAS_W-MARGIN, Math.max(MARGIN, p.x)),
+      y: Math.min(CANVAS_H-MARGIN, Math.max(MARGIN, p.y))
+    };
+  }
+  function endpoints(seg){
+    return [ {x:seg.C.x+seg.d.x, y:seg.C.y+seg.d.y}, {x:seg.C.x-seg.d.x, y:seg.C.y-seg.d.y} ];
+  }
+
+  function resetSegments(){
+    const cx = CANVAS_W/2, cy = CANVAS_H/2;
+    if(conditions.bisect){
+      segA.C = {x:cx, y:cy};
+      segB.C = {x:cx, y:cy};
+    } else {
+      segA.C = {x:cx-70, y:cy-30};
+      segB.C = {x:cx+60, y:cy+20};
+    }
+    segA.d = vfromAngle(-0.35, 95);
+    segB.d = vfromAngle(1.15, 80);
+    applyConstraints('A');
+    quadMade = false;
+    document.getElementById('btn-make').textContent = '사각형 만들기';
+    document.getElementById('hint-body').textContent = '사각형을 먼저 만들어보세요.';
+    draw();
+  }
+  document.getElementById('btn-reset').addEventListener('click', resetSegments);
+
+  function applyConstraints(masterName){
+    const master = masterName==='A' ? segA : segB;
+    const other  = masterName==='A' ? segB : segA;
+
+    let newAngle = vangle(other.d);
+    let newMag   = vlen(other.d);
+
+    if(conditions.perp) newAngle = vangle(master.d) + Math.PI/2;
+    if(conditions.equal) newMag = vlen(master.d);
+
+    other.d = vfromAngle(newAngle, Math.max(newMag, 30));
+    if(vlen(master.d) < 30){ master.d = vfromAngle(vangle(master.d), 30); }
+  }
+
+  /* ---------------- drawing ---------------- */
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+
+  function draw(){
+    ctx.clearRect(0,0,CANVAS_W,CANVAS_H);
+    if(quadMade){ drawQuad(); }
+    drawSegment(segA);
+    drawSegment(segB);
+    drawDiagonalRightAngle();
+    drawHandles();
+  }
+
+  function drawSegment(seg){
+    const [p1,p2] = endpoints(seg);
+    ctx.save();
+    ctx.strokeStyle = seg.color;
+    ctx.lineWidth = 3;
+    ctx.setLineDash(quadMade ? [7,6] : []);
+    ctx.beginPath();
+    ctx.moveTo(p1.x,p1.y);
+    ctx.lineTo(p2.x,p2.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawHandles(){
+    if(conditions.bisect){
+      drawCenterHandle(segA.C, '#233238');
+    } else {
+      drawCenterHandle(segA.C, segA.color);
+      drawCenterHandle(segB.C, segB.color);
+    }
+    endpoints(segA).forEach(p=>drawEndHandle(p, segA.color));
+    endpoints(segB).forEach(p=>drawEndHandle(p, segB.color));
+  }
+
+  function drawEndHandle(p, color){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,8,0,Math.PI*2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCenterHandle(c, color){
+    ctx.save();
+    ctx.translate(c.x,c.y);
+    ctx.rotate(Math.PI/4);
+    ctx.fillStyle = color;
+    ctx.fillRect(-4,-4,8,8);
+    ctx.restore();
+  }
+
+  /* ---------- right-angle marker (small square at a corner) ---------- */
+  function drawRightAngleMarker(vertex, dir1, dir2, size){
+    size = size || 11;
+    const p1 = { x: vertex.x + dir1.x*size, y: vertex.y + dir1.y*size };
+    const p2 = { x: vertex.x + dir1.x*size + dir2.x*size, y: vertex.y + dir1.y*size + dir2.y*size };
+    const p3 = { x: vertex.x + dir2.x*size, y: vertex.y + dir2.y*size };
+    ctx.save();
+    ctx.strokeStyle = '#233238';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---------- right-angle marker where the two diagonals cross ---------- */
+  function drawDiagonalRightAngle(){
+    const d1 = segA.d, d2 = segB.d;
+    const dot = d1.x*d2.x + d1.y*d2.y;
+    const nrm = vlen(d1)*vlen(d2) || 1;
+    if(Math.abs(dot)/nrm > 0.05) return; // not perpendicular enough
+
+    const denom = d1.x*d2.y - d1.y*d2.x;
+    if(Math.abs(denom) < 1e-6) return; // parallel, no intersection
+
+    const pdx = segB.C.x - segA.C.x, pdy = segB.C.y - segA.C.y;
+    const t = (pdx*d2.y - pdy*d2.x) / denom;
+    const s = (pdx*d1.y - pdy*d1.x) / denom;
+    if(Math.abs(t) > 1.03 || Math.abs(s) > 1.03) return; // crossing point off the visible segments
+
+    const ip = { x: segA.C.x + t*d1.x, y: segA.C.y + t*d1.y };
+    drawRightAngleMarker(ip, vnorm(d1), vnorm(d2), 11);
+  }
+
+  /* ---------- quadrilateral + marks ---------- */
+  function currentQuadPoints(){
+    const [a1,a2] = endpoints(segA);
+    const [b1,b2] = endpoints(segB);
+    return [a1,b1,a2,b2];
+  }
+
+  function drawQuad(){
+    const P = currentQuadPoints();
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(P[0].x,P[0].y);
+    for(let i=1;i<4;i++) ctx.lineTo(P[i].x,P[i].y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(217,164,65,0.12)';
+    ctx.fill();
+    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = '#233238';
+    ctx.stroke();
+    ctx.restore();
+
+    const sides = [
+      {a:P[0], b:P[1]},
+      {a:P[1], b:P[2]},
+      {a:P[2], b:P[3]},
+      {a:P[3], b:P[0]}
+    ];
+    const lens = sides.map(s=>Math.hypot(s.b.x-s.a.x, s.b.y-s.a.y));
+
+    const tol = Math.max(6, 0.03*Math.max(...lens));
+    const groupId = [-1,-1,-1,-1];
+    let nextGroup = 0;
+    for(let i=0;i<4;i++){
+      if(groupId[i]!==-1) continue;
+      groupId[i] = nextGroup;
+      for(let j=i+1;j<4;j++){
+        if(groupId[j]===-1 && Math.abs(lens[i]-lens[j])<tol){
+          groupId[j] = nextGroup;
+        }
+      }
+      nextGroup++;
+    }
+    const counts = {};
+    groupId.forEach(g=>counts[g]=(counts[g]||0)+1);
+    const usedGroups = [];
+    groupId.forEach(g=>{ if(counts[g]>=2 && !usedGroups.includes(g)) usedGroups.push(g); });
+
+    sides.forEach((s,i)=>{
+      if(counts[groupId[i]]>=2){
+        const tickIdx = usedGroups.indexOf(groupId[i]) + 1;
+        drawTick(s.a, s.b, tickIdx);
+      }
+    });
+
+    const pairDefs = [[0,2],[1,3]];
+    let arrowCount = 0;
+    const foundParallel = [];
+    pairDefs.forEach(([i,j])=>{
+      const v1 = {x:sides[i].b.x-sides[i].a.x, y:sides[i].b.y-sides[i].a.y};
+      const v2 = {x:sides[j].b.x-sides[j].a.x, y:sides[j].b.y-sides[j].a.y};
+      const cross = Math.abs(v1.x*v2.y - v1.y*v2.x);
+      const norm = vlen(v1)*vlen(v2) || 1;
+      if(cross/norm < 0.05){
+        foundParallel.push([i,j]);
+      }
+    });
+    foundParallel.forEach(([i,j])=>{
+      arrowCount++;
+      drawArrow(sides[i].a, sides[i].b, arrowCount);
+      drawArrow(sides[j].a, sides[j].b, arrowCount);
+    });
+
+    // 직사각형(또는 부분적으로 직각을 이루는 꼭짓점)의 각 표시
+    for(let i=0;i<4;i++){
+      const prev = P[(i+3)%4], curr = P[i], next = P[(i+1)%4];
+      const e1 = {x:prev.x-curr.x, y:prev.y-curr.y};
+      const e2 = {x:next.x-curr.x, y:next.y-curr.y};
+      const dot = e1.x*e2.x + e1.y*e2.y;
+      const enorm = vlen(e1)*vlen(e2) || 1;
+      if(Math.abs(dot)/enorm < 0.05){
+        drawRightAngleMarker(curr, vnorm(e1), vnorm(e2), 12);
+      }
+    }
+
+    updateHint(lens, groupId, counts, foundParallel);
+  }
+
+  function drawTick(a,b,count){
+    const mid = {x:(a.x+b.x)/2, y:(a.y+b.y)/2};
+    const dir = vnorm({x:b.x-a.x, y:b.y-a.y});
+    const perp = {x:-dir.y, y:dir.x};
+    const gap = 6;
+    ctx.save();
+    ctx.strokeStyle = '#233238';
+    ctx.lineWidth = 2.4;
+    for(let k=0;k<count;k++){
+      const offset = (k-(count-1)/2) * gap;
+      const cx = mid.x + dir.x*offset;
+      const cy = mid.y + dir.y*offset;
+      ctx.beginPath();
+      ctx.moveTo(cx - perp.x*6, cy - perp.y*6);
+      ctx.lineTo(cx + perp.x*6, cy + perp.y*6);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawArrow(a,b,count){
+    const anchor = { x: a.x + (b.x-a.x)/3, y: a.y + (b.y-a.y)/3 };
+    const dir = vnorm({x:b.x-a.x, y:b.y-a.y});
+    const perp = {x:-dir.y, y:dir.x};
+    const gap = 9;
+    ctx.save();
+    ctx.strokeStyle = '#D9A441';
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
+    for(let k=0;k<count;k++){
+      const offset = (k-(count-1)/2) * gap;
+      const bx = anchor.x + dir.x*(offset);
+      const by = anchor.y + dir.y*(offset);
+      const tipx = bx + dir.x*7, tipy = by + dir.y*7;
+      const backx = bx - dir.x*7, backy = by - dir.y*7;
+      ctx.beginPath();
+      ctx.moveTo(backx + perp.x*5, backy + perp.y*5);
+      ctx.lineTo(tipx, tipy);
+      ctx.lineTo(backx - perp.x*5, backy - perp.y*5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function updateHint(lens, groupId, counts, foundParallel){
+    const box = document.getElementById('hint-body');
+    const twoPairsParallel = foundParallel.length===2;
+    const onePairParallel = foundParallel.length===1;
+    const hasAnyEqualPair = Object.values(counts).some(c=>c>=2);
+
+    let text = '';
+    text += '변의 길이: ' + lens.map(l=>l.toFixed(0)).join(' , ') + ' (px)<br>';
+
+    if(conditions.bisect && conditions.equal && conditions.perp){
+      text += '➡ <b>정사각형</b>이 만들어졌어요. (네 변의 길이가 모두 같고, 이웃한 변끼리 수직)';
+    } else if(conditions.bisect && conditions.equal){
+      text += '➡ <b>직사각형</b>이 만들어졌어요. (두 쌍의 대변이 각각 평행하고, 네 각이 모두 직각)';
+    } else if(conditions.bisect && conditions.perp){
+      text += '➡ <b>마름모</b>가 만들어졌어요. (네 변의 길이가 모두 같은 평행사변형)';
+    } else if(conditions.bisect){
+      text += '➡ <b>평행사변형</b>이 만들어졌어요. (두 쌍의 대변이 각각 평행)';
+    } else if(twoPairsParallel){
+      text += '➡ 두 쌍의 대변이 모두 평행한 <b>평행사변형</b> 모양이 관찰돼요.';
+    } else if(onePairParallel){
+      text += '➡ 한 쌍의 대변만 평행한 <b>사다리꼴</b> 모양이 관찰돼요.';
+    } else if(hasAnyEqualPair && !onePairParallel && !twoPairsParallel){
+      text += '➡ 평행한 변은 없지만, 길이가 같은 변이 있는 사각형이에요. (이웃한 두 변끼리 같으면 <b>연꼴(kite)</b> 모양)';
+    } else {
+      text += '➡ 특별한 성질이 뚜렷하지 않은 <b>일반 사각형</b>이에요. 선분을 조절하며 다시 관찰해보세요.';
+    }
+    box.innerHTML = text;
+  }
+
+  /* ---------------- pointer interaction ---------------- */
+  function getPos(e){
+    const rect = cv.getBoundingClientRect();
+    const scaleX = CANVAS_W/rect.width, scaleY = CANVAS_H/rect.height;
+    const clientX = (e.touches? e.touches[0].clientX : e.clientX);
+    const clientY = (e.touches? e.touches[0].clientY : e.clientY);
+    return { x:(clientX-rect.left)*scaleX, y:(clientY-rect.top)*scaleY };
+  }
+
+  function handleList(){
+    const list = [];
+    const [a1,a2] = endpoints(segA);
+    const [b1,b2] = endpoints(segB);
+    list.push({seg:'A', part:'e1', p:a1});
+    list.push({seg:'A', part:'e2', p:a2});
+    list.push({seg:'B', part:'e1', p:b1});
+    list.push({seg:'B', part:'e2', p:b2});
+    if(conditions.bisect){
+      list.push({seg:'shared', part:'c', p:segA.C});
+    } else {
+      list.push({seg:'A', part:'c', p:segA.C});
+      list.push({seg:'B', part:'c', p:segB.C});
+    }
+    return list;
+  }
+
+  function nearestHandle(pos){
+    const list = handleList();
+    let best = null, bestD = 20;
+    list.forEach(h=>{
+      const d = Math.hypot(h.p.x-pos.x, h.p.y-pos.y);
+      if(d<bestD){ bestD=d; best=h; }
+    });
+    return best;
+  }
+
+  cv.addEventListener('pointerdown', (e)=>{
+    const pos = getPos(e);
+    const h = nearestHandle(pos);
+    if(h){
+      dragging = h;
+      cv.classList.add('grabbing');
+      cv.setPointerCapture(e.pointerId);
+    }
+    e.preventDefault();
+  });
+
+  cv.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const pos = clampPt(getPos(e));
+
+    if(dragging.part==='c'){
+      if(dragging.seg==='shared'){
+        const delta = {x:pos.x-segA.C.x, y:pos.y-segA.C.y};
+        segA.C = pos;
+        segB.C = {x:segB.C.x+delta.x, y:segB.C.y+delta.y};
+      } else {
+        const seg = dragging.seg==='A' ? segA : segB;
+        seg.C = pos;
+      }
+    } else {
+      const seg = dragging.seg==='A' ? segA : segB;
+      if(dragging.part==='e1'){
+        seg.d = {x:pos.x-seg.C.x, y:pos.y-seg.C.y};
+      } else {
+        seg.d = {x:seg.C.x-pos.x, y:seg.C.y-pos.y};
+      }
+      if(vlen(seg.d) < 30){ seg.d = vfromAngle(vangle(seg.d), 30); }
+      applyConstraints(dragging.seg);
+    }
+    draw();
+    e.preventDefault();
+  });
+
+  function endDrag(){
+    dragging = null;
+    cv.classList.remove('grabbing');
+  }
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointerleave', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+
+  /* ---------------- make quad button ---------------- */
+  document.getElementById('btn-make').addEventListener('click', ()=>{
+    quadMade = true;
+    document.getElementById('btn-make').textContent = '✓ 사각형 관찰 중 (계속 움직여 보세요)';
+    document.getElementById('hint-box').setAttribute('open','');
+    draw();
+  });
+
+  /* ---------------- init ---------------- */
+  resetSegments();
+  draw();
+
+})();
+</script>
+</body>
+</html>
