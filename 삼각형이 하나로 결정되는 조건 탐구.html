@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>삼각형이 하나로 결정되는 조건 탐구</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F1;
+    --grid:#E7E0CF;
+    --ink:#233129;
+    --teal:#256B5A;
+    --teal-dark:#184A3E;
+    --coral:#E8722C;
+    --coral-dark:#C25A19;
+    --sun:#F2B705;
+    --good:#2E8B4B;
+    --bad:#D64545;
+    --card:#FFFFFF;
+    --shadow: 0 6px 18px rgba(35,49,41,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito',sans-serif;
+    color:var(--ink);
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/28px 28px,
+      var(--paper);
+    overflow:auto;
+  }
+  h1,h2,h3,.brand{font-family:'Baloo 2',sans-serif;}
+
+  /* ---------- top bar ---------- */
+  #topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 18px;
+    background:rgba(251,248,241,0.92);
+    backdrop-filter:blur(4px);
+    border-bottom:2px solid var(--grid);
+  }
+  .brand{font-size:18px; font-weight:700; color:var(--teal-dark);}
+  .brand span{color:var(--coral);}
+  #zoomCtrl{display:flex; align-items:center; gap:6px;}
+  #zoomCtrl button{
+    width:32px;height:32px;border-radius:9px;border:2px solid var(--teal);
+    background:#fff;color:var(--teal-dark);font-size:17px;font-weight:800;cursor:pointer;
+  }
+  #zoomCtrl button:hover{background:var(--teal);color:#fff;}
+  #zoomPct{font-size:13px; font-weight:700; color:var(--teal-dark); width:42px; text-align:center;}
+
+  /* ---------- scroll / zoom stage ---------- */
+  #scrollArea{ width:100%; }
+  #zoomWrap{
+    transform-origin: top center;
+    display:flex; justify-content:center;
+    padding: 22px 16px 60px;
+  }
+  #stageContent{ width:100%; max-width:1080px; }
+
+  /* ---------- intro ---------- */
+  .intro{
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    gap:18px; padding:40px 20px 10px;
+  }
+  .intro-badge{
+    font-size:13px; font-weight:700; color:var(--teal-dark);
+    background:#E4F0EA; padding:6px 14px; border-radius:999px; border:2px solid var(--teal);
+  }
+  .intro h1{font-size:clamp(26px,4vw,40px); margin:6px 0; color:var(--teal-dark); line-height:1.25;}
+  .intro h1 em{font-style:normal; color:var(--coral);}
+  .intro p{max-width:560px; font-size:16px; line-height:1.7; color:#3c473f;}
+  .startBtn{
+    margin-top:10px;
+    background:var(--coral); color:#fff; border:none; border-radius:16px;
+    padding:16px 34px; font-family:'Baloo 2',sans-serif; font-size:20px; font-weight:700;
+    cursor:pointer; box-shadow: 0 8px 0 var(--coral-dark);
+    transition: transform .08s ease;
+  }
+  .startBtn:hover{ transform: translateY(-2px); }
+  .startBtn:active{ transform: translateY(4px); box-shadow:0 4px 0 var(--coral-dark); }
+  .introTriPreview{margin:8px 0;}
+
+  /* ---------- stage layout ---------- */
+  .stageHead{ margin-bottom:14px; }
+  .stageTag{
+    display:inline-block; font-size:13px; font-weight:700; color:#fff;
+    background:var(--teal); padding:5px 12px; border-radius:8px; margin-bottom:8px;
+  }
+  .stageHead h2{ font-size:22px; margin:0 0 6px; color:var(--teal-dark); }
+  .stageHead p{ margin:0; font-size:15px; line-height:1.6; color:#3c473f; max-width:760px;}
+  .stageHead p b{ color:var(--coral-dark); font-weight:800; }
+
+  .panelsRow{
+    display:flex; gap:18px; flex-wrap:wrap; margin-top:16px;
+  }
+  .panelCard{
+    flex:1 1 320px; min-width:280px;
+    background:var(--card); border-radius:18px; box-shadow:var(--shadow);
+    border:2px solid #EFE9D8; padding:14px 14px 10px;
+  }
+  .panelCard h3{
+    margin:0 0 8px; font-size:15px; color:var(--teal-dark); font-weight:700;
+    display:flex; align-items:center; gap:6px;
+  }
+  .side-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .side-dot.L{background:var(--teal);}
+  .side-dot.R{background:var(--coral);}
+  .panelCard svg{ width:100%; height:auto; display:block; touch-action:none; border-radius:10px; background:#fff;}
+  .infoLine{ margin-top:8px; font-size:13.5px; color:#4a554d; min-height:20px; font-weight:600;}
+  .infoLine b{color:var(--coral-dark);}
+
+  .qCard{
+    margin-top:18px; background:#fff; border-radius:18px; box-shadow:var(--shadow);
+    border:2px solid #EFE9D8; padding:18px 20px; display:flex; flex-wrap:wrap;
+    align-items:center; gap:18px; justify-content:space-between;
+  }
+  .qText{font-size:17px; font-weight:700; color:var(--teal-dark);}
+  .qBtns{display:flex; gap:12px;}
+  .qBtns button{
+    width:60px; height:60px; border-radius:16px; border:none; font-family:'Baloo 2',sans-serif;
+    font-size:26px; font-weight:800; cursor:pointer; color:#fff;
+  }
+  .qBtns .oBtn{background:var(--good); box-shadow:0 6px 0 #205e34;}
+  .qBtns .xBtn{background:var(--bad); box-shadow:0 6px 0 #93302f;}
+  .qBtns button:active{ transform:translateY(4px); box-shadow:none;}
+  .feedback{ width:100%; font-size:14.5px; font-weight:700; min-height:22px; }
+  .feedback.ok{color:var(--good);}
+  .feedback.no{color:var(--bad);}
+
+  .bottomBar{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-top:18px; flex-wrap:wrap;}
+  .progressWrap{font-size:13px; color:#8a9089; font-weight:700;}
+  .condCard{
+    background:#FFF7E8; border:2px dashed var(--sun); border-radius:16px; padding:14px 18px;
+    min-width:280px; flex:1 1 320px;
+  }
+  .condCard h4{ margin:0 0 8px; font-size:15px; color:#8a5c00; }
+  .condCard ol{ margin:0; padding-left:20px; font-size:14px; color:#5c4300; line-height:1.7; font-weight:700;}
+  .condCard .placeholder{ font-size:13px; color:#b39558; font-weight:600; font-style:normal;}
+
+  /* ---------- summary ---------- */
+  .summaryCard{
+    background:#fff; border-radius:22px; box-shadow:var(--shadow); border:2px solid #EFE9D8;
+    padding:34px 30px; max-width:640px; margin:20px auto 40px;
+  }
+  .summaryCard h2{ color:var(--teal-dark); font-size:24px; margin-top:0;}
+  .sumList{ list-style:none; margin:20px 0; padding:0; display:flex; flex-direction:column; gap:14px;}
+  .sumList li{
+    display:flex; gap:14px; align-items:flex-start; background:#F4FBF6; border:2px solid #CFEAD8;
+    border-radius:14px; padding:14px 16px; font-size:15.5px; font-weight:700; color:#1c4a30; line-height:1.5;
+  }
+  .sumNum{
+    flex:0 0 30px; height:30px; border-radius:50%; background:var(--good); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-family:'Baloo 2',sans-serif; font-weight:800;
+  }
+  .restartBtn{
+    background:var(--teal); color:#fff; border:none; border-radius:14px; padding:13px 26px;
+    font-family:'Baloo 2',sans-serif; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 6px 0 var(--teal-dark);
+  }
+  .restartBtn:active{ transform:translateY(4px); box-shadow:none; }
+
+  /* svg drawing classes */
+  .fixedSeg{ stroke:var(--teal); stroke-width:3; }
+  .triFill{ fill:rgba(37,107,90,0.07); stroke:#333; stroke-width:2; }
+  .guide{ stroke:#B7BDB6; stroke-width:1.6; stroke-dasharray:5,4; fill:none; }
+  .guideCircle{ stroke:#C9A54A; stroke-width:1.6; stroke-dasharray:4,4; fill:none; }
+  .refDot{ fill:#fff; stroke:#C9A54A; stroke-width:2; }
+  .movPoint{ fill:var(--coral); stroke:#fff; stroke-width:2.5; cursor:grab; touch-action:none; }
+  .movPoint:active{ cursor:grabbing; }
+  .fixedPoint{ fill:var(--teal-dark); }
+  .rotHandle{ fill:#fff; stroke:var(--coral); stroke-width:2.5; cursor:grab; touch-action:none; }
+  .dragHit{ fill:rgba(0,0,0,0.001); touch-action:none; cursor:grab; }
+  .dragHit:active{ cursor:grabbing; }
+  .vlabel{ font-family:'Baloo 2',sans-serif; font-size:15px; font-weight:700; fill:#233129; }
+  .lenlabel{ font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:800; fill:var(--teal-dark); }
+  .anglelabel{ font-family:'Nunito',sans-serif; font-size:12.5px; font-weight:800; fill:var(--coral-dark); }
+  .anglearc{ stroke:var(--coral); stroke-width:2; fill:none; }
+  .noteText{ font-family:'Nunito',sans-serif; font-size:12px; font-weight:700; fill:#8a9089; }
+
+  @media (max-width:640px){
+    .qCard{flex-direction:column; align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="brand">📐 삼각형, 하나로 <span>결정</span>될까?</div>
+  <div id="zoomCtrl">
+    <button id="zoomOut" title="축소">−</button>
+    <span id="zoomPct">100%</span>
+    <button id="zoomIn" title="확대">+</button>
+    <button id="zoomReset" title="원래대로">⟳</button>
+  </div>
+</div>
+
+<div id="scrollArea">
+  <div id="zoomWrap">
+    <div id="stageContent"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   유틸
+========================================================= */
+const SVGNS = "http://www.w3.org/2000/svg";
+const PPC = 28; // pixel per cm
+
+function el(tag, attrs={}, text){
+  const e = document.createElementNS(SVGNS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(text!==undefined){ e.textContent = text; }
+  return e;
+}
+function dist(p,q){ return Math.hypot(p.x-q.x, p.y-q.y); }
+function angleAt(P,Q,R){ // 각 Q(내각), 단위 도
+  const v1={x:P.x-Q.x,y:P.y-Q.y}, v2={x:R.x-Q.x,y:R.y-Q.y};
+  const m = Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y);
+  if(m===0) return 0;
+  let c = (v1.x*v2.x+v1.y*v2.y)/m;
+  c = Math.max(-1,Math.min(1,c));
+  return Math.acos(c)*180/Math.PI;
+}
+function polar(o, deg, r){
+  const rad = deg*Math.PI/180;
+  return { x:o.x + r*Math.cos(rad), y:o.y - r*Math.sin(rad) };
+}
+function cross(u,v){ return u.x*v.y - u.y*v.x; }
+function rayIntersect(P1, dir1Deg, P2, dir2Deg){
+  const d1 = { x:Math.cos(dir1Deg*Math.PI/180), y:-Math.sin(dir1Deg*Math.PI/180) };
+  const d2 = { x:Math.cos(dir2Deg*Math.PI/180), y:-Math.sin(dir2Deg*Math.PI/180) };
+  const denom = cross(d1,d2);
+  if(Math.abs(denom) < 1e-9) return {x:(P1.x+P2.x)/2, y:(P1.y+P2.y)/2};
+  const t = cross({x:P2.x-P1.x,y:P2.y-P1.y}, d2) / denom;
+  return { x:P1.x + t*d1.x, y:P1.y + t*d1.y };
+}
+function svgCoord(svg, evt){
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const ctm = svg.getScreenCTM().inverse();
+  return pt.matrixTransform(ctm);
+}
+/* svg 하나당 이동/해제 리스너는 한 번만 등록해서, 매 프레임 다시 그리며
+   손잡이(원)를 새로 만들어도 드래그가 중간에 끊기지 않도록 한다.
+   (기존 방식은 손잡이 자체가 pointer capture를 갖고 있었는데,
+   draw()가 화면을 다시 그리며 그 손잡이를 지워버려서 캡처가 풀리는 문제가 있었음) */
+function ensureSvgDragSupport(svg){
+  if(svg._dragReady) return;
+  svg._dragReady = true;
+  svg.style.touchAction = 'none';
+  svg.addEventListener('pointermove', (e)=>{
+    if(!svg._dragCb) return;
+    e.preventDefault();
+    svg._dragCb(svgCoord(svg,e));
+  });
+  const end = (e)=>{
+    if(svg._dragPid!==undefined && svg._dragPid!==e.pointerId) return;
+    svg._dragCb = null; svg._dragPid = undefined;
+  };
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+}
+function makeDraggable(svg, handle, onMove){
+  ensureSvgDragSupport(svg);
+  handle.style.touchAction = 'none';
+  handle.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+    svg._dragCb = onMove;
+    svg._dragPid = e.pointerId;
+  });
+}
+/* 화면에는 작은 점(r)만 보이지만, 손가락/마우스로 잡기 쉽도록
+   보이지 않는 더 큰 원을 함께 그려서 드래그 손잡이로 사용한다 */
+function dragPoint(svg, p, r, cls){
+  const hitR = Math.max(r+9, 17);
+  const hit = svg.appendChild(el('circle',{cx:p.x,cy:p.y,r:hitR,class:'dragHit'}));
+  svg.appendChild(el('circle',{cx:p.x,cy:p.y,r:r,class:cls,'pointer-events':'none'}));
+  return hit;
+}
+function clear(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+function line(svg,p1,p2,cls){ svg.appendChild(el('line',{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,class:cls})); }
+function circleMark(svg,p,r,cls){ return svg.appendChild(el('circle',{cx:p.x,cy:p.y,r:r,class:cls})); }
+function textAt(svg,p,str,cls){ svg.appendChild(el('text',{x:p.x,y:p.y,class:cls,'text-anchor':'middle'},str)); }
+function outward(P, centroid, d){
+  const dx=P.x-centroid.x, dy=P.y-centroid.y; const m=Math.hypot(dx,dy)||1;
+  return { x:P.x+dx/m*d, y:P.y+dy/m*d };
+}
+function midLabelPos(p1,p2,offsetDir=1,off=15){
+  const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+  const dx=p2.x-p1.x, dy=p2.y-p1.y; const len=Math.hypot(dx,dy)||1;
+  const nx=-dy/len, ny=dx/len;
+  return {x:mx+nx*off*offsetDir, y:my+ny*off*offsetDir+4};
+}
+function angleArcPath(vertex, a1, a2, r, steps=18){
+  let diff = a2-a1;
+  while(diff<=-180) diff+=360;
+  while(diff>180) diff-=360;
+  let d='';
+  for(let i=0;i<=steps;i++){
+    const a=a1+diff*i/steps;
+    const p=polar(vertex,a,r);
+    d += (i===0?'M':'L')+p.x.toFixed(2)+' '+p.y.toFixed(2)+' ';
+  }
+  return d;
+}
+// angleArcPath와 달리 각도 차이를 ±180°로 정규화하지 않는 버전.
+// 270°에 가까운 큰 호(예: 2-3 문제의 긴 호)를 그릴 때 사용한다.
+function wideArcPath(vertex, a1, a2, r, steps=40){
+  let d='';
+  for(let i=0;i<=steps;i++){
+    const a=a1+(a2-a1)*i/steps;
+    const p=polar(vertex,a,r);
+    d += (i===0?'M':'L')+p.x.toFixed(2)+' '+p.y.toFixed(2)+' ';
+  }
+  return d;
+}
+function drawAngleArc(svg, vertex, dirA, dirB, r, label){
+  svg.appendChild(el('path',{d:angleArcPath(vertex,dirA,dirB,r), class:'anglearc'}));
+  let diff=dirB-dirA; while(diff<=-180) diff+=360; while(diff>180) diff-=360;
+  const mid = dirA + diff/2;
+  const lp = polar(vertex, mid, r+15);
+  textAt(svg, lp, label, 'anglelabel');
+}
+function dirDeg(from,to){
+  return Math.atan2(-(to.y-from.y), to.x-from.x) * 180/Math.PI;
+}
+function drawTriangleShape(svg, A,B,C){
+  const path = `M ${A.x} ${A.y} L ${B.x} ${B.y} L ${C.x} ${C.y} Z`;
+  svg.appendChild(el('path',{d:path, class:'triFill'}));
+}
+function vlabel(svg, P, centroid, str){
+  const lp = outward(P, centroid, 17);
+  textAt(svg, lp, str, 'vlabel');
+}
+
+/* =========================================================
+   전체 상태 & 스테이지 정의
+========================================================= */
+const STAGES = [
+  {key:'1-1', phase:'1단계', title:'한 변의 길이가 주어진 경우', answer:'X',
+   desc:'선분 AB의 길이는 <b>3cm</b>로 고정되어 있어요. 점 C를 자유롭게 움직이며 삼각형 ABC를 만들어 보세요.'},
+  {key:'1-2', phase:'1단계', title:'한 각의 크기가 주어진 경우', answer:'X',
+   desc:'각 A의 크기는 <b>45°</b>로 고정되어 있어요. 각 A의 두 변 위에서 B와 C의 위치를 정해 삼각형 ABC를 만들어 보세요.'},
+  {key:'2-1', phase:'2단계', title:'두 변의 길이가 주어진 경우', answer:'X',
+   desc:'선분 AB는 <b>3cm</b>, 선분 AC는 <b>4cm</b>로 고정되어 있어요. AC의 길이를 유지한 채 C의 위치(방향)를 바꾸어 보세요.'},
+  {key:'2-2', phase:'2단계', title:'한 변의 길이와 그 옆 각의 크기가 주어진 경우', answer:'X',
+   desc:'선분 AB는 <b>3cm</b>, 각 A는 <b>45°</b>로 고정되어 있어요. 각 A의 변(B가 없는 쪽) 위에서 C의 위치를 바꾸어 보세요.'},
+  {key:'2-3', phase:'2단계', title:'한 변의 길이와 그 대각의 크기가 주어진 경우', answer:'X',
+   desc:'선분 AB는 <b>5cm</b>, 각 C는 <b>45°</b>로 유지돼요. 각 C가 <b>45°</b>를 유지하는 곡선을 따라 C를 움직여 보세요.'},
+  {key:'2-4', phase:'2단계', title:'두 각의 크기가 주어진 경우', answer:'X',
+   desc:'각 A는 <b>45°</b>, 각 B는 <b>60°</b>로 고정되어 있어요. 점 B를 움직여 선분 AB의 길이를 바꾸어 보세요.'},
+  {key:'3-1', phase:'3단계', title:'세 변의 길이가 주어진 경우', answer:'O',
+   cond:'세 변의 길이가 주어진 경우', desc:'선분 AB는 <b>4cm</b>로 위치가 고정되어 있고, 선분 AC는 <b>5cm</b>로 길이만 고정되어 있어요(방향은 자유). 선분 BC의 길이가 <b>6cm</b>가 되도록 점 C의 위치를 움직여 보세요. (세 변의 길이가 모두 정해지면 삼각형은 하나로 결정돼요)'},
+  {key:'3-2', phase:'3단계', title:'두 변의 길이와 끼인각이 아닌 한 각의 크기가 주어진 경우', answer:'X',
+   desc:'선분 AB는 <b>5cm</b>, 각 A는 <b>45°</b>로 고정. 선분 BC의 길이가 <b>5cm</b>가 되도록 C의 위치를 조절해 보세요. (노란 점선원이 BC=5cm 위치를 보여줘요)'},
+  {key:'3-3', phase:'3단계', title:'두 변의 길이와 끼인각의 크기가 주어진 경우', answer:'O',
+   cond:'두 변의 길이와 그 끼인각의 크기가 주어진 경우', desc:'각 A와 선분 AB의 길이(<b>5cm</b>), 점 B의 위치가 고정되어 있어요. 각 A의 변을 따라 점 C를 움직여 선분 AC의 길이가 <b>7cm</b>가 되는 위치를 찾아보세요.'},
+  {key:'3-4', phase:'3단계', title:'한 변의 길이와 양 끝각이 아닌 두 각의 크기가 주어진 경우', answer:'X',
+   desc:'한 변의 길이가 <b>5cm</b>, 두 각의 크기가 각각 <b>90°</b>, <b>45°</b>인 삼각형을 만들어 보자. 선분 AB는 <b>5cm</b>로 고정, 각 A만 고정되어 있어요. 각 C의 위치(=점 C)를 자유롭게 정해 보세요.'},
+  {key:'3-5', phase:'3단계', title:'한 변의 길이와 그 양 끝 각의 크기가 주어진 경우', answer:'O',
+   cond:'한 변의 길이와 그 양 끝 각의 크기가 주어진 경우',
+   desc:'한 변의 길이가 <b>5cm</b>, 양 끝 각의 크기가 각각 <b>60°</b>, <b>45°</b>인 삼각형을 만들어 보자. 선분 AB는 <b>5cm</b>로 고정. 점 C를 자유롭게 움직여 각 A=60°, 각 B=45°가 되는 위치를 찾아보세요.'},
+  {key:'3-6', phase:'3단계', title:'세 각의 크기가 주어진 경우', answer:'X',
+   desc:'세 각의 크기가 각각 <b>45°</b>, <b>60°</b>, <b>75°</b>로 고정되어 있어요. 오른쪽 아래 손잡이를 당겨 삼각형의 크기만 바꾸어 보세요. (각의 크기는 그대로예요)'},
+];
+
+let stageIdx = -1; // -1 = intro, STAGES.length = summary
+let conditions = [];
+
+const root = document.getElementById('stageContent');
+
+function go(idx){
+  stageIdx = idx;
+  render();
+  window.scrollTo({top:0, behavior:'instant' in window ? 'instant':'auto'});
+}
+
+/* =========================================================
+   렌더링: 화면 흐름
+========================================================= */
+function render(){
+  if(stageIdx === -1) return renderIntro();
+  if(stageIdx === STAGES.length) return renderSummary();
+  return renderStage(STAGES[stageIdx]);
+}
+
+function renderIntro(){
+  root.innerHTML = `
+    <div class="intro">
+      <div class="intro-badge">중1 수학 · 삼각형의 작도</div>
+      <h1>삼각형은 언제<br><em>하나로</em> 결정될까요?</h1>
+      <p>변의 길이와 각의 크기, 몇 개를 알아야 삼각형의 모양이 딱 하나로 정해질까요?
+      점을 직접 움직여 보면서 삼각형이 하나로 결정되는 조건을 스스로 찾아보세요.</p>
+      <button class="startBtn" id="startBtn">탐구 시작하기 →</button>
+    </div>
+  `;
+  document.getElementById('startBtn').addEventListener('click', ()=>go(0));
+}
+
+function renderSummary(){
+  const items = conditions.length ? conditions : STAGES.filter(s=>s.cond).map(s=>s.cond);
+  root.innerHTML = `
+    <div class="summaryCard">
+      <h2>🎉 탐구 결과 정리하기</h2>
+      <p style="color:#4a554d; font-weight:600; line-height:1.6;">여러 번의 실험 끝에, 우리는 삼각형이 <b>하나로 결정되는 조건</b> 세 가지를 찾았어요.</p>
+      <ol class="sumList" id="sumList"></ol>
+      <button class="restartBtn" id="restartBtn">처음부터 다시 탐구하기</button>
+    </div>
+  `;
+  const ul = document.getElementById('sumList');
+  items.forEach((c,i)=>{
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="sumNum">${i+1}</span><span>${c}</span>`;
+    ul.appendChild(li);
+  });
+  document.getElementById('restartBtn').addEventListener('click', ()=>{
+    conditions = [];
+    go(-1);
+  });
+}
+
+function renderStage(stage){
+  const showCond = stageIdx >= STAGES.findIndex(s=>s.key==='3-1');
+  root.innerHTML = `
+    <div class="stageHead">
+      <span class="stageTag">${stage.phase} · ${stage.key}</span>
+      <h2>${stage.title}</h2>
+      <p>${stage.desc}</p>
+    </div>
+    <div class="panelsRow">
+      <div class="panelCard">
+        <h3><span class="side-dot L"></span>왼쪽 삼각형</h3>
+        <svg id="svgL" viewBox="0 0 260 200"></svg>
+        <div class="infoLine" id="infoL"></div>
+      </div>
+      <div class="panelCard">
+        <h3><span class="side-dot R"></span>오른쪽 삼각형</h3>
+        <svg id="svgR" viewBox="0 0 260 200"></svg>
+        <div class="infoLine" id="infoR"></div>
+      </div>
+    </div>
+    <div class="qCard">
+      <div class="qText">삼각형이 하나로 결정됩니까?</div>
+      <div class="qBtns">
+        <button class="oBtn" id="btnO">O</button>
+        <button class="xBtn" id="btnX">X</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+    <div class="bottomBar">
+      <div class="progressWrap">${stageIdx+1} / ${STAGES.length} 단계</div>
+      ${showCond ? `<div class="condCard"><h4>📋 삼각형이 하나로 결정되는 조건</h4><ol id="condList"></ol></div>` : ''}
+    </div>
+  `;
+  buildStageGeometry(stage.key, 'L');
+  buildStageGeometry(stage.key, 'R');
+
+  if(showCond){
+    const condList = document.getElementById('condList');
+    if(conditions.length===0){
+      condList.innerHTML = `<li class="placeholder">아직 찾은 조건이 없어요. O를 맞혀 보세요!</li>`;
+    } else {
+      condList.innerHTML='';
+      conditions.forEach(c=>{ const li=document.createElement('li'); li.textContent=c; condList.appendChild(li); });
+    }
+  }
+
+  document.getElementById('btnO').addEventListener('click', ()=>answer(stage,'O'));
+  document.getElementById('btnX').addEventListener('click', ()=>answer(stage,'X'));
+}
+
+function answer(stage, choice){
+  const fb = document.getElementById('feedback');
+  if(choice === stage.answer){
+    fb.className='feedback ok';
+    fb.textContent = '정답이에요! 👏 다음 단계로 넘어갑니다.';
+    if(stage.cond && !conditions.includes(stage.cond)) conditions.push(stage.cond);
+    setTimeout(()=>go(stageIdx+1), 700);
+  } else {
+    fb.className='feedback no';
+    fb.textContent = stage.answer==='X'
+      ? '다시 살펴보세요! 점을 계속 움직여서, 조건을 만족하는 서로 다른 모양의 삼각형이 더 있는지 확인해 보세요.'
+      : '다시 살펴보세요! 점을 아무리 움직여도 삼각형의 모양이 바뀌지 않는지 확인해 보세요.';
+  }
+}
+
+/* =========================================================
+   스테이지별 기하 구성
+========================================================= */
+function buildStageGeometry(key, side){
+  const svg = document.getElementById(side==='L'?'svgL':'svgR');
+  const info = document.getElementById(side==='L'?'infoL':'infoR');
+  const seed = side==='L' ? 0 : 1;
+  clear(svg);
+  const fns = {
+    '1-1': stage11, '1-2': stage12, '2-1': stage21, '2-2': stage22,
+    '2-3': stage23, '2-4': stage24, '3-1': stage31, '3-2': stage32,
+    '3-3': stage33, '3-4': stage34, '3-5': stage35, '3-6': stage36
+  };
+  fns[key](svg, info, seed);
+}
+
+/* ---- 1-1: 한 변의 길이 (AB=3) ---- */
+function stage11(svg, info, seed){
+  const A={x:50,y:150}, B={x:50+3*PPC,y:150};
+  let C = seed===0 ? {x:120,y:60} : {x:170,y:95};
+  function draw(){
+    clear(svg);
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp = dragPoint(svg,C,8,'movPoint');
+    const cen = {x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1), '3 cm', 'lenlabel');
+    const ab=3, bc=dist(B,C)/PPC, ca=dist(C,A)/PPC;
+    info.innerHTML = `현재 BC = <b>${bc.toFixed(1)}cm</b>, CA = <b>${ca.toFixed(1)}cm</b> — 점 C를 움직여 보세요.`;
+    makeDraggable(svg, cp, (p)=>{ C=p; draw(); });
+  }
+  draw();
+}
+
+/* ---- 1-2: 한 각의 크기 (각A=45) ---- */
+function stage12(svg, info, seed){
+  const A={x:45,y:165};
+  const dir1=0, dir2=45;
+  let distB = seed===0? 130:150;
+  let distC = seed===0? 95:70;
+  function draw(){
+    clear(svg);
+    const B = polar(A,dir1,distB), C = polar(A,dir2,distC);
+    line(svg, A, polar(A,dir1,210), 'guide');
+    line(svg, A, polar(A,dir2,210), 'guide');
+    drawTriangleShape(svg,A,B,C);
+    circleMark(svg,A,5,'fixedPoint');
+    const bp=dragPoint(svg,B,8,'movPoint'), cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    drawAngleArc(svg,A,dir1,dir2,26,'45°');
+    info.innerHTML = `AB = <b>${(distB/PPC).toFixed(1)}cm</b>, AC = <b>${(distC/PPC).toFixed(1)}cm</b> — B, C를 각각 움직여 보세요.`;
+    makeDraggable(svg,bp,(p)=>{ const v={x:p.x-A.x,y:p.y-A.y}; let d=v.x*Math.cos(dir1*Math.PI/180)+v.y*(-Math.sin(dir1*Math.PI/180)); distB=Math.max(35,Math.min(210,d)); draw(); });
+    makeDraggable(svg,cp,(p)=>{ const v={x:p.x-A.x,y:p.y-A.y}; let d=v.x*Math.cos(dir2*Math.PI/180)+v.y*(-Math.sin(dir2*Math.PI/180)); distC=Math.max(35,Math.min(210,d)); draw(); });
+  }
+  draw();
+}
+
+/* ---- 2-1: 두 변 (AB=3, AC=4, 방향 자유) ---- */
+function stage21(svg, info, seed){
+  const A={x:52,y:160}, B={x:52+3*PPC,y:160};
+  let angC = seed===0? 120: 95;
+  function draw(){
+    clear(svg);
+    const C = polar(A, angC, 4*PPC);
+    svg.appendChild(el('path',{d:describeArcCircle(A,4*PPC), class:'guideCircle'}));
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    line(svg,A,C,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'3 cm','lenlabel');
+    textAt(svg, midLabelPos(A,C,-1),'4 cm','lenlabel');
+    info.innerHTML = `AC의 길이는 항상 4cm를 유지해요. 방향(각도)만 바꿀 수 있어요.`;
+    makeDraggable(svg,cp,(p)=>{
+      let a = dirDeg(A,p);
+      a = Math.max(6, Math.min(174, a));
+      angC = a; draw();
+    });
+  }
+  draw();
+}
+function circleCircleIntersections(c1, r1, c2, r2){
+  const dx=c2.x-c1.x, dy=c2.y-c1.y;
+  const d = Math.hypot(dx,dy);
+  if(d<1e-9 || d>r1+r2 || d<Math.abs(r1-r2)) return [];
+  const a = (r1*r1 - r2*r2 + d*d)/(2*d);
+  const h2 = r1*r1 - a*a;
+  if(h2<0) return [];
+  const h = Math.sqrt(h2);
+  const xm = c1.x + a*dx/d, ym = c1.y + a*dy/d;
+  const rx = -dy*(h/d), ry = dx*(h/d);
+  return [{x:xm+rx,y:ym+ry},{x:xm-rx,y:ym-ry}];
+}
+function describeArcCircle(o,r){
+  let d='';
+  for(let i=0;i<=60;i++){ const a=i*6; const p=polar(o,a,r); d+=(i===0?'M':'L')+p.x.toFixed(2)+' '+p.y.toFixed(2)+' '; }
+  return d+'Z';
+}
+
+/* ---- 2-2: 한 변 + 옆각 (AB=3, 각A=45, C는 그 변 위 자유) ---- */
+function stage22(svg, info, seed){
+  const A={x:50,y:165}, B={x:50+3*PPC,y:165};
+  const dirC=45;
+  let distC = seed===0? 90:140;
+  function draw(){
+    clear(svg);
+    const C = polar(A,dirC,distC);
+    line(svg,A,polar(A,dirC,220),'guide');
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'3 cm','lenlabel');
+    drawAngleArc(svg,A,0,dirC,26,'45°');
+    info.innerHTML = `AC = <b>${(distC/PPC).toFixed(1)}cm</b> — C를 각 A의 변을 따라 움직여 보세요.`;
+    makeDraggable(svg,cp,(p)=>{
+      const v={x:p.x-A.x,y:p.y-A.y};
+      let d = v.x*Math.cos(dirC*Math.PI/180)+v.y*(-Math.sin(dirC*Math.PI/180));
+      distC = Math.max(35,Math.min(220,d)); draw();
+    });
+  }
+  draw();
+}
+
+/* ---- 2-3: 한 변 + 대각 (AB=5, 각C=45 유지, 호 위의 C, C는 AB 위쪽) ---- */
+function stage23(svg, info, seed){
+  svg.setAttribute('viewBox','0 0 260 260');
+  const L=5*PPC, theta=45;
+  const A={x:40,y:220}, B={x:40+L,y:220};
+  const R = L/(2*Math.sin(theta*Math.PI/180));
+  const h = (L/2)/Math.tan(theta*Math.PI/180);
+  const M = {x:(A.x+B.x)/2, y:(A.y+B.y)/2};
+  const O = {x:M.x, y:M.y - h}; // O는 AB 위쪽에 둔다
+  const aOA = dirDeg(O,A), aOB = dirDeg(O,B);
+  let lo = Math.min(aOA,aOB), hi=Math.max(aOA,aOB);
+  // 각C=45°(예각)를 만족하는 호는 lo~hi 사이의 짧은 호(원주각 정리상 135°가 됨)가 아니라,
+  // 그 나머지(긴) 호이다. 그 긴 호는 O와 같은 쪽, 즉 AB 위쪽에 자리해서 요구사항도 함께 만족된다.
+  const majLo = hi, majHi = lo+360;
+  const midMaj = (majLo+majHi)/2;
+  let ang = seed===0 ? midMaj-40 : midMaj+30;
+  function draw(){
+    clear(svg);
+    const C = polar(O, ang, R);
+    svg.appendChild(el('path',{d:wideArcPath(O, majLo+3, majHi-3, R, 60), class:'guideCircle'}));
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'5 cm','lenlabel');
+    const dc1=dirDeg(C,A), dc2=dirDeg(C,B);
+    drawAngleArc(svg,C,dc1,dc2,20,'45°');
+    info.innerHTML = `각 C는 항상 45°를 유지해요. C는 곡선(호)을 따라서만 움직일 수 있어요.`;
+    makeDraggable(svg,cp,(p)=>{
+      let a = dirDeg(O,p);
+      // 각을 순환 범위 안에서 정규화하여 클램프
+      let candidates=[a,a+360,a-360];
+      let best=candidates.reduce((bst,c)=>Math.abs(c-midMaj)<Math.abs(bst-midMaj)?c:bst, candidates[0]);
+      best = Math.max(majLo+3, Math.min(majHi-3, best));
+      ang = best; draw();
+    });
+  }
+  draw();
+}
+
+/* ---- 2-4: 두 각 (각A=45, 각B=60, AB 길이 자유) ---- */
+function stage24(svg, info, seed){
+  const A={x:40,y:170};
+  let bx = seed===0? 150: 190;
+  function draw(){
+    clear(svg);
+    const B={x:A.x+bx, y:A.y};
+    const C = rayIntersect(A,45,B,120);
+    line(svg,A,polar(A,45,dist(A,C)+30),'guide');
+    line(svg,B,polar(B,120,dist(B,C)+30),'guide');
+    drawTriangleShape(svg,A,B,C);
+    circleMark(svg,A,5,'fixedPoint');
+    const bp=dragPoint(svg,B,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    drawAngleArc(svg,A,0,45,24,'45°');
+    drawAngleArc(svg,B,180,120,24,'60°');
+    info.innerHTML = `AB = <b>${(bx/PPC).toFixed(1)}cm</b> — 점 B를 좌우로 움직여 선분 AB의 길이를 바꿔 보세요.`;
+    makeDraggable(svg,bp,(p)=>{ bx = Math.max(60,Math.min(230,p.x-A.x)); draw(); });
+  }
+  draw();
+}
+
+/* ---- 3-1: 세 변 (AB=4 위치 고정, AC=5 길이만 고정(방향 자유), BC=6이 되도록 C를 찾기) ---- */
+function stage31(svg, info, seed){
+  const A={x:40,y:150}, B={x:40+4*PPC,y:150}; // A, B는 위치가 고정
+  const rAC = 5*PPC, rTargetBC = 6*PPC;
+  let angC = seed===0? 100:70; // C는 A를 중심으로 반지름 5cm인 원 위에서만 위치를 바꿀 수 있음
+  function draw(){
+    clear(svg);
+    const C = polar(A, angC, rAC);
+    const marks = circleCircleIntersections(A, rAC, B, rTargetBC);
+    marks.forEach(m=>circleMark(svg,m,6,'refDot'));
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    line(svg,A,C,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'4 cm','lenlabel');
+    textAt(svg, midLabelPos(A,C,-1),'5 cm','lenlabel');
+    const bcLen = dist(B,C)/PPC;
+    textAt(svg, midLabelPos(B,C,1), bcLen.toFixed(2)+' cm','lenlabel');
+    const ok = Math.abs(bcLen-6)<0.05;
+    info.innerHTML = `BC = <b>${bcLen.toFixed(2)}cm</b> (목표 6cm) — C를 원 위에서 움직여 BC=6cm가 되는 지점(⚪)을 찾아보세요.`
+      + (ok ? ' <span style="color:#2E8B4B">✔ 6cm!</span>' : '');
+    makeDraggable(svg, cp, (p)=>{
+      angC = dirDeg(A,p);
+      draw();
+    });
+  }
+  draw();
+}
+
+/* ---- 3-2: 두 변 + 끼인각 아닌 각 (SSA, 애매한 경우) ---- */
+function stage32(svg, info, seed){
+  const A={x:40,y:160}, B={x:40+5*PPC,y:160};
+  const dirC=45;
+  let distC = seed===0? 110:150;
+  const Rt = 5*PPC;
+  function draw(){
+    clear(svg);
+    const C = polar(A,dirC,distC);
+    line(svg,A,polar(A,dirC,240),'guide');
+    // reference intersection points
+    const w={x:A.x-B.x,y:A.y-B.y};
+    const d={x:Math.cos(dirC*Math.PI/180), y:-Math.sin(dirC*Math.PI/180)};
+    const wd = w.x*d.x+w.y*d.y;
+    const disc = wd*wd - (w.x*w.x+w.y*w.y-Rt*Rt);
+    let marks=[];
+    if(disc>=0){
+      const sq=Math.sqrt(disc);
+      [-wd+sq,-wd-sq].forEach(t=>{ if(t>10) marks.push({x:A.x+t*d.x,y:A.y+t*d.y}); });
+    }
+    marks.forEach(m=>circleMark(svg,m,6,'refDot'));
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'5 cm','lenlabel');
+    drawAngleArc(svg,A,0,dirC,24,'45°');
+    const bc = dist(B,C)/PPC;
+    info.innerHTML = `BC = <b>${bc.toFixed(2)}cm</b> (목표 5cm). 노란 점선원과 점선이 만나는 두 지점(⚪) 모두 BC=5cm를 만족해요!`;
+    makeDraggable(svg,cp,(p)=>{
+      const v={x:p.x-A.x,y:p.y-A.y};
+      let d2 = v.x*Math.cos(dirC*Math.PI/180)+v.y*(-Math.sin(dirC*Math.PI/180));
+      distC=Math.max(20,Math.min(260,d2)); draw();
+    });
+  }
+  draw();
+}
+
+/* ---- 3-3: SAS 완전 결정 (각A, AB, B의 위치 고정 / C는 각A의 변 위에서만 움직여 AC=7 지점 찾기) ---- */
+function stage33(svg, info, seed){
+  const A={x:40,y:165}, B={x:40+5*PPC,y:165}; // 각 A, 선분 AB, 점 B의 위치가 모두 고정
+  const dirC = 45; // 각 A의 크기(방향)도 고정
+  const targetLen = 7*PPC;
+  let distC = seed===0? 90:150; // C는 이 변(광선) 위에서만 위치를 바꿀 수 있음
+  function draw(){
+    clear(svg);
+    const C = polar(A,dirC,distC);
+    line(svg,A,polar(A,dirC,240),'guide');
+    const targetPt = polar(A,dirC,targetLen);
+    circleMark(svg,targetPt,6,'refDot');
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'5 cm','lenlabel');
+    drawAngleArc(svg,A,0,dirC,24,'45°');
+    const ac = distC/PPC;
+    const ok = Math.abs(ac-7)<0.05;
+    info.innerHTML = `AC = <b>${ac.toFixed(2)}cm</b> (목표 7cm) — 각 A의 변을 따라 C를 움직여 목표 지점(⚪)을 찾아보세요.`
+      + (ok ? ' <span style="color:#2E8B4B">✔ 7cm!</span>' : '');
+    makeDraggable(svg,cp,(p)=>{
+      const v={x:p.x-A.x,y:p.y-A.y};
+      let d = v.x*Math.cos(dirC*Math.PI/180)+v.y*(-Math.sin(dirC*Math.PI/180));
+      distC=Math.max(20,Math.min(240,d)); draw();
+    });
+  }
+  draw();
+}
+
+/* ---- 3-4: 한 변 + 한 각만 실제 고정 (겉보기엔 두 각이지만 자유로운 경우) ---- */
+function stage34(svg, info, seed){
+  const A={x:40,y:170}, B={x:40+5*PPC,y:170};
+  const dirA = seed===0? 90:45;
+  let distC = seed===0? 100:130;
+  function draw(){
+    clear(svg);
+    const C = polar(A,dirA,distC);
+    line(svg,A,polar(A,dirA,220),'guide');
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'5 cm','lenlabel');
+    drawAngleArc(svg,A,0,dirA,24, dirA+'°');
+    const angC = angleAt(A,C,B).toFixed(1);
+    info.innerHTML = `현재 각 C = <b>${angC}°</b> — C를 움직이면 각 C 크기가 계속 바뀌어요.`;
+    makeDraggable(svg,cp,(p)=>{
+      const v={x:p.x-A.x,y:p.y-A.y};
+      let d = v.x*Math.cos(dirA*Math.PI/180)+v.y*(-Math.sin(dirA*Math.PI/180));
+      distC=Math.max(20,Math.min(220,d)); draw();
+    });
+  }
+  draw();
+}
+
+/* ---- 3-5: 한 변 + 양 끝각 (ASA, C를 자유이동시켜 목표각 찾기) ---- */
+function stage35(svg, info, seed){
+  const A={x:40,y:175}, B={x:40+5*PPC,y:175};
+  let C = seed===0? {x:150,y:70} : {x:110,y:60};
+  const targetA=60, targetB=45;
+  function draw(){
+    clear(svg);
+    drawTriangleShape(svg,A,B,C);
+    line(svg,A,B,'fixedSeg');
+    circleMark(svg,A,5,'fixedPoint'); circleMark(svg,B,5,'fixedPoint');
+    const cp=dragPoint(svg,C,8,'movPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    textAt(svg, midLabelPos(A,B,1),'5 cm','lenlabel');
+    const angA = angleAt(B,A,C), angB = angleAt(A,B,C);
+    drawAngleArc(svg,A,0,dirDeg(A,C), 22, angA.toFixed(0)+'°');
+    drawAngleArc(svg,B,dirDeg(B,C),180, 22, angB.toFixed(0)+'°');
+    const okA = Math.abs(angA-targetA)<3, okB=Math.abs(angB-targetB)<3;
+    info.innerHTML = `목표: 각 A = <b>60°</b>, 각 B = <b>45°</b> · 현재 각 A=${angA.toFixed(1)}°, 각 B=${angB.toFixed(1)}° `
+      + (okA&&okB ? '<span style="color:#2E8B4B">✔ 목표에 맞춰졌어요!</span>' : '');
+    makeDraggable(svg,cp,(p)=>{
+      C = {x:Math.max(-40,Math.min(300,p.x)), y:Math.max(10,Math.min(190,p.y))}; draw();
+    });
+  }
+  draw();
+}
+
+/* ---- 3-6: 세 각 (45,60,75) 유지, 크기만 변경 ---- */
+function stage36(svg, info, seed){
+  const A={x:40,y:180};
+  const baseAB = 90;
+  const B0 = {x:A.x+baseAB, y:A.y};
+  const C0 = rayIntersect(A,45,B0,120);
+  let s = seed===0? 1: 1.6;
+  function draw(){
+    clear(svg);
+    const B = {x:A.x+(B0.x-A.x)*s, y:A.y+(B0.y-A.y)*s};
+    const C = {x:A.x+(C0.x-A.x)*s, y:A.y+(C0.y-A.y)*s};
+    drawTriangleShape(svg,A,B,C);
+    circleMark(svg,A,5,'fixedPoint');
+    const cen={x:(A.x+B.x+C.x)/3,y:(A.y+B.y+C.y)/3};
+    vlabel(svg,A,cen,'A'); vlabel(svg,B,cen,'B'); vlabel(svg,C,cen,'C');
+    const angA=angleAt(B,A,C), angB=angleAt(A,B,C), angC=angleAt(A,C,B);
+    drawAngleArc(svg,A,0,45,22,angA.toFixed(0)+'°');
+    drawAngleArc(svg,B,180,120,22,angB.toFixed(0)+'°');
+    const handleBase = outward(C0, A, 26);
+    const handle = {x:A.x+(handleBase.x-A.x)*s, y:A.y+(handleBase.y-A.y)*s};
+    line(svg,A,handle,'guide');
+    const hp = dragPoint(svg,handle,8,'rotHandle');
+    textAt(svg, midLabelPos(A,B,1), (5*s).toFixed(1)+' (배율)','lenlabel');
+    info.innerHTML = `각은 항상 ${angA.toFixed(0)}°, ${angB.toFixed(0)}°, ${angC.toFixed(0)}°로 똑같아요. 크기(배율)만 <b>${s.toFixed(2)}배</b>로 바뀌어요.`;
+    makeDraggable(svg,hp,(p)=>{
+      const d0 = dist(A,handleBase);
+      const d1 = dist(A,p);
+      s = Math.max(0.5, Math.min(2.4, d1/d0));
+      draw();
+    });
+  }
+  draw();
+}
+
+/* =========================================================
+   확대/축소
+========================================================= */
+let zoom = 1;
+const zoomWrap = document.getElementById('zoomWrap');
+function applyZoom(){
+  zoomWrap.style.transform = `scale(${zoom})`;
+  document.getElementById('zoomPct').textContent = Math.round(zoom*100)+'%';
+}
+document.getElementById('zoomIn').addEventListener('click', ()=>{ zoom=Math.min(1.6, zoom+0.1); applyZoom(); });
+document.getElementById('zoomOut').addEventListener('click', ()=>{ zoom=Math.max(0.5, zoom-0.1); applyZoom(); });
+document.getElementById('zoomReset').addEventListener('click', ()=>{ zoom=1; applyZoom(); });
+
+render();
+</script>
+</body>
+</html>
