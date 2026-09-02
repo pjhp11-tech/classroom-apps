@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>점 빨리 찍기 게임 - 도형의 중심 찾기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FFFCF4;
+    --panel: #FFFFFF;
+    --ink: #2B2D42;
+    --sub: #7C7F93;
+    --accent: #8B7CF6;
+    --accent-dark: #6C5CE0;
+    --yellow: #FFD166;
+    --line: #E9E6DA;
+    --shadow: 0 10px 24px rgba(43,45,66,0.08);
+  }
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0; min-height:100%;
+    background: var(--bg);
+    font-family: "Noto Sans KR", sans-serif;
+    color: var(--ink);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .stage{ width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+  .screen{
+    display: none; width: 960px; height: 700px;
+    max-width: 96vw; max-height: 96vh; position: relative;
+  }
+  .screen.active{ display: flex; flex-direction: column; }
+
+  /* ---------- START SCREEN ---------- */
+  #screen-start{ align-items:center; justify-content:center; text-align:center; gap: 8px; }
+  .eyebrow{ font-size: 14px; letter-spacing: 3px; color: var(--accent-dark); font-weight:700; margin-bottom: 6px; }
+  h1.game-title{ font-family:"Jua", sans-serif; font-size: 52px; margin: 0; letter-spacing: 1px; }
+  h1.game-title .dot-o{ color: var(--accent); }
+  h2.sub-game-title{ font-family:"Jua", sans-serif; font-size: 26px; margin: 10px 0 18px; color: var(--accent-dark); }
+  .icon-row{ margin: 6px 0 22px; }
+  .desc-card{
+    background: var(--panel); border: 3px solid var(--line); border-radius: 22px;
+    box-shadow: var(--shadow); padding: 26px 40px; max-width: 520px; margin-bottom: 30px;
+  }
+  .desc-card p{ font-size: 15px; line-height: 1.7; color: var(--sub); margin: 0; }
+  .desc-card p b{ color: var(--ink); }
+  .start-btn{
+    display:inline-block; background: var(--accent); color: white; font-weight: 700;
+    font-size: 17px; padding: 14px 40px; border-radius: 999px; border:none; cursor:pointer;
+    transition: transform .15s ease;
+  }
+  .start-btn:hover{ transform: translateY(-3px); }
+
+  /* ---------- GAME SCREEN ---------- */
+  #screen-game{ justify-content: flex-start; }
+  .game-header{ display:flex; align-items:center; justify-content:space-between; padding: 4px 6px 18px; }
+  .mode-badge{ font-family:"Jua", sans-serif; font-size: 20px; display:flex; align-items:center; gap:10px; }
+  .mode-dot{ width:14px; height:14px; border-radius:50%; background: var(--accent); }
+  .stat-group{ display:flex; gap: 22px; align-items:center; }
+  .stat{ background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 8px 16px; text-align:center; min-width: 86px; }
+  .stat .label{ font-size: 11px; color: var(--sub); font-weight:700; letter-spacing:1px;}
+  .stat .value{ font-size: 20px; font-weight:900; }
+
+  .game-body{ flex: 1; display:flex; gap: 22px; align-items:center; }
+  .canvas-wrap{
+    position: relative; background: var(--panel); border-radius: 24px;
+    box-shadow: var(--shadow); border: 3px solid var(--line); overflow:hidden;
+  }
+  #gameCanvas{ display:block; cursor: crosshair; }
+
+  .score-pop{
+    position:absolute; font-family:"Jua", sans-serif; font-size: 30px; color: var(--accent-dark);
+    background: rgba(255,255,255,0.95); border: 3px solid var(--accent); border-radius: 16px;
+    padding: 6px 18px; pointer-events:none; opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+    transition: opacity .18s ease, transform .18s ease; z-index: 5;
+  }
+  .score-pop.miss{ color: #E8534F; border-color: #FF6B6B; }
+  .score-pop.show{ opacity: 1; transform: translate(-50%, -80%) scale(1); }
+
+  .side-panel{ width: 220px; display:flex; flex-direction:column; gap:18px; align-items:center; }
+  .timer-ring-wrap{ position:relative; width:150px; height:150px; }
+  .timer-ring-wrap svg{ width:150px; height:150px; transform: rotate(-90deg); }
+  .timer-ring-bg{ fill:none; stroke: var(--line); stroke-width: 12; }
+  .timer-ring-fg{ fill:none; stroke: var(--accent); stroke-width: 12; stroke-linecap: round; }
+  .timer-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:"Jua", sans-serif; font-size: 36px; }
+  .instruction-box{ background: var(--yellow); border-radius: 16px; padding: 14px 16px; font-size: 13.5px; line-height:1.6; text-align:center; color: #5C4400; font-weight: 500; }
+
+  /* ---------- END SCREEN ---------- */
+  #screen-end{ align-items:center; justify-content:center; text-align:center; }
+  .end-card{ background: var(--panel); border-radius: 28px; box-shadow: var(--shadow); border: 3px solid var(--line); padding: 46px 60px; }
+  .end-eyebrow{ font-size:14px; color:var(--sub); font-weight:700; letter-spacing:2px; }
+  .end-total{ font-family:"Jua", sans-serif; font-size: 84px; margin: 10px 0 0; color: var(--accent-dark); }
+  .end-total span{ font-size: 28px; color: var(--sub); font-family:"Noto Sans KR"; }
+  .round-scores{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width: 480px; margin: 22px 0 30px; }
+  .round-chip{ background: #F5F3EA; border-radius: 10px; padding:8px 12px; font-size: 13px; font-weight:700; min-width: 54px; }
+  .round-chip .r{ display:block; font-size:10px; color:var(--sub); font-weight:600; }
+  .end-btns{ display:flex; gap:14px; justify-content:center; }
+  .btn{ border:none; cursor:pointer; font-family:"Noto Sans KR"; font-weight:700; font-size:14px; padding: 12px 26px; border-radius: 999px; transition: transform .12s ease; }
+  .btn:hover{ transform: translateY(-2px); }
+  .btn-primary{ background: var(--accent); color:white; }
+  .btn-ghost{ background:#F0EEE3; color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- ================= START SCREEN ================= -->
+  <div id="screen-start" class="screen active">
+    <div class="eyebrow">SHAPE CENTER SPEED CLICK</div>
+    <h1 class="game-title">점<span class="dot-o">.</span>빨리 찍기 게임</h1>
+    <h2 class="sub-game-title">도형의 중심 찾기</h2>
+    <div class="icon-row">
+      <svg width="140" height="100" viewBox="0 0 140 100">
+        <polygon points="70,14 24,80 116,74" fill="#F1EEFE" stroke="#8B7CF6" stroke-width="3"/>
+        <line x1="70" y1="14" x2="70" y2="77" stroke="#8B7CF6" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <line x1="24" y1="80" x2="93" y2="44" stroke="#8B7CF6" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <circle cx="70" cy="14" r="5" fill="#6C5CE0"/>
+        <circle cx="24" cy="80" r="5" fill="#6C5CE0"/>
+        <circle cx="116" cy="74" r="5" fill="#6C5CE0"/>
+        <circle cx="70" cy="56" r="6" fill="#FF6B6B"/>
+      </svg>
+    </div>
+    <div class="desc-card">
+      <p>화면에 <b>삼각형</b>이 나타나요.<br>10초 안에 <b>도형이 가장 안정적으로 균형을 이루는 위치</b>(세 꼭짓점을 평균 낸 위치)를 마우스로 클릭하세요!<br>총 10문제가 출제되며, 정답에 가까울수록 높은 점수를 받아요.</p>
+    </div>
+    <button class="start-btn" onclick="startGame()">게임 시작 ▶</button>
+  </div>
+
+  <!-- ================= GAME SCREEN ================= -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <div class="mode-badge"><span class="mode-dot"></span><span>도형의 중심 찾기</span></div>
+      <div class="stat-group">
+        <div class="stat"><div class="label">ROUND</div><div class="value"><span id="roundNum">1</span>/10</div></div>
+        <div class="stat"><div class="label">SCORE</div><div class="value" id="totalScoreLive">0</div></div>
+      </div>
+    </div>
+
+    <div class="game-body">
+      <div class="canvas-wrap">
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        <div id="scorePop" class="score-pop">+0</div>
+      </div>
+
+      <div class="side-panel">
+        <div class="timer-ring-wrap">
+          <svg viewBox="0 0 150 150">
+            <circle class="timer-ring-bg" cx="75" cy="75" r="64"/>
+            <circle class="timer-ring-fg" id="timerRing" cx="75" cy="75" r="64" stroke-dasharray="402" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-num" id="timerNum">10.0</div>
+        </div>
+        <div class="instruction-box">
+          삼각형이 <b>균형을 이루는</b><br>한가운데라고 생각되는<br>곳을 클릭하세요!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= END SCREEN ================= -->
+  <div id="screen-end" class="screen">
+    <div class="end-card">
+      <div class="end-eyebrow">도형의 중심 찾기 게임 결과</div>
+      <div class="end-total"><span id="endTotal">0</span><span> / 100점</span></div>
+      <div class="round-scores" id="roundScores"></div>
+      <div class="end-btns">
+        <button class="btn btn-primary" id="retryBtn">다시 도전하기</button>
+        <button class="btn btn-ghost" onclick="goHome()">처음 화면으로</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let roundIndex = 0;
+const totalRounds = 10;
+const ROUND_TIME = 10.0; // 초
+let totalScore = 0;
+let roundScores = [];
+let currentTarget = null;
+let currentTri = null;
+let answered = false;
+let roundTimeoutId = null;
+let tickIntervalId = null;
+
+const RING_CIRC = 2 * Math.PI * 64;
+const DIVISOR = 15;
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome(){
+  clearTimeout(roundTimeoutId);
+  clearInterval(tickIntervalId);
+  showScreen('screen-start');
+}
+document.getElementById('retryBtn').addEventListener('click', startGame);
+
+function dist(a, b){ return Math.hypot(a.x - b.x, a.y - b.y); }
+
+// 도형의 중심(세 꼭짓점 평균) 계산
+function shapeCenter(A, B, C){
+  return { x: (A.x + B.x + C.x) / 3, y: (A.y + B.y + C.y) / 3 };
+}
+
+function triangleArea(A,B,C){
+  return Math.abs((B.x-A.x)*(C.y-A.y) - (C.x-A.x)*(B.y-A.y)) / 2;
+}
+
+function randPoint(pad){
+  return { x: pad + Math.random() * (W - pad*2), y: pad + Math.random() * (H - pad*2) };
+}
+
+function generateTriangle(){
+  const pad = 55;
+  let A, B, C, target;
+  let tries = 0;
+  while(true){
+    tries++;
+    A = randPoint(pad); B = randPoint(pad); C = randPoint(pad);
+    const area = triangleArea(A,B,C);
+    if(area < 9000){ if(tries < 200) continue; }
+    target = shapeCenter(A,B,C);
+    break;
+  }
+  return { A, B, C, target };
+}
+
+function drawTriangle(tri){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.beginPath();
+  ctx.moveTo(tri.A.x, tri.A.y);
+  ctx.lineTo(tri.B.x, tri.B.y);
+  ctx.lineTo(tri.C.x, tri.C.y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(139,124,246,0.10)';
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#6C5CE0';
+  ctx.stroke();
+
+  [tri.A, tri.B, tri.C].forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
+    ctx.fillStyle = '#2B2D42';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.stroke();
+  });
+}
+
+function clearCanvas(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0,0,W,H);
+}
+
+function startGame(){
+  roundIndex = 0;
+  totalScore = 0;
+  roundScores = [];
+  document.getElementById('totalScoreLive').textContent = '0';
+  showScreen('screen-game');
+  nextRound();
+}
+
+function nextRound(){
+  clearTimeout(roundTimeoutId);
+  clearInterval(tickIntervalId);
+  if(roundIndex >= totalRounds){ endGame(); return; }
+  roundIndex++;
+  answered = false;
+  document.getElementById('roundNum').textContent = roundIndex;
+
+  const tri = generateTriangle();
+  currentTri = tri;
+  currentTarget = tri.target;
+
+  drawTriangle(tri);
+  hideScorePop();
+  startTimer();
+}
+
+function startTimer(){
+  const ring = document.getElementById('timerRing');
+  const numEl = document.getElementById('timerNum');
+  ring.style.transition = 'none';
+  ring.setAttribute('stroke-dashoffset', 0);
+  numEl.textContent = ROUND_TIME.toFixed(1);
+
+  requestAnimationFrame(() => {
+    ring.style.transition = `stroke-dashoffset ${ROUND_TIME}s linear`;
+    ring.setAttribute('stroke-dashoffset', RING_CIRC);
+  });
+
+  const startTime = performance.now();
+  tickIntervalId = setInterval(() => {
+    const elapsed = (performance.now() - startTime) / 1000;
+    const left = Math.max(0, ROUND_TIME - elapsed);
+    numEl.textContent = left.toFixed(1);
+    if(left <= 0) clearInterval(tickIntervalId);
+  }, 60);
+
+  roundTimeoutId = setTimeout(() => {
+    if(!answered) handleAnswer(null);
+  }, ROUND_TIME * 1000);
+}
+
+function handleAnswer(clickPoint){
+  if(answered) return;
+  answered = true;
+  clearTimeout(roundTimeoutId);
+  clearInterval(tickIntervalId);
+
+  let score = 0;
+  let popPos = { x: W/2, y: H/2 };
+
+  if(clickPoint){
+    const d = dist(clickPoint, currentTarget);
+    score = Math.max(0, 10 - d / DIVISOR);
+    score = Math.round(score * 10) / 10;
+    popPos = clickPoint;
+  }
+
+  totalScore += score;
+  roundScores.push(score);
+  document.getElementById('totalScoreLive').textContent = Math.round(totalScore * 10) / 10;
+
+  showScorePop(score, popPos, clickPoint === null);
+  setTimeout(() => { nextRound(); }, 950);
+}
+
+canvas.addEventListener('click', (e) => {
+  if(answered) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (W / rect.width);
+  const y = (e.clientY - rect.top) * (H / rect.height);
+  handleAnswer({x, y});
+});
+
+function showScorePop(score, pos, isMiss){
+  const pop = document.getElementById('scorePop');
+  pop.textContent = isMiss ? '시간 초과! +0' : ('+' + score.toFixed(1));
+  pop.classList.toggle('miss', isMiss || score < 3);
+  pop.style.left = pos.x + 'px';
+  pop.style.top = pos.y + 'px';
+  requestAnimationFrame(() => pop.classList.add('show'));
+}
+function hideScorePop(){ document.getElementById('scorePop').classList.remove('show'); }
+
+function endGame(){
+  clearCanvas();
+  document.getElementById('endTotal').textContent = Math.round(totalScore * 10) / 10;
+  const wrap = document.getElementById('roundScores');
+  wrap.innerHTML = '';
+  roundScores.forEach((s, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'round-chip';
+    chip.innerHTML = `<span class="r">R${i+1}</span>${s.toFixed(1)}`;
+    wrap.appendChild(chip);
+  });
+  showScreen('screen-end');
+}
+</script>
+</body>
+</html>
