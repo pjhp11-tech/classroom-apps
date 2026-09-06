@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>여러 가지 사각형 사이의 관계</title>
+<style>
+  :root{
+    --bg1:#fdfefe; --bg2:#eef7f3;
+    --ink:#274b40; --ink-soft:#4c6b62;
+    --green:#2f8f6f; --green-dark:#1f6b52;
+    --blue:#3b82f6; --pink:#ec4899;
+    --card-bg:#ffffff; --card-border:#cfe4dc;
+    --blank-border:#b7c8ff; --blank-bg:#f3f6ff;
+    --correct:#22c55e; --wrong:#ef4444;
+    --shadow: 0 6px 18px rgba(30,60,50,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--ink);}
+  #app{position:relative;width:100%;height:100%;}
+
+  /* ---------- MAIN SCREEN ---------- */
+  #mainScreen{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100vh;padding:40px 20px;text-align:center;
+  }
+  #mainScreen h1{
+    font-size:clamp(22px,4vw,34px);color:var(--green-dark);margin-bottom:10px;
+  }
+  #mainScreen h1 span{color:var(--pink);}
+  #mainScreen p.sub{color:var(--ink-soft);max-width:640px;line-height:1.6;margin-bottom:36px;font-size:15px;}
+  .mode-buttons{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;}
+  .mode-card{
+    width:230px;background:var(--card-bg);border:2px solid var(--card-border);border-radius:20px;
+    padding:26px 20px;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s, box-shadow .15s;
+  }
+  .mode-card:hover{transform:translateY(-6px);box-shadow:0 12px 24px rgba(30,60,50,0.16);}
+  .mode-card .badge{
+    display:inline-block;background:var(--green);color:#fff;font-weight:700;font-size:13px;
+    padding:4px 12px;border-radius:20px;margin-bottom:14px;
+  }
+  .mode-card.v2 .badge{background:var(--pink);}
+  .mode-card h3{margin:0 0 8px;font-size:18px;color:var(--ink);}
+  .mode-card p{margin:0;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+
+  /* ---------- DIAGRAM SCREEN ---------- */
+  #diagramScreen{display:none;height:100vh;flex-direction:column;}
+  #topbar{
+    display:flex;align-items:center;gap:10px;padding:10px 16px;background:#ffffffcc;
+    backdrop-filter:blur(6px);border-bottom:1px solid var(--card-border);z-index:20;flex-wrap:wrap;
+  }
+  #topbar h2{font-size:16px;margin:0;color:var(--green-dark);margin-right:auto;}
+  .btn{
+    border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;
+    background:var(--green);color:#fff;transition:filter .12s;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.secondary{background:#e5edea;color:var(--ink);}
+  .btn.zoom{padding:6px 12px;font-size:15px;background:#e5edea;color:var(--ink);}
+  #progress{font-size:13px;color:var(--ink-soft);background:#eef7f3;padding:6px 12px;border-radius:20px;}
+
+  #viewport{
+    flex:1;position:relative;overflow:hidden;cursor:grab;background:
+      radial-gradient(circle at 1px 1px, #d9e6e0 1px, transparent 1px) 0 0/24px 24px, var(--bg1);
+  }
+  #viewport.panning{cursor:grabbing;}
+  #board{
+    position:absolute;top:0;left:0;width:1560px;height:900px;transform-origin:0 0;
+  }
+  svg.arrows-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+
+  .shape-card{
+    position:absolute;z-index:5;background:var(--card-bg);border:2px solid var(--card-border);
+    border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:8px;user-select:none;
+  }
+  .shape-card .icon{width:70%;height:60%;color:var(--ink);}
+  .shape-card .name{font-weight:700;font-size:15px;margin-top:4px;color:var(--ink);}
+
+  .blank-shape{
+    border:2.5px dashed var(--blank-border) !important;background:var(--blank-bg) !important;
+    cursor:pointer;
+  }
+  .blank-shape .placeholder{font-size:26px;color:#a7b6f5;}
+  .blank-shape.correct{border:2.5px solid var(--correct) !important;background:#effaf1 !important;}
+  .blank-shape.wrong-flash{animation:shakeRed .4s;}
+
+  .label-box{
+    position:absolute;z-index:4;transform:translate(-50%,-50%);text-align:center;font-size:12.5px;
+    line-height:1.35;padding:5px 9px;border-radius:8px;font-weight:700;white-space:pre-line;
+    pointer-events:none;background:#ffffffee;box-shadow:0 2px 6px rgba(0,0,0,0.06);color:var(--ink);
+  }
+  .note-box{
+    position:absolute;z-index:4;background:#fde4ef;border:1.5px solid var(--pink);color:#a3336b;
+    border-radius:10px;padding:8px 12px;font-size:12px;line-height:1.4;text-align:center;font-weight:600;
+    box-shadow:0 2px 6px rgba(0,0,0,0.06);
+  }
+
+  .blank-label{
+    position:absolute;z-index:4;transform:translate(-50%,-50%);min-width:150px;min-height:44px;
+    border:2.5px dashed var(--blank-border);background:var(--blank-bg);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;text-align:center;font-size:12.5px;
+    font-weight:700;padding:6px 10px;cursor:pointer;color:#5b6cc9;line-height:1.3;white-space:pre-line;
+  }
+  .blank-label.correct{border:2.5px solid var(--correct);background:#effaf1;color:var(--ink);}
+  .blank-label.wrong-flash{animation:shakeRed .4s;}
+  .blank-label.selected-target, .blank-shape.selected-target{outline:3px solid #ffd166;}
+
+  @keyframes shakeRed{
+    0%,100%{transform:translate(-50%,-50%);}
+    25%{transform:translate(calc(-50% - 6px),-50%);border-color:var(--wrong) !important;}
+    75%{transform:translate(calc(-50% + 6px),-50%);border-color:var(--wrong) !important;}
+  }
+
+  /* ---------- POOL ---------- */
+  #poolBar{
+    background:#ffffffee;border-top:1px solid var(--card-border);padding:10px 14px;
+    display:flex;gap:10px;overflow-x:auto;align-items:center;z-index:20;
+  }
+  #poolBar .pool-label{font-size:12px;color:var(--ink-soft);white-space:nowrap;margin-right:4px;font-weight:600;}
+  .pool-item{
+    flex:0 0 auto;background:#fff;border:2px solid var(--card-border);border-radius:12px;
+    padding:8px 12px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:grab;
+    min-width:80px;transition:transform .12s, box-shadow .12s;font-size:12px;font-weight:700;
+    text-align:center;white-space:pre-line;line-height:1.25;
+  }
+  .pool-item .icon{width:44px;height:34px;color:var(--ink);}
+  .pool-item:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+  .pool-item.selected{border-color:#ffb703;background:#fff8e8;box-shadow:0 0 0 3px #ffe6a3;}
+  .pool-item.dragging{opacity:.4;}
+
+  /* ---------- COMPLETE OVERLAY ---------- */
+  #completeOverlay{
+    position:fixed;inset:0;background:rgba(20,40,35,0.45);display:none;
+    align-items:center;justify-content:center;z-index:100;
+  }
+  #completeCard{
+    background:#fff;border-radius:20px;padding:36px 40px;text-align:center;max-width:360px;box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  #completeCard h2{color:var(--green-dark);margin:0 0 10px;font-size:22px;}
+  #completeCard p{color:var(--ink-soft);font-size:14px;margin-bottom:20px;}
+  #completeCard .row{display:flex;gap:10px;justify-content:center;}
+
+  .toast{
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    background:#2b2b2b;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;
+    opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;z-index:200;
+  }
+  .toast.show{opacity:1;bottom:100px;}
+
+  @media (max-width:640px){
+    .mode-buttons{flex-direction:column;align-items:center;}
+    #topbar h2{width:100%;order:-1;margin-bottom:4px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- MAIN SCREEN -->
+  <div id="mainScreen">
+    <h1>여러 가지 <span>사각형</span> 사이의 관계</h1>
+    <p class="sub">사각형, 사다리꼴, 평행사변형, 직사각형, 마름모, 정사각형 사이의 관계도를 직접 완성하며 익혀 봅시다.
+    화면은 손가락(마우스)으로 끌어서 이동할 수 있고, 확대·축소 버튼이나 마우스 휠로 확대할 수 있어요.</p>
+    <div class="mode-buttons">
+      <div class="mode-card v1" onclick="startMode('v1')">
+        <span class="badge">버전 1</span>
+        <h3>도형 카드 채우기</h3>
+        <p>관계도의 화살표(성질)는 미리 적혀 있고,<br>빈 카드에 알맞은 <b>도형의 이름과 모양</b>을 채워 넣어요.</p>
+      </div>
+      <div class="mode-card v2" onclick="startMode('v2')">
+        <span class="badge">버전 2</span>
+        <h3>성질 카드 채우기</h3>
+        <p>도형의 이름과 모양은 미리 그려져 있고,<br>빈 칸에 알맞은 <b>사각형의 성질</b>을 채워 넣어요.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIAGRAM SCREEN -->
+  <div id="diagramScreen">
+    <div id="topbar">
+      <button class="btn secondary" onclick="goHome()">← 메인으로</button>
+      <h2 id="modeTitle"></h2>
+      <span id="progress">0 / 0 완료</span>
+      <button class="btn zoom" onclick="zoomBy(-0.2)">－</button>
+      <button class="btn zoom" onclick="zoomBy(0.2)">＋</button>
+      <button class="btn secondary" onclick="resetView()">화면 초기화</button>
+      <button class="btn secondary" onclick="renderDiagram(state.mode)">문제 다시 풀기</button>
+    </div>
+    <div id="viewport">
+      <div id="board">
+        <svg class="arrows-layer" id="arrowsLayer" viewBox="0 0 1560 900"></svg>
+      </div>
+    </div>
+    <div id="poolBar">
+      <span class="pool-label">💡 카드를 눌러 선택한 뒤, 빈 칸을 눌러보세요 (드래그도 가능해요)</span>
+      <div id="poolItems" style="display:flex;gap:10px;"></div>
+    </div>
+  </div>
+
+  <div id="completeOverlay">
+    <div id="completeCard">
+      <h2>🎉 완성했어요!</h2>
+      <p>여러 가지 사각형 사이의 관계를 모두 알맞게 채웠습니다.</p>
+      <div class="row">
+        <button class="btn secondary" onclick="closeOverlay(); goHome();">메인으로</button>
+        <button class="btn" onclick="closeOverlay(); renderDiagram(state.mode);">다시 풀기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ===================== SHAPE ICONS ===================== */
+function icon(type){
+  switch(type){
+    case 'quad': return `<svg viewBox="0 0 140 110"><polygon points="22,82 48,26 128,36 102,92" fill="none" stroke="currentColor" stroke-width="5"/></svg>`;
+    case 'trapezoid': return `<svg viewBox="0 0 140 110">
+      <polygon points="38,30 108,30 128,86 18,86" fill="none" stroke="currentColor" stroke-width="5"/>
+      <path d="M65,30 l8,-6 l8,6" fill="none" stroke="currentColor" stroke-width="3"/>
+      <path d="M55,86 l8,6 l8,-6" fill="none" stroke="currentColor" stroke-width="3"/>
+    </svg>`;
+    case 'parallelogram': return `<svg viewBox="0 0 140 110">
+      <polygon points="32,30 122,30 108,86 18,86" fill="none" stroke="currentColor" stroke-width="5"/>
+      <line x1="32" y1="30" x2="108" y2="86" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="122" y1="30" x2="18" y2="86" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+    </svg>`;
+    case 'rectangle': return `<svg viewBox="0 0 140 110">
+      <rect x="22" y="24" width="96" height="62" fill="none" stroke="currentColor" stroke-width="5"/>
+      <line x1="22" y1="24" x2="118" y2="86" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="118" y1="24" x2="22" y2="86" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <path d="M22,34 h10 v-10" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <path d="M118,34 h-10 v-10" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <path d="M22,76 h10 v10" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <path d="M118,76 h-10 v10" fill="none" stroke="currentColor" stroke-width="2.5"/>
+    </svg>`;
+    case 'rhombus': return `<svg viewBox="0 0 140 110">
+      <polygon points="70,14 126,55 70,96 14,55" fill="none" stroke="currentColor" stroke-width="5"/>
+      <line x1="70" y1="14" x2="70" y2="96" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="14" y1="55" x2="126" y2="55" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <rect x="65" y="50" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>`;
+    case 'square': return `<svg viewBox="0 0 140 110">
+      <rect x="34" y="18" width="72" height="72" fill="none" stroke="currentColor" stroke-width="5"/>
+      <line x1="34" y1="18" x2="106" y2="90" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="106" y1="18" x2="34" y2="90" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <path d="M34,28 h10 v-10" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <path d="M106,28 h-10 v-10" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <rect x="65" y="49" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>`;
+  }
+  return '';
+}
+
+/* ===================== DATA ===================== */
+const SHAPES = {
+  quad:          {name:'사각형',     x:30,  y:290, w:150, h:110},
+  trapezoid:     {name:'사다리꼴',   x:250, y:440, w:160, h:110},
+  parallelogram: {name:'평행사변형', x:560, y:440, w:170, h:120},
+  rectangle:     {name:'직사각형',   x:900, y:250, w:170, h:110},
+  rhombus:       {name:'마름모',     x:900, y:620, w:150, h:150},
+  square:        {name:'정사각형',   x:1230,y:440, w:140, h:140},
+};
+
+function center(k){
+  const s = SHAPES[k];
+  return {x: s.x + s.w/2, y: s.y + s.h/2};
+}
+
+// Returns the point where a line from a shape's center toward (extX,extY)
+// crosses that shape's rectangular boundary, plus a small outward margin
+// so the arrow line/head never overlaps the card.
+function boundaryPoint(key, extX, extY, margin){
+  const s = SHAPES[key];
+  const cx = s.x + s.w/2, cy = s.y + s.h/2;
+  const dx = extX - cx, dy = extY - cy;
+  const D = Math.hypot(dx, dy) || 1;
+  const hw = s.w/2, hh = s.h/2;
+  const tx = dx !== 0 ? hw/Math.abs(dx) : Infinity;
+  const ty = dy !== 0 ? hh/Math.abs(dy) : Infinity;
+  let t = Math.min(tx, ty);
+  t += (margin||0)/D; // push a bit further out so there's a visible gap
+  return {x: cx + dx*t, y: cy + dy*t};
+}
+
+const EDGES = [
+  {id:'e1',  from:'quad', to:'trapezoid', curve:0, text:'한 쌍의 대변이\n평행하다'},
+  {id:'e2',  from:'trapezoid', to:'parallelogram', curve:0, text:'다른 한 쌍의 대변이\n평행하다'},
+  {id:'e3a', from:'parallelogram', to:'rectangle', curve:-1, text:'한 내각이\n직각이다'},
+  {id:'e3b', from:'parallelogram', to:'rectangle', curve:1, text:'두 대각선의\n길이가 같다'},
+  {id:'e4a', from:'parallelogram', to:'rhombus', curve:1, text:'이웃하는 두 변의\n길이가 같다'},
+  {id:'e4b', from:'parallelogram', to:'rhombus', curve:-1, text:'두 대각선이 서로\n수직이다'},
+  {id:'e5a', from:'rectangle', to:'square', curve:-1, text:'이웃하는 두 변의\n길이가 같다'},
+  {id:'e5b', from:'rectangle', to:'square', curve:1, text:'두 대각선이 서로\n수직이다'},
+  {id:'e6a', from:'rhombus', to:'square', curve:1, text:'한 내각이\n직각이다'},
+  {id:'e6b', from:'rhombus', to:'square', curve:-1, text:'두 대각선의\n길이가 같다'},
+];
+
+const NOTE = {text:'두 대각선이 서로\n다른 것을 이등분한다', x:445, y:610, w:190, h:66};
+
+// Some property pairs are alternative (either/or) sufficient conditions for the
+// same pair of transitions, so any card from the group is accepted in any of
+// that group's blanks, regardless of which specific slot (top/bottom, or which
+// of the two look-alike edges) it's dropped into.
+const GROUPS = {
+  rectlike:  ['한 내각이\n직각이다', '두 대각선의\n길이가 같다'],   // 평행사변형→직사각형, 마름모→정사각형
+  rhomblike: ['이웃하는 두 변의\n길이가 같다', '두 대각선이 서로\n수직이다'], // 평행사변형→마름모, 직사각형→정사각형
+};
+const EDGE_GROUP = {e3a:'rectlike', e3b:'rectlike', e6a:'rectlike', e6b:'rectlike',
+                     e4a:'rhomblike', e4b:'rhomblike', e5a:'rhomblike', e5b:'rhomblike'};
+
+/* ===================== STATE ===================== */
+const state = {mode:null, blanks:[], pool:[], selectedPoolId:null,
+  scale:0.85, tx:60, ty:20};
+
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+/* ===================== NAVIGATION ===================== */
+function startMode(mode){
+  document.getElementById('mainScreen').style.display='none';
+  document.getElementById('diagramScreen').style.display='flex';
+  document.getElementById('modeTitle').textContent = mode==='v1' ? '버전 1 · 도형 카드 채우기' : '버전 2 · 성질 카드 채우기';
+  renderDiagram(mode);
+}
+function goHome(){
+  document.getElementById('diagramScreen').style.display='none';
+  document.getElementById('mainScreen').style.display='flex';
+}
+function closeOverlay(){ document.getElementById('completeOverlay').style.display='none'; }
+
+/* ===================== RENDER ===================== */
+function renderDiagram(mode){
+  state.mode = mode;
+  state.selectedPoolId = null;
+  const board = document.getElementById('board');
+  board.querySelectorAll('.shape-card, .label-box, .note-box, .blank-label').forEach(el=>el.remove());
+  const svg = document.getElementById('arrowsLayer');
+  svg.innerHTML = `
+    <defs>
+      <marker id="arrowUni" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#4b7bec"/></marker>
+    </defs>`;
+
+  // --- draw arrows ---
+  EDGES.forEach(e=>{
+    const p1 = center(e.from), p2 = center(e.to);
+    const dx=p2.x-p1.x, dy=p2.y-p1.y, len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    const off = 34*e.curve;
+    const cx = (p1.x+p2.x)/2 + nx*off, cy=(p1.y+p2.y)/2 + ny*off;
+    // clip actual drawn line to just outside each card's border
+    const start = boundaryPoint(e.from, p2.x, p2.y, 6);
+    const end = boundaryPoint(e.to, p1.x, p1.y, 10);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`);
+    path.setAttribute('stroke', '#4b7bec');
+    path.setAttribute('stroke-width','3');
+    path.setAttribute('fill','none');
+    path.setAttribute('marker-end', 'url(#arrowUni)');
+    svg.appendChild(path);
+    e._mid = {x:cx, y:cy};
+  });
+
+  // --- shape cards (given or blank depending on mode) ---
+  state.blanks = [];
+  Object.keys(SHAPES).forEach(key=>{
+    const s = SHAPES[key];
+    const div = document.createElement('div');
+    div.className='shape-card';
+    div.style.left=s.x+'px'; div.style.top=s.y+'px'; div.style.width=s.w+'px'; div.style.height=s.h+'px';
+
+    const isBlank = (mode==='v1' && key!=='quad');
+    if(isBlank){
+      div.classList.add('blank-shape');
+      div.dataset.match = key;
+      div.dataset.kind = 'shape';
+      div.id='blank-shape-'+key;
+      div.innerHTML = `<div class="placeholder">?</div>`;
+      div.addEventListener('click', ()=>onBlankClick(div));
+      addDropHandlers(div);
+      state.blanks.push({el:div, match:key, filled:false});
+    } else {
+      div.innerHTML = `<div class="icon">${icon(key)}</div><div class="name">${s.name}</div>`;
+    }
+    board.appendChild(div);
+  });
+
+  // --- note box (always shown as text unless v2, where it's a blank) ---
+  const noteEl = document.createElement('div');
+  noteEl.style.left = NOTE.x+'px'; noteEl.style.top = NOTE.y+'px';
+  noteEl.style.width = NOTE.w+'px'; noteEl.style.minHeight = NOTE.h+'px';
+  if(mode==='v2'){
+    noteEl.className='blank-label';
+    noteEl.dataset.match = NOTE.text;
+    noteEl.dataset.kind='label';
+    noteEl.id='blank-label-C';
+    noteEl.textContent='?';
+    noteEl.addEventListener('click', ()=>onBlankClick(noteEl));
+    addDropHandlers(noteEl);
+    state.blanks.push({el:noteEl, match:NOTE.text, filled:false});
+  } else {
+    noteEl.className='note-box';
+    noteEl.textContent = NOTE.text;
+  }
+  board.appendChild(noteEl);
+
+  // --- edge labels ---
+  EDGES.forEach(e=>{
+    if(mode==='v2'){
+      const div = document.createElement('div');
+      div.className='blank-label';
+      div.style.left=e._mid.x+'px'; div.style.top=e._mid.y+'px';
+      div.dataset.match = e.text;
+      div.dataset.kind='label';
+      div.id='blank-label-'+e.id;
+      div.textContent='?';
+      div.addEventListener('click', ()=>onBlankClick(div));
+      addDropHandlers(div);
+      board.appendChild(div);
+      const group = EDGE_GROUP[e.id] ? GROUPS[EDGE_GROUP[e.id]] : null;
+      state.blanks.push({el:div, match:e.text, group:group, filled:false});
+    } else {
+      const div = document.createElement('div');
+      div.className='label-box';
+      div.style.left=e._mid.x+'px'; div.style.top=e._mid.y+'px';
+      div.textContent = e.text;
+      board.appendChild(div);
+    }
+  });
+
+  // --- pool ---
+  buildPool(mode);
+  updateProgress();
+  applyTransform();
+}
+
+function buildPool(mode){
+  let items = [];
+  if(mode==='v1'){
+    items = Object.keys(SHAPES).filter(k=>k!=='quad').map(k=>({
+      id:'p-'+k, match:k, kind:'shape', label:SHAPES[k].name
+    }));
+  } else {
+    const texts = [NOTE.text, ...EDGES.map(e=>e.text)];
+    items = texts.map((t,i)=>({id:'p-'+i, match:t, kind:'label', label:t}));
+  }
+  state.pool = shuffle(items);
+  renderPool();
+}
+
+function renderPool(){
+  const wrap = document.getElementById('poolItems');
+  wrap.innerHTML='';
+  state.pool.forEach(item=>{
+    const el = document.createElement('div');
+    el.className='pool-item';
+    el.draggable = true;
+    el.dataset.id = item.id;
+    if(item.kind==='shape'){
+      el.innerHTML = `<div class="icon">${icon(item.match)}</div><div>${item.label}</div>`;
+    } else {
+      el.textContent = item.label;
+    }
+    el.addEventListener('click', ()=>selectPoolItem(item.id, el));
+    el.addEventListener('dragstart', ev=>{
+      ev.dataTransfer.setData('text/plain', item.id);
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', ()=> el.classList.remove('dragging'));
+    wrap.appendChild(el);
+  });
+}
+
+function selectPoolItem(id, el){
+  document.querySelectorAll('.pool-item').forEach(p=>p.classList.remove('selected'));
+  if(state.selectedPoolId===id){ state.selectedPoolId=null; return; }
+  state.selectedPoolId = id;
+  el.classList.add('selected');
+}
+
+function addDropHandlers(blankEl){
+  blankEl.addEventListener('dragover', ev=>ev.preventDefault());
+  blankEl.addEventListener('drop', ev=>{
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData('text/plain');
+    attemptPlace(id, blankEl);
+  });
+}
+
+function onBlankClick(blankEl){
+  if(blankEl.classList.contains('correct')) return;
+  if(!state.selectedPoolId){
+    showToast('먼저 아래에서 카드를 선택해 주세요.');
+    return;
+  }
+  attemptPlace(state.selectedPoolId, blankEl);
+}
+
+function attemptPlace(poolId, blankEl){
+  if(blankEl.classList.contains('correct')) return;
+  const item = state.pool.find(p=>p.id===poolId);
+  if(!item) return;
+  const blank = state.blanks.find(b=>b.el===blankEl);
+  if(!blank) return;
+
+  // Normalize so that any card sharing the exact same wording is accepted
+  // for any blank that needs that wording — position/instance doesn't matter.
+  // For blanks that belong to a group of alternative conditions (e.g. the four
+  // slots shared between two look-alike transitions), any card whose text is
+  // a member of that group is also accepted, regardless of which slot it's in.
+  const norm = s => (s||'').trim();
+  const isCorrect = blank.group
+    ? blank.group.some(t => norm(t) === norm(item.match))
+    : norm(item.match) === norm(blank.match);
+  if(isCorrect){
+    // correct — keep the base blank-shape/blank-label class so the box's
+    // border/background/layout stay intact; only the "correct" style layers on top.
+    blankEl.classList.add('correct');
+    blankEl.classList.remove('wrong-flash');
+    if(item.kind==='shape'){
+      blankEl.innerHTML = `<div class="icon">${icon(item.match)}</div><div class="name">${SHAPES[item.match].name}</div>`;
+    } else {
+      blankEl.textContent = item.label;
+    }
+    blank.filled = true;
+    state.pool = state.pool.filter(p=>p.id!==poolId);
+    state.selectedPoolId = null;
+    renderPool();
+    updateProgress();
+    checkComplete();
+  } else {
+    blankEl.classList.add('wrong-flash');
+    showToast('앗, 정답이 아니에요. 다시 생각해 볼까요?');
+    setTimeout(()=>blankEl.classList.remove('wrong-flash'), 420);
+  }
+}
+
+function updateProgress(){
+  const done = state.blanks.filter(b=>b.filled).length;
+  document.getElementById('progress').textContent = `${done} / ${state.blanks.length} 완료`;
+}
+
+function checkComplete(){
+  if(state.blanks.length>0 && state.blanks.every(b=>b.filled)){
+    setTimeout(()=>{ document.getElementById('completeOverlay').style.display='flex'; }, 300);
+  }
+}
+
+let toastTimer=null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ===================== PAN & ZOOM ===================== */
+const viewport = document.getElementById('viewport');
+function applyTransform(){
+  document.getElementById('board').style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+}
+function resetView(){ state.scale=0.85; state.tx=60; state.ty=20; applyTransform(); }
+function zoomBy(delta){
+  const rect = viewport.getBoundingClientRect();
+  zoomAt(rect.width/2, rect.height/2, delta);
+}
+function zoomAt(mx, my, delta){
+  const newScale = Math.min(2, Math.max(0.35, state.scale + delta));
+  const bx = (mx - state.tx)/state.scale;
+  const by = (my - state.ty)/state.scale;
+  state.tx = mx - bx*newScale;
+  state.ty = my - by*newScale;
+  state.scale = newScale;
+  applyTransform();
+}
+
+viewport.addEventListener('wheel', ev=>{
+  ev.preventDefault();
+  const rect = viewport.getBoundingClientRect();
+  const mx = ev.clientX-rect.left, my=ev.clientY-rect.top;
+  zoomAt(mx, my, ev.deltaY<0 ? 0.12 : -0.12);
+}, {passive:false});
+
+let isPanning=false, lastX=0, lastY=0;
+viewport.addEventListener('mousedown', ev=>{
+  if(ev.target.closest('.shape-card') || ev.target.closest('.blank-label') || ev.target.closest('.note-box')) return;
+  isPanning=true; lastX=ev.clientX; lastY=ev.clientY;
+  viewport.classList.add('panning');
+});
+window.addEventListener('mousemove', ev=>{
+  if(!isPanning) return;
+  state.tx += (ev.clientX-lastX);
+  state.ty += (ev.clientY-lastY);
+  lastX=ev.clientX; lastY=ev.clientY;
+  applyTransform();
+});
+window.addEventListener('mouseup', ()=>{ isPanning=false; viewport.classList.remove('panning'); });
+
+// touch support (pan + pinch)
+let touchState = {mode:null, lastX:0, lastY:0, lastDist:0};
+viewport.addEventListener('touchstart', ev=>{
+  if(ev.touches.length===1){
+    const t=ev.touches[0];
+    if(t.target.closest('.shape-card') || t.target.closest('.blank-label') || t.target.closest('.note-box')) return;
+    touchState.mode='pan'; touchState.lastX=t.clientX; touchState.lastY=t.clientY;
+  } else if(ev.touches.length===2){
+    touchState.mode='pinch';
+    touchState.lastDist = Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX, ev.touches[0].clientY-ev.touches[1].clientY);
+  }
+}, {passive:true});
+viewport.addEventListener('touchmove', ev=>{
+  if(touchState.mode==='pan' && ev.touches.length===1){
+    const t=ev.touches[0];
+    state.tx += (t.clientX-touchState.lastX);
+    state.ty += (t.clientY-touchState.lastY);
+    touchState.lastX=t.clientX; touchState.lastY=t.clientY;
+    applyTransform();
+  } else if(touchState.mode==='pinch' && ev.touches.length===2){
+    const dist = Math.hypot(ev.touches[0].clientX-ev.touches[1].clientX, ev.touches[0].clientY-ev.touches[1].clientY);
+    const delta = (dist - touchState.lastDist)*0.01;
+    const rect = viewport.getBoundingClientRect();
+    const mx=(ev.touches[0].clientX+ev.touches[1].clientX)/2-rect.left;
+    const my=(ev.touches[0].clientY+ev.touches[1].clientY)/2-rect.top;
+    zoomAt(mx,my,delta);
+    touchState.lastDist = dist;
+  }
+}, {passive:true});
+viewport.addEventListener('touchend', ()=>{ touchState.mode=null; });
+</script>
+</body>
+</html>
