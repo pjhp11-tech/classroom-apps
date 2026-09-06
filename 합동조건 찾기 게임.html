@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>합동 조건 찾기 - SAS · SSS · ASA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=JetBrains+Mono:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F4FAFF;
+    --paper: #FFFFFF;
+    --grid-line: #DCEBF7;
+    --ink: #1E2A38;
+    --ink-soft: #5B6B7C;
+    --sas: #FF6B4A;      /* SAS - 코랄 */
+    --sas-soft: #FFE3DA;
+    --sss: #14B8A6;      /* SSS - 틸 */
+    --sss-soft: #D6F5F1;
+    --asa: #7C6CF0;      /* ASA - 바이올렛 */
+    --asa-soft: #E5E1FE;
+    --wrong: #FF4757;
+    --gold: #FFB020;
+    --shadow: 0 10px 30px rgba(30,42,56,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      linear-gradient(var(--bg), var(--bg));
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    overflow:hidden;
+  }
+  .screen{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .hidden{ display:none !important; }
+
+  /* ---------- MAIN SCREEN ---------- */
+  #mainScreen{
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,107,74,0.08), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(124,108,240,0.08), transparent 40%),
+      var(--bg);
+    padding: 24px;
+  }
+  .title-wrap{
+    text-align:center;
+    max-width: 640px;
+  }
+  .eyebrow-shapes{
+    display:flex; justify-content:center; gap:14px; margin-bottom:18px;
+  }
+  .tri-badge{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .tri-badge svg{ width:46px; height:40px; }
+  .tri-badge span{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700; font-size:13px;
+  }
+  h1{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size: clamp(32px, 6vw, 52px);
+    margin: 0 0 12px;
+    line-height:1.15;
+    color: var(--ink);
+  }
+  h1 .accent{ color: var(--sas); }
+  .subtitle{
+    font-size:17px;
+    color: var(--ink-soft);
+    line-height:1.6;
+    margin: 0 0 30px;
+  }
+  .rule-cards{
+    display:flex; gap:12px; justify-content:center; margin-bottom:34px; flex-wrap:wrap;
+  }
+  .rule-card{
+    background: var(--paper);
+    border-radius: 16px;
+    padding: 14px 18px;
+    width: 150px;
+    box-shadow: var(--shadow);
+    border-bottom: 4px solid var(--card-color, var(--sas));
+  }
+  .rule-card b{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:20px;
+    margin-bottom:4px;
+    color: var(--card-color, var(--sas));
+  }
+  .rule-card span{ font-size:13px; color:var(--ink-soft); }
+
+  .start-btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    color:#fff;
+    background: var(--sas);
+    border:none;
+    padding: 16px 48px;
+    border-radius: 999px;
+    cursor:pointer;
+    box-shadow: 0 8px 0 #D6502F, 0 14px 24px rgba(255,107,74,0.35);
+    transition: transform .08s ease;
+  }
+  .start-btn:active{
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 #D6502F, 0 6px 14px rgba(255,107,74,0.3);
+  }
+  .how-to{
+    margin-top:22px;
+    font-size:14px;
+    color: var(--ink-soft);
+  }
+  .how-to b{ color: var(--ink); }
+
+  /* ---------- GAME SCREEN ---------- */
+  #gameScreen{
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 14px 24px;
+    background: var(--paper);
+    box-shadow: 0 2px 12px rgba(30,42,56,0.06);
+    z-index: 10;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .stat{
+    display:flex; align-items:center; gap:10px;
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 8px 16px;
+  }
+  .stat .label{
+    font-size:12px; font-weight:700; color: var(--ink-soft);
+  }
+  .stat .value{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700; font-size:22px; color: var(--ink);
+  }
+  #timerStat.warning .value{ color: var(--wrong); }
+  .stats-group{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  .legend{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .legend-chip{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700; font-size:13px;
+    padding: 6px 12px; border-radius: 10px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .legend-chip .dot{ width:9px; height:9px; border-radius:50%; }
+  .chip-sas{ background: var(--sas-soft); color:#B8451D; }
+  .chip-sas .dot{ background: var(--sas); }
+  .chip-sss{ background: var(--sss-soft); color:#0B7A6E; }
+  .chip-sss .dot{ background: var(--sss); }
+  .chip-asa{ background: var(--asa-soft); color:#4A3BC4; }
+  .chip-asa .dot{ background: var(--asa); }
+
+  .zoom-controls{ display:flex; gap:6px; }
+  .zoom-btn{
+    width:36px; height:36px; border-radius:10px; border:none;
+    background: var(--bg); color: var(--ink);
+    font-size:18px; font-weight:800; cursor:pointer;
+    font-family:'Nunito',sans-serif;
+  }
+  .zoom-btn:hover{ background: #E4EFF9; }
+
+  #gridWrapper{
+    flex:1;
+    overflow:auto;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/24px 24px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/24px 24px,
+      var(--bg);
+    padding: 40px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+  }
+  #gridInner{
+    transform-origin: top center;
+    transition: transform 0.08s ease-out;
+  }
+  #grid{
+    display:grid;
+    grid-template-columns: repeat(20, 38px);
+    grid-template-rows: repeat(20, 38px);
+    gap: 4px;
+    background: var(--paper);
+    padding: 16px;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+  }
+  .cell{
+    width:38px; height:38px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700; font-size:17px;
+    color: var(--ink);
+    background: var(--bg);
+    border-radius: 8px;
+    cursor:pointer;
+    user-select:none;
+    transition: background .12s ease, color .12s ease, transform .1s ease;
+  }
+  .cell:hover{ background:#E4EFF9; }
+  .cell.selected{
+    background: var(--gold);
+    color:#fff;
+    transform: scale(1.08);
+  }
+  .cell.found-sas{ background: var(--sas); color:#fff; cursor:default; }
+  .cell.found-sss{ background: var(--sss); color:#fff; cursor:default; }
+  .cell.found-asa{ background: var(--asa); color:#fff; cursor:default; }
+  .cell.wrong{
+    background: var(--wrong) !important; color:#fff !important;
+  }
+
+  .toast{
+    position: fixed;
+    top: 92px; left:50%; transform: translateX(-50%);
+    padding: 10px 22px;
+    border-radius: 12px;
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700; font-size:16px;
+    color:#fff;
+    z-index: 50;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(6px); }
+  .toast.good{ background: var(--sss); }
+  .toast.bad{ background: var(--wrong); }
+
+  .hint-bar{
+    text-align:center;
+    font-size:13px;
+    color: var(--ink-soft);
+    padding: 8px 0 14px;
+  }
+
+  /* ---------- RESULT SCREEN ---------- */
+  #resultScreen{
+    background: var(--bg);
+  }
+  .result-card{
+    background: var(--paper);
+    border-radius: 24px;
+    padding: 44px 56px;
+    box-shadow: var(--shadow);
+    text-align:center;
+    max-width: 420px;
+  }
+  .result-card h2{
+    font-family:'Baloo 2', sans-serif;
+    font-size: 26px; margin:0 0 6px;
+  }
+  .final-score{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 56px; font-weight:800;
+    color: var(--sas);
+    margin: 14px 0;
+  }
+  .result-breakdown{
+    display:flex; justify-content:center; gap:18px;
+    margin: 18px 0 28px;
+    flex-wrap: wrap;
+  }
+  .result-breakdown div{
+    font-size:13px; color:var(--ink-soft);
+  }
+  .result-breakdown b{
+    display:block; font-family:'JetBrains Mono', monospace;
+    font-size:20px; color:var(--ink);
+  }
+  .retry-btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700; font-size:18px; color:#fff;
+    background: var(--asa);
+    border:none; padding:14px 36px; border-radius:999px;
+    cursor:pointer;
+    box-shadow: 0 6px 0 #5A4BC0;
+  }
+  .retry-btn:active{ transform: translateY(4px); box-shadow: 0 2px 0 #5A4BC0; }
+</style>
+</head>
+<body>
+
+  <!-- MAIN SCREEN -->
+  <div id="mainScreen" class="screen">
+    <div class="title-wrap">
+      <div class="eyebrow-shapes">
+        <div class="tri-badge">
+          <svg viewBox="0 0 46 40"><polygon points="23,3 43,36 3,36" fill="none" stroke="#FF6B4A" stroke-width="3"/></svg>
+          <span style="color:#FF6B4A">SAS</span>
+        </div>
+        <div class="tri-badge">
+          <svg viewBox="0 0 46 40"><polygon points="23,3 43,36 3,36" fill="none" stroke="#14B8A6" stroke-width="3"/></svg>
+          <span style="color:#14B8A6">SSS</span>
+        </div>
+        <div class="tri-badge">
+          <svg viewBox="0 0 46 40"><polygon points="23,3 43,36 3,36" fill="none" stroke="#7C6CF0" stroke-width="3"/></svg>
+          <span style="color:#7C6CF0">ASA</span>
+        </div>
+      </div>
+      <h1>글자 격자 속에서<br><span class="accent">합동 조건</span>을 찾아라!</h1>
+      <p class="subtitle">A와 S로 채워진 20×20 격자 안에 숨어있는<br><b>SAS · SSS · ASA</b> 배열을 1분 안에 최대한 많이 찾아보세요.</p>
+
+      <div class="rule-cards">
+        <div class="rule-card" style="--card-color:#FF6B4A"><b>SAS</b><span>변-각-변</span></div>
+        <div class="rule-card" style="--card-color:#14B8A6"><b>SSS</b><span>변-변-변</span></div>
+        <div class="rule-card" style="--card-color:#7C6CF0"><b>ASA</b><span>각-변-각</span></div>
+      </div>
+
+      <button class="start-btn" id="startBtn">게임 시작</button>
+      <p class="how-to">연결된 <b>3칸</b>을 순서대로 클릭하세요 (가로·세로·대각선) · 정답 <b>+10점</b> · 오답 <b>−3점</b></p>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="screen hidden">
+    <div class="topbar">
+      <div class="stats-group">
+        <div class="stat"><span class="label">SCORE</span><span class="value" id="scoreVal">0</span></div>
+        <div class="stat" id="timerStat"><span class="label">TIME</span><span class="value" id="timerVal">60</span></div>
+        <div class="stat"><span class="label">FOUND</span><span class="value" id="foundVal">0</span></div>
+      </div>
+      <div class="legend">
+        <div class="legend-chip chip-sas"><span class="dot"></span>SAS</div>
+        <div class="legend-chip chip-sss"><span class="dot"></span>SSS</div>
+        <div class="legend-chip chip-asa"><span class="dot"></span>ASA</div>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoomOut">−</button>
+        <button class="zoom-btn" id="zoomReset">⟲</button>
+        <button class="zoom-btn" id="zoomIn">+</button>
+      </div>
+    </div>
+    <div class="hint-bar">연결된 3칸을 순서대로 클릭해서 제출하세요 · 휠 스크롤로 확대/축소, 드래그 스크롤 가능</div>
+    <div id="gridWrapper">
+      <div id="gridInner">
+        <div id="grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="resultScreen" class="screen hidden">
+    <div class="result-card">
+      <h2>타임 오버!</h2>
+      <div class="final-score" id="finalScore">0</div>
+      <div class="result-breakdown">
+        <div><b id="correctCount">0</b>정답</div>
+        <div><b id="wrongCount">0</b>오답</div>
+      </div>
+      <button class="retry-btn" id="retryBtn">다시 도전하기</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const SIZE = 20;
+  const GAME_TIME = 60;
+  const PATTERNS = { 'SAS':'sas', 'SSS':'sss', 'ASA':'asa' };
+
+  let grid = [];
+  let cellEls = [];
+  let selected = []; // {r,c}
+  let direction = null; // {dr,dc}
+  let score = 0;
+  let foundCount = 0;
+  let correctCount = 0;
+  let wrongCount = 0;
+  let timeLeft = GAME_TIME;
+  let timerId = null;
+  let zoom = 1;
+
+  const mainScreen = document.getElementById('mainScreen');
+  const gameScreen = document.getElementById('gameScreen');
+  const resultScreen = document.getElementById('resultScreen');
+  const gridEl = document.getElementById('grid');
+  const gridInner = document.getElementById('gridInner');
+  const gridWrapper = document.getElementById('gridWrapper');
+  const scoreVal = document.getElementById('scoreVal');
+  const timerVal = document.getElementById('timerVal');
+  const timerStat = document.getElementById('timerStat');
+  const foundVal = document.getElementById('foundVal');
+  const toast = document.getElementById('toast');
+
+  function randLetter(){ return Math.random() < 0.5 ? 'A' : 'S'; }
+
+  function buildGrid(){
+    grid = [];
+    for(let r=0; r<SIZE; r++){
+      const row = [];
+      for(let c=0; c<SIZE; c++) row.push(randLetter());
+      grid.push(row);
+    }
+  }
+
+  function renderGrid(){
+    gridEl.innerHTML = '';
+    cellEls = [];
+    for(let r=0; r<SIZE; r++){
+      const rowEls = [];
+      for(let c=0; c<SIZE; c++){
+        const div = document.createElement('div');
+        div.className = 'cell';
+        div.textContent = grid[r][c];
+        div.dataset.r = r;
+        div.dataset.c = c;
+        div.addEventListener('click', () => onCellClick(r, c, div));
+        gridEl.appendChild(div);
+        rowEls.push(div);
+      }
+      cellEls.push(rowEls);
+    }
+  }
+
+  function showToast(msg, good){
+    toast.textContent = msg;
+    toast.className = 'toast show ' + (good ? 'good' : 'bad');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { toast.className = 'toast'; }, 900);
+  }
+
+  function clearSelectionVisual(){
+    selected.forEach(({r,c}) => {
+      const el = cellEls[r][c];
+      if(!el.classList.contains('found-sas') && !el.classList.contains('found-sss') && !el.classList.contains('found-asa')){
+        el.classList.remove('selected');
+      }
+    });
+  }
+
+  function resetSelection(){
+    clearSelectionVisual();
+    selected = [];
+    direction = null;
+  }
+
+  function isLocked(el){
+    return el.classList.contains('found-sas') || el.classList.contains('found-sss') || el.classList.contains('found-asa');
+  }
+
+  function onCellClick(r, c, el){
+    if(timeLeft <= 0) return;
+    if(isLocked(el)) return;
+
+    // clicking the same cell again -> ignore
+    if(selected.length && selected[selected.length-1].r === r && selected[selected.length-1].c === c) return;
+
+    if(selected.length === 0){
+      selected.push({r,c});
+      el.classList.add('selected');
+      return;
+    }
+
+    if(selected.length === 1){
+      const first = selected[0];
+      const dr = r - first.r, dc = c - first.c;
+      const adj = Math.abs(dr) <= 1 && Math.abs(dc) <= 1 && !(dr===0 && dc===0);
+      if(adj){
+        direction = {dr, dc};
+        selected.push({r,c});
+        el.classList.add('selected');
+      } else {
+        // start over with new first cell
+        resetSelection();
+        selected.push({r,c});
+        el.classList.add('selected');
+      }
+      return;
+    }
+
+    if(selected.length === 2){
+      const second = selected[1];
+      const expectedR = second.r + direction.dr;
+      const expectedC = second.c + direction.dc;
+      if(r === expectedR && c === expectedC){
+        selected.push({r,c});
+        el.classList.add('selected');
+        evaluateSelection();
+      } else {
+        resetSelection();
+        selected.push({r,c});
+        el.classList.add('selected');
+      }
+      return;
+    }
+  }
+
+  function evaluateSelection(){
+    const letters = selected.map(({r,c}) => grid[r][c]).join('');
+    const patternClass = PATTERNS[letters];
+    const cellsSnapshot = selected.slice();
+
+    if(patternClass){
+      cellsSnapshot.forEach(({r,c}) => {
+        const el = cellEls[r][c];
+        el.classList.remove('selected');
+        el.classList.add('found-' + patternClass);
+      });
+      score += 10;
+      foundCount += 1;
+      correctCount += 1;
+      showToast(letters + ' 발견! +10', true);
+      updateStats();
+      selected = [];
+      direction = null;
+    } else {
+      cellsSnapshot.forEach(({r,c}) => cellEls[r][c].classList.add('wrong'));
+      score -= 3;
+      wrongCount += 1;
+      showToast('오답! -3', false);
+      updateStats();
+      setTimeout(() => {
+        cellsSnapshot.forEach(({r,c}) => {
+          const el = cellEls[r][c];
+          el.classList.remove('wrong');
+          el.classList.remove('selected');
+        });
+        selected = [];
+        direction = null;
+      }, 350);
+    }
+  }
+
+  function updateStats(){
+    scoreVal.textContent = score;
+    foundVal.textContent = foundCount;
+  }
+
+  function startTimer(){
+    timeLeft = GAME_TIME;
+    timerVal.textContent = timeLeft;
+    timerStat.classList.remove('warning');
+    timerId = setInterval(() => {
+      timeLeft -= 1;
+      timerVal.textContent = timeLeft;
+      if(timeLeft <= 10) timerStat.classList.add('warning');
+      if(timeLeft <= 0){
+        clearInterval(timerId);
+        endGame();
+      }
+    }, 1000);
+  }
+
+  function endGame(){
+    gameScreen.classList.add('hidden');
+    resultScreen.classList.remove('hidden');
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('correctCount').textContent = correctCount;
+    document.getElementById('wrongCount').textContent = wrongCount;
+  }
+
+  function applyZoom(){
+    gridInner.style.transform = 'scale(' + zoom + ')';
+  }
+
+  function startGame(){
+    score = 0; foundCount = 0; correctCount = 0; wrongCount = 0; zoom = 1;
+    selected = []; direction = null;
+    updateStats();
+    applyZoom();
+    buildGrid();
+    renderGrid();
+    mainScreen.classList.add('hidden');
+    resultScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    startTimer();
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('retryBtn').addEventListener('click', startGame);
+
+  document.getElementById('zoomIn').addEventListener('click', () => {
+    zoom = Math.min(2, +(zoom + 0.15).toFixed(2));
+    applyZoom();
+  });
+  document.getElementById('zoomOut').addEventListener('click', () => {
+    zoom = Math.max(0.5, +(zoom - 0.15).toFixed(2));
+    applyZoom();
+  });
+  document.getElementById('zoomReset').addEventListener('click', () => {
+    zoom = 1;
+    applyZoom();
+  });
+
+  gridWrapper.addEventListener('wheel', (e) => {
+    if(e.ctrlKey || Math.abs(e.deltaY) > 0){
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.08 : 0.08;
+      zoom = Math.min(2, Math.max(0.5, +(zoom + delta).toFixed(2)));
+      applyZoom();
+    }
+  }, { passive:false });
+
+  // drag-to-scroll
+  let isDragging = false, startX, startY, scrollLeft, scrollTop;
+  gridWrapper.addEventListener('mousedown', (e) => {
+    if(e.target.classList.contains('cell')) return;
+    isDragging = true;
+    startX = e.pageX; startY = e.pageY;
+    scrollLeft = gridWrapper.scrollLeft; scrollTop = gridWrapper.scrollTop;
+  });
+  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('mousemove', (e) => {
+    if(!isDragging) return;
+    gridWrapper.scrollLeft = scrollLeft - (e.pageX - startX);
+    gridWrapper.scrollTop = scrollTop - (e.pageY - startY);
+  });
+
+})();
+</script>
+</body>
+</html>
