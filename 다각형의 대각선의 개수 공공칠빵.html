@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>공공칠빵 — 리듬 반응 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#EAF6FF;
+    --sky-bottom:#FFF6E4;
+    --ink:#16324F;
+    --ink-soft:#5B7690;
+    --paper:#FFFFFF;
+    --gong:#3FB8E8;      /* 공 */
+    --chil:#FFC93F;      /* 칠 */
+    --bbang:#FF6161;     /* 빵 */
+    --eoak:#9B6BF2;      /* 으악 */
+    --ok:#2ECC9E;
+    --shadow: 0 10px 24px rgba(22,50,79,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+    touch-action:none;
+    background:linear-gradient(180deg,var(--sky-top) 0%, var(--sky-bottom) 100%);
+    color:var(--ink);
+    font-family:'Gowun Dodum','Noto Sans KR',sans-serif;
+  }
+  #app{ position:relative; width:100%; height:100%; }
+  .screen{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+  }
+  .screen[hidden]{ display:none; }
+
+  /* ---------- Home / Over screens ---------- */
+  .home-card{
+    background:var(--paper);
+    border-radius:28px;
+    box-shadow:var(--shadow);
+    padding:34px 30px 30px;
+    max-width:480px;
+    width:100%;
+    text-align:center;
+    max-height:92vh;
+    overflow-y:auto;
+  }
+  .home-card h1{
+    font-family:'Jua',sans-serif;
+    font-size:52px;
+    margin:0 0 2px;
+    color:var(--ink);
+    letter-spacing:1px;
+  }
+  .home-card .subtitle{
+    margin:0 0 18px;
+    color:var(--ink-soft);
+    font-size:17px;
+  }
+  .legend{
+    display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .legend span{
+    display:inline-flex; align-items:center; gap:6px;
+    background:#F3F8FC; border-radius:999px; padding:7px 12px;
+    font-size:14px; font-weight:700;
+  }
+  .legend .dot{ width:10px;height:10px;border-radius:50%; }
+  .home-card ol{
+    text-align:left;
+    margin:0 0 22px;
+    padding-left:22px;
+    color:var(--ink);
+    font-size:15px;
+    line-height:1.65;
+  }
+  .home-card ol li{ margin-bottom:6px; }
+  .home-card ol b{ color:var(--bbang); }
+  button{ font-family:inherit; border:none; cursor:pointer; }
+  .pc-label{ text-align:left; font-size:14px; font-weight:800; color:var(--ink-soft); margin:0 0 8px; }
+  .pc-options{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+  .pc-btn{
+    flex:1 1 auto; min-width:52px;
+    padding:10px 0; border-radius:12px;
+    background:#F3F8FC; color:var(--ink-soft);
+    font-family:'Jua',sans-serif; font-size:16px;
+    box-shadow:0 4px 0 #dfe9f0;
+  }
+  .pc-btn.selected{ background:var(--gong); color:#fff; box-shadow:0 4px 0 #2c93b8; }
+  .pc-btn:active{ transform:translateY(3px); }
+  #btn-start, #btn-retry{
+    width:100%;
+    padding:16px;
+    border-radius:16px;
+    background:var(--bbang);
+    color:#fff;
+    font-size:19px;
+    font-weight:800;
+    box-shadow:0 8px 0 #d94848;
+    transition:transform .05s ease;
+  }
+  #btn-start:active, #btn-retry:active{ transform:translateY(6px); box-shadow:0 2px 0 #d94848; }
+  .btn-secondary{
+    width:100%;
+    margin-top:10px;
+    padding:13px;
+    border-radius:16px;
+    background:#EEF3F8;
+    color:var(--ink-soft);
+    font-size:16px;
+    font-weight:700;
+  }
+  .result-stage{
+    font-family:'Jua',sans-serif;
+    font-size:26px;
+    background:#FFF6E4;
+    border-radius:16px;
+    padding:14px;
+    margin:14px 0;
+  }
+  .result-stage span{ color:var(--bbang); font-size:40px; }
+  #overBestNote{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
+  #overEmoji{ font-size:56px; margin:0; }
+
+  /* ---------- Game screen ---------- */
+  #screen-game{ flex-direction:column; padding:0; align-items:stretch; justify-content:flex-start; }
+  .topbar{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 16px;
+    flex:0 0 auto;
+  }
+  .stage-badge{
+    background:var(--paper); border-radius:16px; box-shadow:var(--shadow);
+    padding:6px 14px; display:flex; align-items:baseline; gap:4px; flex:0 0 auto;
+  }
+  .stage-badge .stage-num{ font-family:'Jua',sans-serif; font-size:26px; color:var(--bbang); }
+  .stage-badge .stage-label{ font-size:13px; color:var(--ink-soft); font-weight:700; }
+  .timerbar-wrap{
+    flex:1 1 auto; height:16px; background:#DCEBF5; border-radius:999px; overflow:hidden;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.06);
+  }
+  .timerbar{
+    height:100%; width:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--ok), var(--chil));
+    transform-origin:left center;
+    transform:scaleX(0);
+  }
+  .best-badge{
+    background:var(--paper); border-radius:16px; box-shadow:var(--shadow);
+    padding:8px 12px; font-size:13px; font-weight:700; color:var(--ink-soft); flex:0 0 auto;
+    white-space:nowrap;
+  }
+  .best-badge span{ color:var(--bbang); font-family:'Jua',sans-serif; font-size:16px; }
+  .icon-btn{
+    background:var(--paper); border-radius:14px; box-shadow:var(--shadow);
+    width:40px; height:40px; font-size:18px; color:var(--ink-soft); flex:0 0 auto;
+  }
+
+  .arena-viewport{
+    flex:1 1 auto;
+    position:relative;
+    overflow:hidden;
+    margin:0 10px;
+    border-radius:22px;
+    background:radial-gradient(circle at 50% 40%, #FFFFFF 0%, #EAF6FF 70%);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.6);
+  }
+  .arena-canvas{
+    position:absolute;
+    top:0; left:0;
+    width:900px; height:640px;
+    transform-origin:0 0;
+    will-change:transform;
+  }
+  .pointer-svg{ position:absolute; top:0; left:0; width:900px; height:640px; pointer-events:none; }
+
+  .seat{
+    position:absolute;
+    width:118px; height:118px;
+    margin-left:-59px; margin-top:-59px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:filter .15s ease;
+  }
+  .seat.is-user{ width:136px; height:136px; margin-left:-68px; margin-top:-68px; }
+  .seat-avatar{
+    width:88px; height:88px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:44px;
+    box-shadow:var(--shadow);
+    border:4px solid #fff;
+    position:relative;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .seat.is-user .seat-avatar{ width:104px; height:104px; font-size:52px; border-color:#FFE1A8; }
+  .seat-name{
+    margin-top:6px; font-size:13px; font-weight:800; color:var(--ink);
+    background:#fff; padding:2px 10px; border-radius:999px; box-shadow:var(--shadow);
+  }
+  .seat.active .seat-avatar{
+    transform:scale(1.12);
+    box-shadow:0 0 0 6px rgba(255,201,63,.55), var(--shadow);
+  }
+  .seat.reacting .seat-avatar{
+    box-shadow:0 0 0 6px rgba(155,107,242,.55), var(--shadow);
+    animation:pulse 0.6s ease-in-out infinite;
+  }
+  .seat.fail .seat-avatar{ box-shadow:0 0 0 6px rgba(255,97,97,.65), var(--shadow); animation:shake .35s ease; }
+  @keyframes pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.08);} }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+
+  .bubble{
+    position:absolute;
+    left:50%; top:-6px;
+    transform:translate(-50%,-100%) scale(0.6);
+    background:#fff; border-radius:14px; padding:8px 14px;
+    font-family:'Jua',sans-serif; font-size:20px; color:var(--ink);
+    box-shadow:var(--shadow);
+    white-space:nowrap;
+    opacity:0;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), opacity .18s ease;
+    pointer-events:none;
+  }
+  .bubble::after{
+    content:''; position:absolute; left:50%; bottom:-7px; transform:translateX(-50%);
+    border-width:8px 7px 0 7px; border-style:solid; border-color:#fff transparent transparent transparent;
+  }
+  .bubble.show{ opacity:1; transform:translate(-50%,-100%) scale(1); }
+
+  .toast{
+    position:absolute; left:50%; top:40%; transform:translate(-50%,-50%) scale(.7);
+    font-family:'Jua',sans-serif; font-size:34px; color:var(--bbang);
+    opacity:0; pointer-events:none;
+    text-shadow:0 2px 0 #fff, 0 4px 10px rgba(0,0,0,.15);
+    transition:transform .5s ease, opacity .5s ease;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,-90%) scale(1); }
+
+  .status-line{
+    text-align:center; padding:8px 14px; font-size:15px; font-weight:700; color:var(--ink-soft);
+    flex:0 0 auto;
+    min-height:22px;
+  }
+
+  .dock{
+    flex:0 0 auto;
+    display:flex; gap:10px;
+    padding:10px 14px calc(14px + env(safe-area-inset-bottom));
+  }
+  .card-btn{
+    --c:#ccc;
+    flex:1 1 0;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:12px 4px 10px;
+    border-radius:18px;
+    background:color-mix(in srgb, var(--c) 10%, #fff);
+    box-shadow:0 6px 0 var(--c), var(--shadow);
+    transform:translateY(0);
+    transition:transform .06s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .card-btn:active{ transform:translateY(6px); box-shadow:0 0 0 var(--c); }
+  .card-btn .card-emoji{ font-size:26px; }
+  .card-btn .card-word{ font-family:'Jua',sans-serif; font-size:17px; color:var(--ink); }
+  .card-btn.enabled{
+    background:color-mix(in srgb, var(--c) 26%, #fff);
+    animation:bob .5s ease-in-out infinite;
+  }
+  @keyframes bob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+  .card-btn.enabled:active{ animation:none; }
+  .card-btn.flash-ok{ background:color-mix(in srgb, var(--ok) 30%, #fff); }
+  .card-btn.flash-bad{ background:color-mix(in srgb, var(--bbang) 30%, #fff); animation:shake .3s ease; }
+
+  @media (prefers-reduced-motion: reduce){
+    .card-btn.enabled, .seat.reacting .seat-avatar{ animation:none; }
+    .toast{ transition:opacity .2s ease; }
+  }
+
+  @media (max-width:520px){
+    .home-card h1{ font-size:42px; }
+    .best-badge{ font-size:11px; padding:6px 8px; }
+    .stage-badge{ padding:5px 10px; }
+    .card-btn .card-emoji{ font-size:22px; }
+    .card-btn .card-word{ font-size:15px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <section id="screen-home" class="screen">
+    <div class="home-card">
+      <h1>공공칠빵</h1>
+      <p class="subtitle">친구들과 둘러앉아 외치는 리듬 반응 게임</p>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--gong)"></span>공</span>
+        <span><span class="dot" style="background:var(--chil)"></span>칠</span>
+        <span><span class="dot" style="background:var(--bbang)"></span>빵</span>
+        <span><span class="dot" style="background:var(--eoak)"></span>으악</span>
+      </div>
+      <ol>
+        <li>나를 포함한 친구들이 원 모양으로 둘러앉아요. 나 말고는 모두 컴퓨터가 진행해요.</li>
+        <li>말하는 사람은 누군가를 손가락으로 지목하며 <b>"공", "공", "칠"</b>을 순서대로 외쳐요. 지목된 사람이 다음 차례가 돼요.</li>
+        <li>네 번째 차례에는 <b>"빵!"</b>을 외치며 아무나 한 명을 지목해요.</li>
+        <li>지목된 친구의 양옆 두 명은 재빨리 <b>"으악!"</b>을 외쳐야 해요.</li>
+        <li>내 차례가 오면 화면 아래 4장의 카드 중 <b>알맞은 카드를 제한 시간 안에</b> 눌러야 통과예요. (정답은 알려주지 않아요, 흐름을 잘 듣고 맞혀보세요!)</li>
+        <li>한 바퀴(공공칠빵)가 끝날 때마다 점점 빨라져요. 몇 단계까지 버티는지 도전해보세요!</li>
+      </ol>
+      <p class="pc-label">인원 수 (나 포함)</p>
+      <div class="pc-options" id="pcOptions">
+        <button class="pc-btn" data-n="3">3명</button>
+        <button class="pc-btn" data-n="4">4명</button>
+        <button class="pc-btn selected" data-n="5">5명</button>
+        <button class="pc-btn" data-n="6">6명</button>
+        <button class="pc-btn" data-n="7">7명</button>
+        <button class="pc-btn" data-n="8">8명</button>
+      </div>
+      <button id="btn-start">시작하기</button>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen" hidden>
+    <header class="topbar">
+      <div class="stage-badge"><span class="stage-num" id="stageNum">1</span><span class="stage-label">단계</span></div>
+      <div class="timerbar-wrap"><div class="timerbar" id="timerBar"></div></div>
+      <div class="best-badge">최고 <span id="bestNum">0</span></div>
+      <button id="btn-viewreset" class="icon-btn" title="화면 원위치">⟳</button>
+    </header>
+
+    <div id="arenaViewport" class="arena-viewport">
+      <div id="arenaCanvas" class="arena-canvas">
+        <svg id="pointerSvg" class="pointer-svg" viewBox="0 0 900 640">
+          <defs>
+            <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#FF6161"></path>
+            </marker>
+          </defs>
+          <line id="pointerLine" x1="0" y1="0" x2="0" y2="0" stroke="#FF6161" stroke-width="5" stroke-dasharray="10 8" marker-end="url(#arrowHead)" opacity="0"></line>
+        </svg>
+        <div id="toast" class="toast">+1 단계!</div>
+        <!-- seats injected here -->
+      </div>
+    </div>
+
+    <div class="status-line" id="statusLine">게임을 준비하고 있어요...</div>
+
+    <footer class="dock">
+      <button class="card-btn" data-word="공" style="--c:#3FB8E8"><span class="card-emoji">🅾️</span><span class="card-word">공</span></button>
+      <button class="card-btn" data-word="칠" style="--c:#FFC93F"><span class="card-emoji">7️⃣</span><span class="card-word">칠</span></button>
+      <button class="card-btn" data-word="빵" style="--c:#FF6161"><span class="card-emoji">💥</span><span class="card-word">빵</span></button>
+      <button class="card-btn" data-word="으악" style="--c:#9B6BF2"><span class="card-emoji">😱</span><span class="card-word">으악</span></button>
+    </footer>
+  </section>
+
+  <!-- GAME OVER -->
+  <section id="screen-over" class="screen" hidden>
+    <div class="home-card">
+      <p id="overEmoji">😵</p>
+      <p class="subtitle" id="overReason">앗, 타이밍을 놓쳤어요!</p>
+      <div class="result-stage"><span id="finalStage">1</span>단계까지 성공!</div>
+      <p id="overBestNote"></p>
+      <button id="btn-retry">다시 도전하기</button>
+      <button id="btn-home" class="btn-secondary">처음으로</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ================= Player / seat setup ================= */
+  var CANVAS_W = 900, CANVAS_H = 640;
+  var CX = 450, CY = 300, RADIUS = 225;
+
+  var BOT_POOL = [
+    { name:'지민', emoji:'🐥' },
+    { name:'서연', emoji:'🐻' },
+    { name:'도윤', emoji:'🐰' },
+    { name:'하은', emoji:'🦊' },
+    { name:'준서', emoji:'🐨' },
+    { name:'서아', emoji:'🐼' },
+    { name:'민준', emoji:'🐯' }
+  ];
+  var SEAT_COLORS = ['#FFE1A8','#FFE3A3','#BFEAFF','#D8FFF2','#FFD6E8','#E4D8FF','#D6FFDB','#FFD8C2'];
+
+  var numPlayers = 5;
+  var PLAYERS = [];
+
+  function buildPlayers(n){
+    var arr = [{ name:'나', emoji:'😊', isUser:true }];
+    for(var i=0;i<n-1;i++){
+      var bot = BOT_POOL[i % BOT_POOL.length];
+      arr.push({ name:bot.name, emoji:bot.emoji, isUser:false });
+    }
+    return arr;
+  }
+
+  var selectedN = 5;
+  var pcOptions = document.getElementById('pcOptions');
+  pcOptions.addEventListener('click', function(e){
+    var btn = e.target.closest('.pc-btn');
+    if(!btn) return;
+    Array.prototype.forEach.call(pcOptions.querySelectorAll('.pc-btn'), function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    selectedN = parseInt(btn.dataset.n, 10);
+  });
+
+  var WORDS = ['공','공','칠','빵'];
+
+  var seatEls = []; // {root, avatar, name, bubble}
+
+  function seatPos(i){
+    var angle = (90 + i*(360/numPlayers)) * Math.PI/180;
+    return { x: CX + RADIUS*Math.cos(angle), y: CY + RADIUS*Math.sin(angle) };
+  }
+
+  function clearSeats(){
+    seatEls.forEach(function(s){ if(s && s.root) s.root.remove(); });
+    seatEls = [];
+  }
+
+  function buildSeats(){
+    clearSeats();
+    var canvas = document.getElementById('arenaCanvas');
+    PLAYERS.forEach(function(p, i){
+      var pos = seatPos(i);
+      var root = document.createElement('div');
+      root.className = 'seat' + (p.isUser ? ' is-user' : '');
+      root.style.left = pos.x + 'px';
+      root.style.top = pos.y + 'px';
+
+      var avatar = document.createElement('div');
+      avatar.className = 'seat-avatar';
+      avatar.style.background = SEAT_COLORS[i];
+      avatar.textContent = p.emoji;
+      root.appendChild(avatar);
+
+      var name = document.createElement('div');
+      name.className = 'seat-name';
+      name.textContent = p.name;
+      root.appendChild(name);
+
+      var bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = '';
+      root.appendChild(bubble);
+
+      canvas.appendChild(root);
+      seatEls[i] = { root:root, avatar:avatar, bubble:bubble };
+    });
+  }
+
+  function showBubble(i, text){
+    var el = seatEls[i].bubble;
+    el.textContent = text;
+    el.classList.add('show');
+  }
+  function hideBubble(i){
+    seatEls[i].bubble.classList.remove('show');
+  }
+  function setActive(i, on){ seatEls[i].root.classList.toggle('active', !!on); }
+  function setReacting(i, on){ seatEls[i].root.classList.toggle('reacting', !!on); }
+  function setFail(i, on){ seatEls[i].root.classList.toggle('fail', !!on); }
+
+  function drawArrow(fromIdx, toIdx){
+    var a = seatPos(fromIdx), b = seatPos(toIdx);
+    var line = document.getElementById('pointerLine');
+    // shorten the line a bit so it doesn't overlap the avatars
+    var dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx,dy) || 1;
+    var pad = 68;
+    var x1 = a.x + dx/len*pad, y1 = a.y + dy/len*pad;
+    var x2 = b.x - dx/len*pad, y2 = b.y - dy/len*pad;
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.style.opacity = '1';
+  }
+  function clearArrow(){
+    document.getElementById('pointerLine').style.opacity = '0';
+  }
+
+  function showToast(text){
+    var t = document.getElementById('toast');
+    t.textContent = text;
+    t.classList.remove('show');
+    // force reflow to restart animation
+    void t.offsetWidth;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 700);
+  }
+
+  /* ================= Pan & zoom ================= */
+  var viewport = document.getElementById('arenaViewport');
+  var canvas = document.getElementById('arenaCanvas');
+  var view = { scale:1, x:0, y:0 };
+  var pointers = new Map();
+  var lastPinchDist = null, lastPinchMid = null;
+
+  function applyView(){
+    canvas.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.scale + ')';
+  }
+  function fitView(){
+    var vw = viewport.clientWidth, vh = viewport.clientHeight;
+    var s = Math.min(vw/CANVAS_W, vh/CANVAS_H) * 0.98;
+    view.scale = s;
+    view.x = (vw - CANVAS_W*s)/2;
+    view.y = (vh - CANVAS_H*s)/2;
+    applyView();
+  }
+  function clampView(){
+    view.scale = Math.max(0.55, Math.min(2.6, view.scale));
+  }
+
+  viewport.addEventListener('pointerdown', function(e){
+    viewport.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+  });
+  viewport.addEventListener('pointermove', function(e){
+    if(!pointers.has(e.pointerId)) return;
+    var prev = pointers.get(e.pointerId);
+    var cur = { x:e.clientX, y:e.clientY };
+    pointers.set(e.pointerId, cur);
+
+    if(pointers.size === 1){
+      view.x += (cur.x - prev.x);
+      view.y += (cur.y - prev.y);
+      applyView();
+    } else if(pointers.size === 2){
+      var pts = Array.from(pointers.values());
+      var dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+      var mid = { x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2 };
+      if(lastPinchDist){
+        var factor = dist / lastPinchDist;
+        zoomAt(mid.x, mid.y, factor);
+      }
+      lastPinchDist = dist;
+      lastPinchMid = mid;
+    }
+  });
+  function endPointer(e){
+    pointers.delete(e.pointerId);
+    if(pointers.size < 2){ lastPinchDist = null; lastPinchMid = null; }
+  }
+  viewport.addEventListener('pointerup', endPointer);
+  viewport.addEventListener('pointercancel', endPointer);
+  viewport.addEventListener('pointerleave', function(e){ if(pointers.size<2) endPointer(e); });
+
+  viewport.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var factor = e.deltaY < 0 ? 1.08 : 0.92;
+    var rect = viewport.getBoundingClientRect();
+    zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor, true);
+  }, { passive:false });
+
+  function zoomAt(px, py, factor, localCoords){
+    var rect = viewport.getBoundingClientRect();
+    var localX = localCoords ? px : (px - rect.left);
+    var localY = localCoords ? py : (py - rect.top);
+    var before = view.scale;
+    view.scale = view.scale * factor;
+    clampView();
+    var applied = view.scale / before;
+    view.x = localX - (localX - view.x) * applied;
+    view.y = localY - (localY - view.y) * applied;
+    applyView();
+  }
+
+  document.getElementById('btn-viewreset').addEventListener('click', fitView);
+  window.addEventListener('resize', fitView);
+
+  /* ================= Game state & timing ================= */
+  var stage = 1;
+  var best = 0;
+  var cursor = 0;
+  var step = 0;
+  var runToken = 0;
+  var gameRunning = false;
+  var pendingPrompt = null; // { resolve, correctWord, token, timeoutId }
+
+  function botDelay(){ return Math.max(260, 950 - stage*35); }
+  function bubbleHold(){ return Math.max(260, 620 - stage*14); }
+  function userWindow(){ return Math.max(750, 2300 - stage*70); }
+  function reactDelay(){ return Math.max(180, 680 - stage*24); }
+  function reactWindow(){ return Math.max(650, 1900 - stage*55); }
+
+  function sleep(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+
+  var cardBtns = Array.prototype.slice.call(document.querySelectorAll('.card-btn'));
+  var timerBarEl = document.getElementById('timerBar');
+  var statusEl = document.getElementById('statusLine');
+
+  function setStatus(text){ statusEl.textContent = text; }
+
+  function setButtonsEnabled(on){
+    // purely a visual "your turn" cue now — buttons stay clickable either way
+    cardBtns.forEach(function(b){ b.classList.toggle('enabled', on); });
+  }
+  function flashButton(btn, ok){
+    btn.classList.add(ok ? 'flash-ok' : 'flash-bad');
+    setTimeout(function(){ btn.classList.remove('flash-ok','flash-bad'); }, 260);
+  }
+
+  // Buttons are always live. If a card is pressed while we're actually
+  // waiting on the user (pendingPrompt), it resolves that prompt.
+  // Otherwise — pressed at the wrong moment — it's an instant fail.
+  cardBtns.forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      var word = btn.dataset.word;
+      if(pendingPrompt){
+        var pp = pendingPrompt;
+        pendingPrompt = null;
+        clearTimeout(pp.timeoutId);
+        setButtonsEnabled(false);
+        var ok = (word === pp.correctWord);
+        flashButton(btn, ok);
+        if(pp.token !== runToken){ pp.resolve('abort'); return; }
+        pp.resolve(ok ? 'success' : 'wrong');
+      } else if(gameRunning){
+        flashButton(btn, false);
+        prematureFail();
+      }
+    });
+  });
+
+  function prematureFail(){
+    if(!gameRunning) return;
+    endGame('premature');
+  }
+
+  function waitForUserTap(correctWord, windowMs, token){
+    return new Promise(function(resolve){
+      setButtonsEnabled(true);
+      timerBarEl.style.transition = 'none';
+      timerBarEl.style.transform = 'scaleX(1)';
+      // allow reflow before enabling transition again
+      requestAnimationFrame(function(){
+        timerBarEl.style.transition = 'transform linear';
+        timerBarEl.style.transitionDuration = windowMs + 'ms';
+        timerBarEl.style.transform = 'scaleX(0)';
+      });
+
+      var timeoutId = setTimeout(function(){
+        if(!pendingPrompt || pendingPrompt.token !== token) return;
+        pendingPrompt = null;
+        setButtonsEnabled(false);
+        resolve('timeout');
+      }, windowMs);
+
+      pendingPrompt = { resolve:resolve, correctWord:correctWord, token:token, timeoutId:timeoutId };
+    });
+  }
+
+  function label(word){ return word; }
+
+  function doSpeak(seatIdx, word, targetIdx, holdArrow){
+    var token = runToken;
+    var p = PLAYERS[seatIdx];
+    setActive(seatIdx, true);
+    if(!p.isUser){
+      setStatus(p.name + ' 차례예요...');
+      return sleep(botDelay()).then(function(){
+        if(token !== runToken) return 'abort';
+        showBubble(seatIdx, label(word));
+        drawArrow(seatIdx, targetIdx);
+        return sleep(bubbleHold()).then(function(){
+          if(token !== runToken) return 'abort';
+          hideBubble(seatIdx);
+          if(!holdArrow) clearArrow();
+          setActive(seatIdx, false);
+          return 'success';
+        });
+      });
+    } else {
+      setStatus('내 차례예요! 알맞은 카드를 골라 눌러요');
+      return waitForUserTap(word, userWindow(), token).then(function(res){
+        if(token !== runToken) return 'abort';
+        if(res === 'success'){
+          showBubble(seatIdx, label(word));
+          drawArrow(seatIdx, targetIdx);
+          return sleep(350).then(function(){
+            hideBubble(seatIdx);
+            if(!holdArrow) clearArrow();
+            setActive(seatIdx, false);
+            return 'success';
+          });
+        }
+        setActive(seatIdx, false);
+        setFail(seatIdx, true);
+        return res;
+      });
+    }
+  }
+
+  function doReact(seatIdx){
+    var token = runToken;
+    var p = PLAYERS[seatIdx];
+    setReacting(seatIdx, true);
+    if(!p.isUser){
+      return sleep(reactDelay()).then(function(){
+        if(token !== runToken) return 'abort';
+        showBubble(seatIdx, '으악!');
+        return sleep(bubbleHold()).then(function(){
+          if(token !== runToken) return 'abort';
+          hideBubble(seatIdx);
+          setReacting(seatIdx, false);
+          return 'success';
+        });
+      });
+    } else {
+      setStatus('지금이야! 알맞은 카드를 눌러요');
+      return waitForUserTap('으악', reactWindow(), token).then(function(res){
+        if(token !== runToken) return 'abort';
+        setReacting(seatIdx, false);
+        if(res === 'success'){
+          showBubble(seatIdx, '으악!');
+          return sleep(300).then(function(){ hideBubble(seatIdx); return 'success'; });
+        }
+        setFail(seatIdx, true);
+        return res;
+      });
+    }
+  }
+
+  function pickTarget(speakerIdx){
+    var options = [];
+    for(var i=0;i<numPlayers;i++){ if(i !== speakerIdx) options.push(i); }
+    return options[Math.floor(Math.random()*options.length)];
+  }
+
+  function reasonText(res){
+    if(res === 'timeout') return '너무 늦게 눌렀어요!';
+    if(res === 'wrong') return '다른 카드를 눌렀어요!';
+    if(res === 'premature') return '아직 내 차례가 아니었어요!';
+    return '타이밍을 놓쳤어요!';
+  }
+
+  function updateStageUI(){
+    document.getElementById('stageNum').textContent = stage;
+  }
+
+  function clearArena(){
+    for(var i=0;i<seatEls.length;i++){
+      hideBubble(i); setActive(i,false); setReacting(i,false); setFail(i,false);
+    }
+    clearArrow();
+  }
+
+  function endGame(res){
+    runToken++; // invalidate any pending bot/timer chains still in flight
+    gameRunning = false;
+    pendingPrompt = null;
+    clearArena();
+    setButtonsEnabled(false);
+    best = Math.max(best, stage);
+    document.getElementById('bestNum').textContent = best;
+    document.getElementById('finalStage').textContent = stage;
+    document.getElementById('overReason').textContent = reasonText(res);
+    document.getElementById('overBestNote').textContent = stage >= best && stage > 1 ? '축하해요, 최고 기록이에요! 🎉' : ('최고 기록: ' + best + '단계');
+    show('screen-over');
+  }
+
+  function gameLoop(token){
+    function step1(){
+      if(token !== runToken) return;
+      var speakerIdx = cursor;
+      var word = WORDS[step];
+      var targetIdx = pickTarget(speakerIdx);
+
+      if(word !== '빵'){
+        doSpeak(speakerIdx, word, targetIdx, false).then(function(res){
+          if(token !== runToken) return;
+          if(res !== 'success'){ endGame(res); return; }
+          cursor = targetIdx;
+          step = (step+1) % 4;
+          sleep(150).then(function(){ if(token===runToken) step1(); });
+        });
+      } else {
+        doSpeak(speakerIdx, word, targetIdx, true).then(function(res){
+          if(token !== runToken) return;
+          if(res !== 'success'){ endGame(res); return; }
+          var n1 = (targetIdx + numPlayers - 1) % numPlayers, n2 = (targetIdx+1) % numPlayers;
+          Promise.all([doReact(n1), doReact(n2)]).then(function(results){
+            if(token !== runToken) return;
+            clearArrow();
+            var bad = results.find(function(r){ return r !== 'success' && r !== 'abort'; });
+            if(bad){ endGame(bad); return; }
+            if(results.indexOf('abort') !== -1) return;
+            stage++;
+            updateStageUI();
+            showToast('+1 단계!');
+            cursor = targetIdx;
+            step = 0;
+            sleep(250).then(function(){ if(token===runToken) step1(); });
+          });
+        });
+      }
+    }
+    step1();
+  }
+
+  /* ================= Screen control ================= */
+  function show(id){
+    ['screen-home','screen-game','screen-over'].forEach(function(s){
+      document.getElementById(s).hidden = (s !== id);
+    });
+  }
+
+  function startGame(){
+    runToken++;
+    var token = runToken;
+    pendingPrompt = null;
+    gameRunning = true;
+    numPlayers = selectedN;
+    PLAYERS = buildPlayers(numPlayers);
+    buildSeats();
+    stage = 1; step = 0;
+    cursor = Math.floor(Math.random()*numPlayers);
+    updateStageUI();
+    clearArena();
+    setStatus('게임을 시작해요! 지금부터 카드를 잘못 누르면 바로 탈락이에요.');
+    setButtonsEnabled(false);
+    show('screen-game');
+    requestAnimationFrame(function(){
+      fitView();
+      sleep(500).then(function(){ if(token===runToken) gameLoop(token); });
+    });
+  }
+
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-retry').addEventListener('click', startGame);
+  document.getElementById('btn-home').addEventListener('click', function(){
+    runToken++;
+    gameRunning = false;
+    pendingPrompt = null;
+    setButtonsEnabled(false);
+    show('screen-home');
+  });
+
+})();
+</script>
+</body>
+</html>
