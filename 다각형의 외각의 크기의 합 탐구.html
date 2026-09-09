@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>다각형의 외각 탐구</title>
+<style>
+  :root{
+    --bg: #F5F8FF;
+    --bg-card: #FFFFFF;
+    --ink: #1C2340;
+    --ink-soft: #5B6688;
+    --line: #DCE4FF;
+    --primary: #3652F0;
+    --primary-dark: #2740C4;
+    --primary-soft: #E7EBFF;
+    --shape-fill: rgba(54, 82, 240, 0.07);
+    --shape-stroke: #2A3FC7;
+    --vertex-fill: #FFFFFF;
+    --canvas-bg: #FBFCFF;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg);
+    color:var(--ink);
+    font-family: 'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button{ font-family: inherit; }
+  #app{ position:relative; width:100%; min-height:100vh; }
+
+  .screen{
+    display:none;
+    min-height:100vh;
+    width:100%;
+    animation: fadeIn .35s ease;
+  }
+  .screen.active{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  @media (prefers-reduced-motion: reduce){
+    .screen{ animation:none; }
+  }
+
+  /* ---------- 메인 화면 ---------- */
+  #screen-main{
+    align-items:center;
+    min-height:100vh;
+    padding: 48px 6vw;
+  }
+  #screen-main.active{ display:flex; }
+  .hero{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:56px;
+    max-width:1180px;
+    margin:0 auto;
+    width:100%;
+    flex-wrap:wrap;
+  }
+  .hero-text{
+    flex: 1 1 380px;
+    max-width: 520px;
+  }
+  .hero-mark{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 14px 6px 10px;
+    border-radius:999px;
+    background:var(--primary-soft);
+    color:var(--primary-dark);
+    font-size:13.5px;
+    font-weight:600;
+    margin-bottom:22px;
+  }
+  .hero-mark svg{ width:16px; height:16px; }
+  .hero-text h1{
+    font-size: clamp(30px, 4vw, 44px);
+    line-height:1.28;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin:0 0 18px 0;
+  }
+  .hero-text p{
+    font-size:16.5px;
+    line-height:1.75;
+    color:var(--ink-soft);
+    margin:0 0 34px 0;
+    max-width:46ch;
+  }
+  .btn-start{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    background:var(--primary);
+    color:#fff;
+    font-size:17px;
+    font-weight:700;
+    padding:16px 30px;
+    border-radius:14px;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    box-shadow: 0 10px 24px rgba(54,82,240,0.28);
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn-start:hover{ background:var(--primary-dark); transform:translateY(-2px); box-shadow:0 14px 28px rgba(54,82,240,0.34); }
+  .btn-start:active{ transform:translateY(0); }
+  .btn-start:focus-visible{ outline:3px solid #9DB0FF; outline-offset:3px; }
+  .btn-start svg{ width:18px; height:18px; transition:transform .15s ease; }
+  .btn-start:hover svg{ transform:translateX(3px); }
+
+  .hero-figure{
+    flex: 1 1 340px;
+    max-width:420px;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:24px;
+    padding:22px;
+    box-shadow: 0 18px 40px rgba(30,50,140,0.08);
+  }
+  .hero-figure svg{ width:100%; height:auto; display:block; }
+  .hero-figure-caption{
+    margin-top:14px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  /* ---------- 탐구 화면 ---------- */
+  #screen-explore{
+    min-height:100vh;
+    flex-direction:column;
+  }
+  #screen-explore.active{ display:flex; }
+  .explore-header{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:18px 20px;
+    border-bottom:1px solid var(--line);
+    background:var(--bg-card);
+    flex-wrap:wrap;
+  }
+  .back-btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--ink);
+    font-weight:600;
+    font-size:14.5px;
+    padding:9px 14px;
+    border-radius:10px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .back-btn:hover{ background:var(--primary-soft); border-color:var(--primary); }
+  .back-btn:focus-visible{ outline:3px solid #9DB0FF; outline-offset:2px; }
+  .explore-title{
+    font-size:17px;
+    font-weight:800;
+    margin-right:auto;
+  }
+
+  .controls-bar{
+    display:flex;
+    align-items:center;
+    gap:22px;
+    flex-wrap:wrap;
+    padding:14px 20px;
+    background:var(--bg-card);
+    border-bottom:1px solid var(--line);
+  }
+  .control-group{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .control-label{
+    font-size:14px;
+    font-weight:700;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  input[type=range]{
+    -webkit-appearance:none;
+    width:200px;
+    height:6px;
+    border-radius:999px;
+    background:var(--line);
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:20px; height:20px;
+    border-radius:50%;
+    background:var(--primary);
+    border:3px solid #fff;
+    box-shadow:0 0 0 1px var(--primary);
+    cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:20px; height:20px;
+    border-radius:50%;
+    background:var(--primary);
+    border:3px solid #fff;
+    box-shadow:0 0 0 1px var(--primary);
+    cursor:pointer;
+  }
+  .n-value{
+    min-width:52px;
+    text-align:center;
+    font-weight:800;
+    color:var(--primary-dark);
+    background:var(--primary-soft);
+    border-radius:8px;
+    padding:5px 8px;
+    font-size:14.5px;
+  }
+  .hint-bar{
+    padding:10px 20px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    background:var(--bg);
+    border-bottom:1px solid var(--line);
+    line-height:1.6;
+  }
+
+  .canvas-wrap{
+    position:relative;
+    flex:1 1 auto;
+    min-height:420px;
+    background:
+      linear-gradient(var(--canvas-bg), var(--canvas-bg)) ,
+      repeating-linear-gradient(0deg, #EEF2FF, #EEF2FF 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, #EEF2FF, #EEF2FF 1px, transparent 1px, transparent 28px);
+  }
+  #explore-svg{
+    width:100%;
+    height:100%;
+    display:block;
+    touch-action:none;
+    cursor:grab;
+  }
+  #explore-svg.panning{ cursor:grabbing; }
+
+  .sector-piece{ cursor:pointer; }
+  .sector-piece polygon{ transition: fill-opacity .12s ease, stroke-width .12s ease; }
+  .sector-piece:hover polygon{ fill-opacity:0.85; stroke-width:4; }
+
+  .assembly-guide{
+    fill:none;
+    stroke:#B9C4F0;
+    stroke-width:2;
+    stroke-dasharray:6 6;
+  }
+  .assembly-guide.complete{
+    animation: pulseComplete 1.1s ease-in-out 2;
+  }
+  @keyframes pulseComplete{
+    0%{ stroke:#B9C4F0; stroke-width:2; stroke-dasharray:6 6; }
+    40%{ stroke:#3652F0; stroke-width:5; stroke-dasharray:none; opacity:0.5; }
+    100%{ stroke:#B9C4F0; stroke-width:2; stroke-dasharray:6 6; opacity:1; }
+  }
+
+  .zoom-toolbar{
+    position:absolute;
+    right:16px;
+    bottom:16px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:8px;
+    box-shadow:0 10px 24px rgba(30,50,140,0.10);
+  }
+  .zoom-btn{
+    appearance:none;
+    border:none;
+    background:#fff;
+    width:38px; height:38px;
+    border-radius:10px;
+    font-size:19px;
+    font-weight:700;
+    color:var(--primary-dark);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: background .15s ease;
+  }
+  .zoom-btn:hover{ background:var(--primary-soft); }
+  .zoom-btn:focus-visible{ outline:3px solid #9DB0FF; outline-offset:2px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= 메인 화면 ================= -->
+  <section id="screen-main" class="screen active">
+    <div class="hero">
+      <div class="hero-text">
+        <span class="hero-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 18 L12 4 L20 18 Z"/></svg>
+          도형과 각도
+        </span>
+        <h1>다각형의 외각을<br>직접 움직이며 살펴보자</h1>
+        <p>오른쪽 오각형은 정다각형이 아니라서 다섯 외각의 크기가 모두 달라요. 탐구 화면에서는 볼록다각형의 변의 개수를 3개부터 20개까지 바꿔보고, 하나씩 표시된 외각을 눌러 다른 곳으로 모아보면서 어떤 모양이 만들어지는지 관찰해볼 수 있어요.</p>
+        <button class="btn-start" id="start-btn">
+          탐구 시작하기
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div class="hero-figure">
+        <svg id="main-illustration" viewBox="-40 -45 430 390" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="hero-figure-caption">서로 다른 크기의 외각 5개를 가진 오각형</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 탐구 화면 ================= -->
+  <section id="screen-explore" class="screen">
+    <div class="explore-header">
+      <button class="back-btn" id="back-btn" aria-label="처음 화면으로 돌아가기">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        처음으로
+      </button>
+      <div class="explore-title">다각형의 외각 탐구</div>
+    </div>
+
+    <div class="controls-bar">
+      <div class="control-group">
+        <span class="control-label">변의 개수</span>
+        <input type="range" id="sides-slider" min="3" max="20" value="5" step="1" aria-label="변의 개수 조절">
+        <span class="n-value" id="n-value-label">5개</span>
+      </div>
+      <button class="back-btn" id="shuffle-btn" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M4 4l5 5"/></svg>
+        다른 모양
+      </button>
+    </div>
+
+    <div class="hint-bar">
+      색칠된 부채꼴을 하나씩 눌러 보세요. 눌린 외각은 오른쪽 점선 원 자리로 옮겨가요 · 빈 공간을 드래그하면 화면이 이동하고, 마우스 휠(또는 두 손가락 핀치)로 확대·축소할 수 있어요.
+    </div>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+      <svg id="explore-svg" xmlns="http://www.w3.org/2000/svg">
+        <rect id="bg-catcher" x="-100000" y="-100000" width="200000" height="200000" fill="transparent"></rect>
+        <g id="viewport"></g>
+      </svg>
+      <div class="zoom-toolbar">
+        <button class="zoom-btn" id="zoom-in" aria-label="확대">+</button>
+        <button class="zoom-btn" id="zoom-out" aria-label="축소">–</button>
+        <button class="zoom-btn" id="zoom-reset" aria-label="화면 초기화" style="font-size:14px;">⟲</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var PALETTE = ['#FF6B6B','#FF9F43','#FFD43B','#51CF66','#20C997','#339AF0','#5C7CFA','#CC5DE8'];
+  function colorFor(i){ return PALETTE[i % PALETTE.length]; }
+
+  function sub(a,b){ return {x:a.x-b.x, y:a.y-b.y}; }
+  function addv(a,dir,s){ return {x:a.x+dir.x*s, y:a.y+dir.y*s}; }
+  function normalize(v){ var len = Math.hypot(v.x,v.y) || 1; return {x:v.x/len, y:v.y/len}; }
+
+  // 각 꼭짓점에서 "들어오는 변의 연장선"과 "나가는 변" 사이의 회전각(=외각)을 계산
+  function computeAngleData(points, extLen, arcRadius){
+    var n = points.length;
+    var data = [];
+    for (var i=0; i<n; i++){
+      var prev = points[(i-1+n)%n];
+      var curr = points[i];
+      var next = points[(i+1)%n];
+      var dirIn = normalize(sub(curr, prev));
+      var dirOut = normalize(sub(next, curr));
+      var angle1 = Math.atan2(dirIn.y, dirIn.x);
+      var angle2 = Math.atan2(dirOut.y, dirOut.x);
+      var delta = angle2 - angle1;
+      while (delta <= -Math.PI) delta += 2*Math.PI;
+      while (delta > Math.PI) delta -= 2*Math.PI;
+      var degrees = Math.abs(delta * 180 / Math.PI);
+      var extPoint = addv(curr, dirIn, extLen);
+      var steps = 18;
+      var arcPts = [];
+      for (var s=0; s<=steps; s++){
+        var a = angle1 + delta * (s/steps);
+        arcPts.push({ x: curr.x + arcRadius*Math.cos(a), y: curr.y + arcRadius*Math.sin(a) });
+      }
+      var midAngle = angle1 + delta/2;
+      var labelPos = { x: curr.x + (arcRadius+18)*Math.cos(midAngle), y: curr.y + (arcRadius+18)*Math.sin(midAngle) };
+      data.push({ index:i, curr:curr, extPoint:extPoint, arcPts:arcPts, degrees:degrees, labelPos:labelPos, angle1:angle1, delta:delta });
+    }
+    return data;
+  }
+
+  function el(tag, attrs){
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs){ e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+
+  function pointsToStr(pts){
+    return pts.map(function(p){ return p.x.toFixed(2)+','+p.y.toFixed(2); }).join(' ');
+  }
+
+  // ---------- 부채꼴(파이 조각) 좌표 ----------
+  function buildSectorPoints(center, arcPts){
+    return [center].concat(arcPts);
+  }
+
+  // ---------- 볼록 다각형 판별 ----------
+  function isConvexPolygon(pts){
+    var n = pts.length;
+    var sign = 0;
+    for (var i=0; i<n; i++){
+      var a = pts[i], b = pts[(i+1)%n], c = pts[(i+2)%n];
+      var e1 = { x:b.x-a.x, y:b.y-a.y };
+      var e2 = { x:c.x-b.x, y:c.y-b.y };
+      var cross = e1.x*e2.y - e1.y*e2.x;
+      if (Math.abs(cross) < 1e-7) continue;
+      var s = cross > 0 ? 1 : -1;
+      if (sign === 0) sign = s;
+      else if (s !== sign) return false;
+    }
+    return true;
+  }
+
+  // ================= 메인 화면 정적 삽화 =================
+  function renderMainIllustration(){
+    var illSvg = document.getElementById('main-illustration');
+    var g = el('g', {});
+    illSvg.appendChild(g);
+    var points = [
+      {x:160, y:42},
+      {x:296, y:126},
+      {x:203, y:242},
+      {x:75, y:251},
+      {x:53, y:111}
+    ];
+    var angleData = computeAngleData(points, 46, 34);
+
+    g.appendChild(el('polygon', {
+      points: pointsToStr(points),
+      fill: 'rgba(54, 82, 240, 0.07)',
+      stroke: '#2A3FC7',
+      'stroke-width': 2.4,
+      'stroke-linejoin':'round'
+    }));
+    angleData.forEach(function(d, i){
+      var c = colorFor(i);
+      g.appendChild(el('line', {
+        x1:d.curr.x, y1:d.curr.y, x2:d.extPoint.x, y2:d.extPoint.y,
+        stroke:'#A9B3D6', 'stroke-width':2.2, 'stroke-dasharray':'6 5'
+      }));
+      g.appendChild(el('polygon', {
+        points: pointsToStr(buildSectorPoints(d.curr, d.arcPts)),
+        fill:c, 'fill-opacity':0.55, stroke:c, 'stroke-width':3, 'stroke-linejoin':'round'
+      }));
+    });
+    points.forEach(function(p){
+      g.appendChild(el('circle', {
+        cx:p.x, cy:p.y, r:5, fill:'#FFFFFF', stroke:'#2A3FC7', 'stroke-width':2.4
+      }));
+    });
+  }
+
+  // ================= 화면 전환 =================
+  var screenMain = document.getElementById('screen-main');
+  var screenExplore = document.getElementById('screen-explore');
+
+  document.getElementById('start-btn').addEventListener('click', function(){
+    screenMain.classList.remove('active');
+    screenExplore.classList.add('active');
+    window.scrollTo(0, 0);
+    setTimeout(initExploreLayout, 0);
+  });
+  document.getElementById('back-btn').addEventListener('click', function(){
+    screenExplore.classList.remove('active');
+    screenMain.classList.add('active');
+    window.scrollTo(0, 0);
+  });
+
+  // ================= 탐구 화면 =================
+  var svg = document.getElementById('explore-svg');
+  var viewport = document.getElementById('viewport');
+  var bgCatcher = document.getElementById('bg-catcher');
+  var canvasWrap = document.getElementById('canvas-wrap');
+  var sidesSlider = document.getElementById('sides-slider');
+  var nValueLabel = document.getElementById('n-value-label');
+  var shuffleBtn = document.getElementById('shuffle-btn');
+
+  var EXT_LEN = 46;      // 변 연장선 길이 (도형 크기와 무관하게 고정)
+  var ARC_RADIUS = 34;   // 외각(부채꼴) 반지름 (도형 크기와 무관하게 고정)
+  var ZMIN = 0.35, ZMAX = 4;
+  var ROTATION = -Math.PI/2;
+  var ASSEMBLY_CENTER = { x: 340, y: 0 };
+  var ASSEMBLY_START_ANGLE = -Math.PI/2;
+
+  // 오목하지 않은(볼록) 다각형만 나오도록, 반지름 변화폭을 확인하며 생성
+  function generateConvexPolygon(n){
+    var baseR = 140;
+    var amplitude = 0.42;
+    var pts = null;
+    for (var attempt=0; attempt<40; attempt++){
+      var candidate = [];
+      for (var i=0; i<n; i++){
+        var theta = ROTATION + i * (2*Math.PI/n);
+        var jitter = Math.random()*2 - 1;
+        var r = baseR * (1 + amplitude*jitter);
+        candidate.push({ x:r*Math.cos(theta), y:r*Math.sin(theta) });
+      }
+      if (isConvexPolygon(candidate)){ pts = candidate; break; }
+      amplitude *= 0.82;
+    }
+    if (!pts){
+      pts = [];
+      for (var j=0; j<n; j++){
+        var th = ROTATION + j * (2*Math.PI/n);
+        pts.push({ x:baseR*Math.cos(th), y:baseR*Math.sin(th) });
+      }
+    }
+    return pts;
+  }
+
+  var state = {
+    n: 5,
+    polygonPoints: [],
+    angleData: [],
+    collectedSet: new Set(),
+    collectedOrder: [],
+    cumulativeAssembledRad: 0,
+    cumulativeSign: 1,
+    zoom: 1,
+    panX: 0,
+    panY: 0
+  };
+
+  var pointers = new Map();
+  var panMode = null;
+  var panStart = null, panOrigin = null;
+  var pinchStart = null;
+  var explorationInitialized = false;
+
+  function clampZoom(v){ return Math.min(ZMAX, Math.max(ZMIN, v)); }
+
+  function applyTransform(){
+    viewport.setAttribute('transform', 'translate(' + state.panX + ',' + state.panY + ') scale(' + state.zoom + ')');
+  }
+
+  function getSvgRect(){ return svg.getBoundingClientRect(); }
+
+  function clientToSvgPoint(clientX, clientY){
+    var rect = getSvgRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  function svgToWorld(p){
+    return { x: (p.x - state.panX) / state.zoom, y: (p.y - state.panY) / state.zoom };
+  }
+
+  function setViewBoxToSize(){
+    var rect = canvasWrap.getBoundingClientRect();
+    var w = Math.max(1, Math.round(rect.width));
+    var h = Math.max(1, Math.round(rect.height));
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    return { w:w, h:h };
+  }
+
+  // 다각형과 모임 영역이 모두 화면 안에 들어오도록 확대/축소·이동 값을 계산
+  function fitView(){
+    var rect = canvasWrap.getBoundingClientRect();
+    var maxPolyR = 0;
+    state.polygonPoints.forEach(function(p){ maxPolyR = Math.max(maxPolyR, Math.hypot(p.x, p.y)); });
+    var pad = EXT_LEN + ARC_RADIUS + 24;
+    var minX = -(maxPolyR + pad);
+    var maxX = Math.max(maxPolyR + pad, ASSEMBLY_CENTER.x + ARC_RADIUS + pad*0.6);
+    var minY = -(maxPolyR + pad);
+    var maxY = (maxPolyR + pad);
+    var sceneW = maxX - minX, sceneH = maxY - minY;
+    var fitZoom = clampZoom(Math.min(rect.width/sceneW, rect.height/sceneH) * 0.94);
+    var cx = (minX+maxX)/2, cy = (minY+maxY)/2;
+    state.zoom = fitZoom;
+    state.panX = rect.width/2 - cx*fitZoom;
+    state.panY = rect.height/2 - cy*fitZoom;
+    applyTransform();
+  }
+
+  function buildAssemblyGuide(){
+    return el('circle', {
+      cx: ASSEMBLY_CENTER.x, cy: ASSEMBLY_CENTER.y, r: ARC_RADIUS,
+      'class':'assembly-guide', id:'assembly-guide'
+    });
+  }
+
+  // 전체 장면(다각형 + 외각 부채꼴 + 모임 영역)을 새로 그림
+  function renderScene(){
+    while (viewport.firstChild) viewport.removeChild(viewport.firstChild);
+
+    var baseG = el('g', { id:'base-g' });
+    viewport.appendChild(baseG);
+
+    baseG.appendChild(el('polygon', {
+      points: pointsToStr(state.polygonPoints),
+      fill: 'rgba(54, 82, 240, 0.07)',
+      stroke: '#2A3FC7',
+      'stroke-width': 2.4,
+      'stroke-linejoin':'round'
+    }));
+
+    state.angleData.forEach(function(d){
+      baseG.appendChild(el('line', {
+        x1:d.curr.x, y1:d.curr.y, x2:d.extPoint.x, y2:d.extPoint.y,
+        stroke:'#A9B3D6', 'stroke-width':2.2, 'stroke-dasharray':'6 5'
+      }));
+      // 조각을 옮긴 뒤에도 원래 자리를 알 수 있도록 남는 옅은 테두리
+      baseG.appendChild(el('polygon', {
+        points: pointsToStr(buildSectorPoints(d.curr, d.arcPts)),
+        fill:'none', stroke:'#C7D0F5', 'stroke-width':1.6, 'stroke-dasharray':'3 4'
+      }));
+    });
+
+    state.polygonPoints.forEach(function(p){
+      baseG.appendChild(el('circle', {
+        cx:p.x, cy:p.y, r:6, fill:'#FFFFFF', stroke:'#2A3FC7', 'stroke-width':2.4
+      }));
+    });
+
+    viewport.appendChild(buildAssemblyGuide());
+
+    var piecesG = el('g', { id:'pieces-g' });
+    viewport.appendChild(piecesG);
+    state.angleData.forEach(function(d, i){
+      var pieceG = el('g', { 'data-sector-index': i, 'class':'sector-piece' });
+      pieceG.appendChild(el('polygon', {
+        points: pointsToStr(buildSectorPoints(d.curr, d.arcPts)),
+        fill: colorFor(i), 'fill-opacity':0.6, stroke: colorFor(i), 'stroke-width':3, 'stroke-linejoin':'round'
+      }));
+      pieceG.addEventListener('pointerdown', function(evt){ evt.stopPropagation(); });
+      pieceG.addEventListener('click', function(evt){ evt.stopPropagation(); onSectorClick(i); });
+      piecesG.appendChild(pieceG);
+    });
+
+    viewport.appendChild(el('g', { id:'assembled-g' }));
+  }
+
+  function onSectorClick(i){
+    if (state.collectedSet.has(i)) return;
+    state.collectedSet.add(i);
+    state.collectedOrder.push(i);
+
+    var d = state.angleData[i];
+    var sign = state.cumulativeSign;
+    var sweepRad = d.degrees * Math.PI/180 * sign;
+    var targetStart = ASSEMBLY_START_ANGLE + state.cumulativeAssembledRad;
+    state.cumulativeAssembledRad += sweepRad;
+
+    animateSectorToAssembly(i, d, targetStart);
+  }
+
+  function easeInOutCubic(t){
+    return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+  }
+
+  function animateSectorToAssembly(i, d, targetStart){
+    var pieceG = viewport.querySelector('.sector-piece[data-sector-index="' + i + '"]');
+    if (!pieceG) return;
+    pieceG.style.pointerEvents = 'none';
+    pieceG.style.cursor = 'default';
+
+    var Tx = ASSEMBLY_CENTER.x - d.curr.x;
+    var Ty = ASSEMBLY_CENTER.y - d.curr.y;
+    var rotDeg = (targetStart - d.angle1) * 180/Math.PI;
+    var duration = 650;
+    var startTime = null;
+
+    function step(ts){
+      if (startTime === null) startTime = ts;
+      var t = Math.min(1, (ts - startTime) / duration);
+      var e = easeInOutCubic(t);
+      pieceG.setAttribute('transform',
+        'translate(' + (Tx*e) + ',' + (Ty*e) + ') rotate(' + (rotDeg*e) + ',' + d.curr.x + ',' + d.curr.y + ')'
+      );
+      if (t < 1){
+        requestAnimationFrame(step);
+      } else if (state.collectedOrder.length === state.n){
+        var guide = document.getElementById('assembly-guide');
+        if (guide){
+          guide.classList.remove('complete');
+          void guide.offsetWidth; // 애니메이션을 처음부터 다시 재생하기 위한 리플로우
+          guide.classList.add('complete');
+        }
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function changePolygon(n){
+    state.n = n;
+    state.polygonPoints = generateConvexPolygon(n);
+    state.angleData = computeAngleData(state.polygonPoints, EXT_LEN, ARC_RADIUS);
+    state.collectedSet = new Set();
+    state.collectedOrder = [];
+    state.cumulativeAssembledRad = 0;
+    state.cumulativeSign = (state.angleData[0].delta < 0) ? -1 : 1;
+    renderScene();
+    fitView();
+  }
+
+  function initExploreLayout(){
+    setViewBoxToSize();
+    if (!explorationInitialized){
+      changePolygon(state.n);
+      explorationInitialized = true;
+    } else {
+      applyTransform();
+    }
+  }
+
+  window.addEventListener('resize', function(){
+    if (screenExplore.classList.contains('active')){
+      setViewBoxToSize();
+      applyTransform();
+    }
+  });
+
+  // ---- 슬라이더 (변의 개수) ----
+  sidesSlider.addEventListener('input', function(){
+    var n = parseInt(sidesSlider.value, 10);
+    nValueLabel.textContent = n + '개';
+    changePolygon(n);
+  });
+
+  // ---- 다른 모양 보기 ----
+  shuffleBtn.addEventListener('click', function(){
+    changePolygon(state.n);
+  });
+
+  // ---- 배경 드래그(화면 이동) & 핀치 줌 ----
+  bgCatcher.addEventListener('pointerdown', function(evt){
+    pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+    try { svg.setPointerCapture(evt.pointerId); } catch(e){}
+    if (pointers.size === 1){
+      panMode = 'pan';
+      panStart = { x: evt.clientX, y: evt.clientY };
+      panOrigin = { x: state.panX, y: state.panY };
+      svg.classList.add('panning');
+    } else if (pointers.size === 2){
+      startPinch();
+    }
+  });
+
+  function startPinch(){
+    panMode = 'pinch';
+    var ids = Array.from(pointers.keys());
+    var p1 = pointers.get(ids[0]), p2 = pointers.get(ids[1]);
+    var dist = Math.hypot(p2.x-p1.x, p2.y-p1.y);
+    var midClient = { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 };
+    var midSvg = clientToSvgPoint(midClient.x, midClient.y);
+    var worldMid = svgToWorld(midSvg);
+    pinchStart = { dist: dist || 1, worldMid: worldMid, zoom: state.zoom };
+  }
+
+  window.addEventListener('pointermove', function(evt){
+    if (pointers.has(evt.pointerId)){
+      pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+      if (panMode === 'pan' && pointers.size === 1){
+        var dx = evt.clientX - panStart.x;
+        var dy = evt.clientY - panStart.y;
+        state.panX = panOrigin.x + dx;
+        state.panY = panOrigin.y + dy;
+        applyTransform();
+      } else if (panMode === 'pinch' && pointers.size === 2){
+        var ids = Array.from(pointers.keys());
+        var p1 = pointers.get(ids[0]), p2 = pointers.get(ids[1]);
+        var dist = Math.hypot(p2.x-p1.x, p2.y-p1.y) || 1;
+        var midClient = { x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2 };
+        var midSvg = clientToSvgPoint(midClient.x, midClient.y);
+        var scaleFactor = dist / pinchStart.dist;
+        var newZoom = clampZoom(pinchStart.zoom * scaleFactor);
+        state.panX = midSvg.x - pinchStart.worldMid.x * newZoom;
+        state.panY = midSvg.y - pinchStart.worldMid.y * newZoom;
+        state.zoom = newZoom;
+        applyTransform();
+      }
+    }
+  });
+
+  function endPointer(evt){
+    if (pointers.has(evt.pointerId)){
+      pointers.delete(evt.pointerId);
+      if (pointers.size === 0){
+        panMode = null;
+        svg.classList.remove('panning');
+      } else if (pointers.size === 1){
+        panMode = 'pan';
+        var remain = Array.from(pointers.values())[0];
+        panStart = { x: remain.x, y: remain.y };
+        panOrigin = { x: state.panX, y: state.panY };
+      }
+    }
+  }
+  window.addEventListener('pointerup', endPointer);
+  window.addEventListener('pointercancel', endPointer);
+
+  // ---- 마우스 휠 확대/축소 ----
+  canvasWrap.addEventListener('wheel', function(evt){
+    evt.preventDefault();
+    var svgP = clientToSvgPoint(evt.clientX, evt.clientY);
+    var worldP = svgToWorld(svgP);
+    var factor = evt.deltaY < 0 ? 1.12 : (1/1.12);
+    var newZoom = clampZoom(state.zoom * factor);
+    state.panX = svgP.x - worldP.x * newZoom;
+    state.panY = svgP.y - worldP.y * newZoom;
+    state.zoom = newZoom;
+    applyTransform();
+  }, { passive:false });
+
+  // ---- 확대/축소/초기화 버튼 ----
+  function zoomAtCenter(factor){
+    var rect = canvasWrap.getBoundingClientRect();
+    var center = { x: rect.width/2, y: rect.height/2 };
+    var worldC = svgToWorld(center);
+    var newZoom = clampZoom(state.zoom * factor);
+    state.panX = center.x - worldC.x * newZoom;
+    state.panY = center.y - worldC.y * newZoom;
+    state.zoom = newZoom;
+    applyTransform();
+  }
+  document.getElementById('zoom-in').addEventListener('click', function(){ zoomAtCenter(1.25); });
+  document.getElementById('zoom-out').addEventListener('click', function(){ zoomAtCenter(1/1.25); });
+  document.getElementById('zoom-reset').addEventListener('click', function(){ fitView(); });
+
+  // ================= 초기화 =================
+  renderMainIllustration();
+})();
+</script>
+</body>
+</html>
