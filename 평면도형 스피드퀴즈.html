@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>도형 스피드 퀴즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#FBF8F2;
+    --bg-panel:#FFFFFF;
+    --bg-card:#F4F0E6;
+    --line:#E6E0D2;
+    --chalk:#FF6B45;
+    --chalk-dim:#D4552F;
+    --ink:#2A2540;
+    --ink-dim:#78708C;
+    --good:#1FAA59;
+    --good-bg:#E7F8ED;
+    --bad:#E0453F;
+    --bad-bg:#FDEBEA;
+    --accent2:#4C6FFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(1100px 700px at 12% -10%, #FFE7DD 0%, transparent 60%),
+      radial-gradient(900px 600px at 105% 5%, #E4EAFF 0%, transparent 55%),
+      var(--bg-deep);
+    font-family:'Noto Sans KR', sans-serif;
+    color:var(--ink);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:40px 16px 80px;
+    overflow-x:hidden;
+  }
+  .stage{
+    width:100%;
+    max-width:760px;
+  }
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:36px 34px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 18px 40px rgba(42,37,64,0.07);
+  }
+  .panel::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: radial-gradient(circle, rgba(42,37,64,0.05) 1px, transparent 1px);
+    background-size:22px 22px;
+    pointer-events:none;
+    opacity:0.5;
+  }
+  .panel > *{position:relative;}
+
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(28px,5vw,38px);
+    line-height:1.15;
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  .lead{color:var(--ink-dim); font-size:15px; line-height:1.7; margin:0 0 30px;}
+
+  .btn{
+    appearance:none; border:none; cursor:pointer;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600; font-size:17px;
+    padding:15px 28px; border-radius:14px;
+    color:#FFFFFF;
+    background:var(--chalk);
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 8px 0 var(--chalk-dim);
+  }
+  .btn:active{transform:translateY(6px); box-shadow:0 2px 0 var(--chalk-dim);}
+
+  .quiz-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:22px; gap:14px;
+  }
+  .progress-wrap{flex:1;}
+  .progress-label{
+    font-size:12.5px; color:var(--ink-dim); margin-bottom:6px;
+    display:flex; justify-content:space-between;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .progress-bar{height:8px; border-radius:6px; background:var(--bg-card); overflow:hidden;}
+  .progress-fill{height:100%; background:linear-gradient(90deg, var(--accent2), var(--chalk)); border-radius:6px; transition:width .35s ease;}
+  .timer{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px;
+    color:var(--chalk-dim);
+    background:var(--bg-card); border:1px solid var(--line);
+    padding:8px 14px; border-radius:12px; min-width:78px; text-align:center;
+    letter-spacing:0.02em;
+  }
+
+  .hero-row{
+    display:flex; align-items:center; gap:22px; margin-bottom:22px;
+  }
+  .hero-shape{
+    flex:0 0 auto;
+    width:96px; height:96px;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hero-shape svg{width:64px; height:64px;}
+  .hero-n{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px; color:var(--ink-dim);
+  }
+  .hero-n b{
+    font-size:26px; color:var(--ink); display:block; font-weight:700;
+  }
+
+  .question{
+    font-size:clamp(18px,3.4vw,22px);
+    font-weight:700;
+    line-height:1.5;
+    margin:0 0 24px;
+    color:var(--ink);
+  }
+
+  .options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .opt{
+    appearance:none; cursor:pointer;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:14px;
+    padding:18px 14px;
+    font-family:'Space Grotesk',sans-serif;
+    font-size:19px; font-weight:600;
+    text-align:center;
+    transition:transform .12s ease, border-color .15s ease, background .15s ease;
+  }
+  .opt:hover:not(:disabled){border-color:var(--accent2); transform:translateY(-2px);}
+  .opt:disabled{cursor:default;}
+  .opt.correct{background:var(--good-bg); border-color:var(--good); color:var(--good);}
+  .opt.wrong{background:var(--bad-bg); border-color:var(--bad); color:var(--bad);}
+  .opt.dim{opacity:0.45;}
+
+  .feedback-row{
+    height:22px; margin-top:16px; text-align:center;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px;
+    letter-spacing:0.02em;
+  }
+  .feedback-row.good{color:var(--good);}
+  .feedback-row.bad{color:var(--bad);}
+
+  .score-hero{
+    text-align:center; padding:30px 0 10px;
+  }
+  .score-hero .num{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:72px; font-weight:700; color:var(--chalk-dim);
+    line-height:1;
+  }
+  .score-hero .cap{color:var(--ink-dim); font-size:14px; margin-top:12px;}
+
+  .hidden{display:none !important;}
+
+  @media (max-width:520px){
+    .panel{padding:26px 20px;}
+    .options{grid-template-columns:1fr 1fr;}
+    .opt{font-size:16px; padding:15px 10px;}
+    .hero-row{gap:14px;}
+    .hero-shape{width:76px; height:76px;}
+    .hero-shape svg{width:50px; height:50px;}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- INTRO -->
+  <section id="screen-intro" class="panel">
+    <h1>도형 스피드 퀴즈</h1>
+    <p class="lead">평면도형의 성질을 얼마나 빠르고 정확하게 풀 수 있는지 확인해보세요.</p>
+    <button class="btn" id="btn-start">시작하기</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="screen-quiz" class="panel hidden">
+    <div class="quiz-head">
+      <div class="progress-wrap">
+        <div class="progress-label"><span id="q-index">문제 1 / 12</span><span id="q-correct">정답 0개</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+      <div class="timer" id="timer">00:00</div>
+    </div>
+
+    <div class="hero-row">
+      <div class="hero-shape" id="hero-shape"></div>
+      <div class="hero-n">지금 도형<b id="hero-n-label">사각형</b></div>
+    </div>
+
+    <p class="question" id="q-text">문제를 불러오는 중...</p>
+    <div class="options" id="options"></div>
+    <div class="feedback-row" id="feedback"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="screen-result" class="panel hidden">
+    <h1>결과 확인</h1>
+    <div class="score-hero">
+      <div class="num" id="final-score">0점</div>
+      <div class="cap">최종 점수</div>
+    </div>
+    <button class="btn" id="btn-restart">다시 도전하기</button>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const N_VALUES = [4,5,6,8,9,10,12,15,18,20,24,30];
+
+  // 한자어 수사로 올바른 다각형 이름 생성 (예: 4 -> 사각형, 12 -> 십이각형)
+  function nameForN(n){
+    const digits = ['','일','이','삼','사','오','육','칠','팔','구'];
+    const tens = Math.floor(n/10), ones = n%10;
+    let str = '';
+    if(tens > 0){
+      if(tens > 1) str += digits[tens];
+      str += '십';
+    }
+    if(ones > 0){
+      str += digits[ones];
+    }
+    return str + '각형';
+  }
+
+  const TYPES = [
+    { id:1, calc:n => n-2, text:n => `${nameForN(n)}의 한 꼭짓점에서 대각선을 모두 그었을 때 나누어지는 삼각형의 개수는?`, unit:"개" },
+    { id:2, calc:n => n-3, text:n => `${nameForN(n)}의 한 꼭짓점에서 그을 수 있는 대각선의 개수는?`, unit:"개" },
+    { id:3, calc:n => 180*(n-2), text:n => `${nameForN(n)}의 내각의 크기의 합은?`, unit:"°" },
+    { id:4, calc:n => 180*(n-2)/n, text:n => `정${nameForN(n)}의 한 내각의 크기는?`, unit:"°" },
+    { id:5, calc:n => 360, text:n => `${nameForN(n)}의 외각의 크기의 합은?`, unit:"°" },
+    { id:6, calc:n => 360/n, text:n => `정${nameForN(n)}의 한 외각의 크기는?`, unit:"°" },
+  ];
+
+  const FALLBACK_360_DISTRACTORS = [270, 300, 330, 390, 420, 450];
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  // 각 유형이 정확히 2번씩 등장하도록 12문제(=n값 12개, n마다 1문제) 구성
+  function assignTypes(){
+    const pool = [];
+    TYPES.forEach(t => { pool.push(t.id); pool.push(t.id); });
+    return shuffle(pool);
+  }
+
+  function buildQuestions(){
+    const typeAssignment = assignTypes();
+    return N_VALUES.map((n, idx) => {
+      const type = TYPES.find(t => t.id === typeAssignment[idx]);
+      const correctVal = type.calc(n);
+
+      let wrongs;
+      if(type.id === 5){
+        wrongs = shuffle(FALLBACK_360_DISTRACTORS.filter(v => v !== correctVal)).slice(0,5);
+      } else {
+        // 값 차이가 크게 나지 않도록, n과 가까운 값들에서 오답을 뽑는다
+        const otherNs = N_VALUES.filter(x => x !== n)
+          .sort((a,b) => Math.abs(a-n) - Math.abs(b-n));
+        const closestNs = otherNs.slice(0,5);
+        wrongs = closestNs.map(x => type.calc(x));
+      }
+
+      const options = shuffle([correctVal, ...wrongs]);
+
+      return { n, type, correctVal, unit: type.unit, text: type.text(n), options };
+    });
+  }
+
+  function formatNum(v){
+    if(Number.isInteger(v)) return String(v);
+    return String(Math.round(v*10)/10);
+  }
+
+  function polygonSVG(n){
+    const size = 100, cx = 50, cy = 52, r = 38;
+    let pts = [];
+    for(let i=0;i<n;i++){
+      const angle = (-90 + i*(360/n)) * Math.PI/180;
+      pts.push(`${(cx + r*Math.cos(angle)).toFixed(1)},${(cy + r*Math.sin(angle)).toFixed(1)}`);
+    }
+    return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="${pts.join(' ')}" fill="none" stroke="#FF6B45" stroke-width="4" stroke-linejoin="round"/>
+    </svg>`;
+  }
+
+  let questions = [];
+  let qIndex = 0;
+  let correctCount = 0;
+  let startTime = 0;
+  let timerHandle = null;
+  let locked = false;
+
+  const screenIntro = document.getElementById('screen-intro');
+  const screenQuiz = document.getElementById('screen-quiz');
+  const screenResult = document.getElementById('screen-result');
+
+  const qIndexEl = document.getElementById('q-index');
+  const qCorrectEl = document.getElementById('q-correct');
+  const progressFill = document.getElementById('progress-fill');
+  const timerEl = document.getElementById('timer');
+  const heroShape = document.getElementById('hero-shape');
+  const heroNLabel = document.getElementById('hero-n-label');
+  const qText = document.getElementById('q-text');
+  const optionsEl = document.getElementById('options');
+  const feedbackEl = document.getElementById('feedback');
+
+  document.getElementById('btn-start').addEventListener('click', startQuiz);
+  document.getElementById('btn-restart').addEventListener('click', startQuiz);
+
+  function startQuiz(){
+    questions = buildQuestions();
+    qIndex = 0;
+    correctCount = 0;
+    locked = false;
+
+    screenIntro.classList.add('hidden');
+    screenResult.classList.add('hidden');
+    screenQuiz.classList.remove('hidden');
+
+    startTime = Date.now();
+    clearInterval(timerHandle);
+    timerHandle = setInterval(updateTimer, 250);
+    updateTimer();
+
+    renderQuestion();
+  }
+
+  function updateTimer(){
+    const elapsed = Math.floor((Date.now() - startTime)/1000);
+    const mm = String(Math.floor(elapsed/60)).padStart(2,'0');
+    const ss = String(elapsed%60).padStart(2,'0');
+    timerEl.textContent = `${mm}:${ss}`;
+  }
+
+  function renderQuestion(){
+    locked = false;
+    feedbackEl.textContent = '';
+    feedbackEl.className = 'feedback-row';
+
+    const q = questions[qIndex];
+    qIndexEl.textContent = `문제 ${qIndex+1} / ${questions.length}`;
+    qCorrectEl.textContent = `정답 ${correctCount}개`;
+    progressFill.style.width = `${(qIndex/questions.length)*100}%`;
+
+    heroShape.innerHTML = polygonSVG(q.n);
+    heroNLabel.textContent = nameForN(q.n);
+
+    qText.textContent = q.text;
+
+    optionsEl.innerHTML = '';
+    q.options.forEach(val => {
+      const btn = document.createElement('button');
+      btn.className = 'opt';
+      btn.textContent = `${formatNum(val)}${q.unit}`;
+      btn.addEventListener('click', () => handleAnswer(val, btn));
+      optionsEl.appendChild(btn);
+    });
+  }
+
+  function handleAnswer(val, btnEl){
+    if(locked) return;
+    locked = true;
+
+    const q = questions[qIndex];
+    const isCorrect = val === q.correctVal;
+    if(isCorrect) correctCount++;
+
+    const allBtns = Array.from(optionsEl.children);
+    allBtns.forEach(b => {
+      b.disabled = true;
+      const bVal = parseFloat(b.textContent);
+      if(bVal === q.correctVal){
+        b.classList.add('correct');
+      } else if(b === btnEl){
+        b.classList.add('wrong');
+      } else {
+        b.classList.add('dim');
+      }
+    });
+
+    feedbackEl.textContent = isCorrect ? '정답이에요! 🎉' : `아쉬워요! 정답은 ${formatNum(q.correctVal)}${q.unit} 이에요.`;
+    feedbackEl.classList.add(isCorrect ? 'good' : 'bad');
+
+    setTimeout(() => {
+      qIndex++;
+      if(qIndex >= questions.length){
+        finishQuiz();
+      } else {
+        renderQuestion();
+      }
+    }, 900);
+  }
+
+  function finishQuiz(){
+    clearInterval(timerHandle);
+    const elapsedSec = Math.floor((Date.now() - startTime)/1000);
+    const finalScore = correctCount*10 - elapsedSec;
+
+    screenQuiz.classList.add('hidden');
+    screenResult.classList.remove('hidden');
+
+    document.getElementById('final-score').textContent = `${finalScore}점`;
+  }
+})();
+</script>
+</body>
+</html>
