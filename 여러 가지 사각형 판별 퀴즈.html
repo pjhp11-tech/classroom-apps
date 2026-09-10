@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>사각형 탐정 퀴즈 - 여러 가지 사각형의 성질</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-a:#FDF6FF;
+    --bg-b:#EAF6FF;
+    --bg-c:#FFF4EA;
+    --card:#FFFFFF;
+    --ink:#3A3352;
+    --muted:#8A82A0;
+    --violet:#8B7CF6;
+    --violet-dark:#6E5AE0;
+    --mint:#3FC9AE;
+    --mint-bg:#E3FBF6;
+    --rose:#FB7185;
+    --rose-bg:#FFE9EC;
+    --peach-bg:#FFF3E4;
+    --line:#E7E2F5;
+    --shadow: 0 18px 40px rgba(107, 90, 190, 0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    background: radial-gradient(circle at 12% 8%, var(--bg-a) 0%, transparent 45%),
+                radial-gradient(circle at 90% 15%, var(--bg-b) 0%, transparent 50%),
+                radial-gradient(circle at 50% 100%, var(--bg-c) 0%, transparent 55%),
+                #F7F5FC;
+    display:flex;
+    justify-content:center;
+    padding: 20px 14px 44px;
+  }
+  .app{ width:100%; max-width:1100px; }
+  .brand{ text-align:center; margin-bottom:14px; }
+  .brand h1{
+    font-family:'Fredoka', sans-serif;
+    font-size:1.25rem;
+    font-weight:600;
+    margin:0 0 4px;
+    color:var(--violet-dark);
+  }
+  .brand p{ margin:0; font-size:0.75rem; color:var(--muted); font-weight:700; }
+  .top-bar{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .progress-track{
+    flex:1; height:8px; background:#EDE9FA; border-radius:999px; overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; width:0%; border-radius:999px;
+    background:linear-gradient(90deg, var(--violet) 0%, #B9A7FF 100%);
+    transition:width .4s ease;
+  }
+  .score-chip{
+    font-family:'Fredoka', sans-serif; font-weight:600; font-size:0.76rem;
+    background:var(--card); border:2px solid var(--line); border-radius:999px;
+    padding:5px 11px; white-space:nowrap; color:var(--violet-dark);
+  }
+  .card{
+    background:var(--card); border-radius:22px; box-shadow:var(--shadow);
+    padding:18px 16px 20px;
+  }
+  .hint-banner{
+    display:flex; align-items:flex-start; gap:8px;
+    background:var(--peach-bg); border:1.5px dashed #F0B57A; border-radius:14px;
+    padding:9px 12px; font-size:0.74rem; font-weight:700; color:#B4661C;
+    margin-bottom:14px; line-height:1.4;
+  }
+  .q-number{
+    font-family:'Fredoka', sans-serif; font-size:0.82rem; font-weight:600;
+    color:var(--muted); margin-bottom:5px;
+  }
+  .q-title{ font-size:0.9rem; font-weight:800; margin-bottom:12px; }
+  .figure-wrap{
+    background:linear-gradient(180deg,#FBFAFF, #F3F0FE);
+    border-radius:16px; display:flex; justify-content:center;
+    padding:8px; margin-bottom:14px;
+  }
+  #quad-svg{ width:100%; max-width:520px; height:auto; }
+  .quad-shape{
+    fill:#EDE7FF; stroke:var(--violet-dark); stroke-width:2.4; stroke-linejoin:round;
+  }
+  .vertex-label{ font-family:'Fredoka', sans-serif; font-size:13px; font-weight:600; fill:#6E5AE0; }
+  .mark-tick{ stroke:#3A3352; stroke-width:2.2; stroke-linecap:round; }
+  .mark-arrow{ fill:none; stroke:#3A3352; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+  .mark-right-angle{ fill:none; stroke:#3A3352; stroke-width:2; stroke-linejoin:miter; }
+  .mark-arc{ fill:none; stroke:#3A3352; stroke-width:2; }
+  .diagonal-line{ stroke:#B7AEDD; stroke-width:1.6; stroke-dasharray:4 4; }
+  .options{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:5px; }
+  .opt-btn{
+    font-family:'Nunito', sans-serif; font-weight:800; font-size:0.78rem;
+    color:var(--violet-dark); background:#F7F5FF; border:2px solid #E7E2F5;
+    border-radius:13px; padding:10px 7px; cursor:pointer;
+    transition:transform .12s ease, background .12s ease, border-color .12s ease;
+    text-align:center;
+  }
+  .opt-btn:hover:not(:disabled){ transform:translateY(-2px); border-color:var(--violet); background:#F0EBFF; }
+  .opt-btn:disabled{ cursor:default; }
+  .opt-btn.correct{ background:var(--mint-bg); border-color:var(--mint); color:#1E8E77; }
+  .opt-btn.wrong{ background:var(--rose-bg); border-color:var(--rose); color:#C23B52; }
+  .feedback{
+    margin-top:13px; border-radius:15px; padding:11px 13px;
+    font-size:0.76rem; line-height:1.5; font-weight:700; display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.correct{ background:var(--mint-bg); color:#1E8E77; }
+  .feedback.wrong{ background:var(--rose-bg); color:#C23B52; }
+  .feedback .verdict{ font-family:'Fredoka', sans-serif; font-size:0.86rem; margin-bottom:3px; }
+  .feedback .explain{ font-weight:600; color:var(--ink); }
+  .next-btn{
+    margin-top:16px; width:100%; font-family:'Fredoka', sans-serif; font-size:1rem;
+    font-weight:600; color:#fff;
+    background:linear-gradient(135deg, var(--violet) 0%, var(--violet-dark) 100%);
+    border:none; border-radius:16px; padding:13px; cursor:pointer; display:none;
+    box-shadow:0 10px 20px rgba(110,90,224,.28);
+  }
+  .next-btn.show{ display:block; }
+  .next-btn:active{ transform:translateY(1px); }
+  .result-wrap{ display:none; text-align:center; }
+  .result-wrap.show{ display:block; }
+  .result-score{
+    font-family:'Fredoka', sans-serif; font-size:2rem; font-weight:600;
+    color:var(--violet-dark); margin:5px 0 2px;
+  }
+  .result-label{ font-weight:800; color:var(--muted); margin-bottom:3px; font-size:0.78rem; }
+  .result-time{ font-weight:700; color:var(--violet-dark); margin-bottom:14px; font-size:0.74rem; }
+  .result-grid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-bottom:18px; }
+  .result-badge{
+    aspect-ratio:1; border-radius:11px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-family:'Fredoka', sans-serif;
+    font-weight:600; font-size:0.8rem; gap:2px;
+  }
+  .result-badge.correct{ background:var(--mint-bg); color:#1E8E77; border:2px solid var(--mint); }
+  .result-badge.wrong{ background:var(--rose-bg); color:#C23B52; border:2px solid var(--rose); }
+  .result-badge span.icon{ font-size:0.95rem; }
+  .restart-btn{
+    width:100%; font-family:'Fredoka', sans-serif; font-size:0.88rem; font-weight:600;
+    color:var(--violet-dark); background:#F0EBFF; border:2px solid var(--violet);
+    border-radius:14px; padding:11px; cursor:pointer;
+  }
+  .quiz-wrap.hide{ display:none; }
+
+  @supports (padding: max(0px)) {
+    body{
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(44px, env(safe-area-inset-bottom));
+    }
+  }
+  .opt-btn, .restart-btn{ min-height:40px; }
+  @media (max-width:600px){
+    .brand h1{ font-size:1.15rem; }
+    .card{ padding:14px 12px 18px; }
+    .options{ gap:6px; }
+    .opt-btn{ font-size:0.74rem; padding:9px 5px; }
+  }
+  @media (min-width:700px){
+    .app{ max-width:1100px; }
+    .brand h1{ font-size:1.15rem; }
+    .brand p{ font-size:0.7rem; }
+    .card{ padding:16px 14px 18px; border-radius:20px; }
+    .q-number{ font-size:0.78rem; }
+    .q-title{ font-size:0.85rem; }
+    .hint-banner{ font-size:0.7rem; padding:8px 11px; }
+    #quad-svg{ max-width:520px; }
+    .options{ gap:8px; }
+    .opt-btn{ font-size:0.74rem; padding:9px 6px; min-height:38px; }
+    .feedback{ font-size:0.74rem; padding:11px 12px; }
+    .score-chip{ font-size:0.74rem; padding:5px 11px; }
+  }
+
+  @media (min-width:700px){
+    .quiz-wrap{
+      display:grid;
+      grid-template-columns:minmax(0, 1.15fr) minmax(300px, .85fr);
+      gap:22px;
+      align-items:start;
+    }
+    .hint-banner,
+    .q-number,
+    .q-title{
+      grid-column:1 / -1;
+    }
+    .figure-wrap{
+      grid-column:1;
+      grid-row:4;
+      min-height:430px;
+      align-items:center;
+    }
+    .options{
+      grid-column:2;
+      grid-row:4;
+      margin-bottom:0;
+      align-self:center;
+    }
+    .feedback{
+      grid-column:2;
+      grid-row:5;
+      margin-top:13px;
+    }
+  }
+
+  html, body{
+    width:100%;
+    height:100%;
+    min-height:100%;
+    overflow:hidden;
+  }
+
+  body{
+    padding:8px 12px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .app{
+    width:100%;
+    max-width:720px;
+    height:100%;
+    max-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .brand{ margin-bottom:6px; flex:0 0 auto; }
+  .brand h1{ font-size:1.05rem; margin-bottom:1px; }
+  .brand p{ font-size:0.62rem; }
+  .top-bar{ gap:7px; margin-bottom:6px; flex:0 0 auto; }
+  .progress-track{ height:6px; }
+  .score-chip{ font-size:0.66rem; padding:3px 8px; border-width:1.5px; }
+
+  .card{
+    width:100%; flex:1 1 auto; min-height:0; padding:10px; border-radius:16px; overflow:hidden;
+  }
+
+  .quiz-wrap{
+    height:100%; min-height:0; display:flex; flex-direction:column;
+  }
+
+  .hint-banner{
+    margin-bottom:6px; padding:6px 8px; border-radius:10px; font-size:0.62rem; line-height:1.25; flex:0 0 auto;
+  }
+
+  .q-number{ font-size:0.68rem; margin-bottom:2px; flex:0 0 auto; }
+  .q-title{ font-size:0.78rem; margin-bottom:6px; flex:0 0 auto; }
+
+  .figure-wrap{
+    flex:1 1 auto; min-height:0; height:auto; margin-bottom:7px; padding:4px; border-radius:11px;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+
+  #quad-svg{
+    width:100%; height:100%; max-width:none; max-height:100%; display:block;
+  }
+
+  .options{
+    flex:0 0 auto; grid-template-columns:repeat(3, 1fr); gap:5px; margin-bottom:0;
+  }
+
+  .opt-btn{
+    min-height:34px; font-size:0.64rem; padding:6px 3px; border-radius:99px; border-width:1.5px;
+  }
+
+  .feedback{
+    flex:0 0 auto; margin-top:6px; padding:7px 8px; border-radius:10px; font-size:0.62rem; line-height:1.3;
+  }
+
+  .feedback .verdict{ font-size:0.7rem; margin-bottom:2px; }
+  .next-btn{ display:none !important; }
+
+  .result-wrap{ height:100%; overflow:hidden; }
+  .result-score{ font-size:1.7rem; margin:3px 0 1px; }
+  .result-label{ font-size:0.68rem; }
+  .result-time{ font-size:0.64rem; margin-bottom:8px; }
+  .result-grid{ gap:5px; margin-bottom:10px; }
+  .result-badge{ border-radius:8px; font-size:0.68rem; gap:1px; }
+  .result-badge span.icon{ font-size:0.8rem; }
+  .restart-btn{ min-height:36px; font-size:0.72rem; padding:7px; border-radius:99px; }
+
+  @media (orientation:landscape){
+    body{padding:6px 10px;}
+    .app{max-width:1100px;}
+    .brand{margin-bottom:3px;}
+    .brand h1{font-size:0.9rem;}
+    .brand p{font-size:0.55rem;}
+    .top-bar{margin-bottom:3px;}
+    .card{padding:7px;}
+    .hint-banner{padding:4px 7px;margin-bottom:4px;font-size:0.56rem;}
+    .q-title{font-size:0.68rem;margin-bottom:4px;}
+    .q-number{font-size:0.6rem;}
+    .figure-wrap{margin-bottom:4px;}
+    .opt-btn{min-height:28px;font-size:0.58rem;padding:4px 2px;}
+    .feedback{margin-top:4px;padding:5px 7px;font-size:0.56rem;}
+    .feedback .verdict{font-size:0.62rem;}
+  }
+
+  @media (max-height:700px) and (orientation:portrait){
+    body{padding:5px 9px;}
+    .brand h1{font-size:0.9rem;}
+    .brand p{font-size:0.55rem;}
+    .card{padding:7px;}
+    .hint-banner{padding:4px 6px;font-size:0.55rem;}
+    .q-title{font-size:0.68rem;margin-bottom:4px;}
+    .opt-btn{min-height:30px;font-size:0.58rem;}
+    .feedback{font-size:0.55rem;padding:5px 6px;}
+  }
+
+  .card{
+    flex:1 1 auto; min-height:0; padding:9px 12px 10px; border-radius:17px; overflow:hidden;
+  }
+
+  .quiz-wrap{
+    height:100%; min-height:0; display:grid;
+    grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
+    grid-template-rows:auto auto auto 1fr auto; column-gap:18px; align-items:start;
+  }
+
+  .hint-banner, .q-number, .q-title{ grid-column:1 / -1; }
+  .hint-banner{ margin-bottom:5px; padding:5px 8px; border-radius:10px; font-size:0.6rem; line-height:1.2; }
+  .q-number{font-size:0.66rem;margin-bottom:2px;}
+  .q-title{font-size:0.76rem;margin-bottom:5px;}
+
+  .figure-wrap{
+    grid-column:1; grid-row:4; width:100%; height:100%; min-height:0; margin:0; padding:3px;
+    border-radius:11px; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+
+  .options{
+    grid-column:2; grid-row:4; align-self:center; display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:0;
+  }
+
+  .opt-btn{ min-height:35px; font-size:0.64rem; padding:6px 4px; border-radius:9px; border-width:1.5px; }
+
+  .feedback{
+    grid-column:2; grid-row:5; margin-top:5px; padding:6px 8px; border-radius:10px; font-size:0.6rem; line-height:1.25;
+  }
+
+  .feedback .verdict{font-size:0.68rem;margin-bottom:2px;}
+
+  @media (orientation:portrait){
+    body{padding:7px 10px;}
+    .app{max-width:720px;}
+    .quiz-wrap{ display:flex; flex-direction:column; }
+    .figure-wrap{ flex:1 1 auto; min-height:0; }
+    .options{ grid-template-columns:repeat(3,1fr); flex:0 0 auto; }
+    .feedback{flex:0 0 auto;}
+  }
+
+  .result-wrap{ height:100%; max-height:100%; overflow:hidden; display:none; padding:4px 8px; }
+  .result-wrap.show{ display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .result-wrap .q-number{ font-size:0.62rem; margin:0 0 2px; }
+  .result-score{ font-size:1.45rem !important; margin:2px 0 1px !important; }
+  .result-label{ font-size:0.62rem !important; margin-bottom:2px !important; }
+  .result-time{ font-size:0.58rem !important; margin-bottom:5px !important; }
+  .result-grid{
+    width:100%; max-width:520px; grid-template-columns:repeat(10,1fr) !important; gap:3px !important; margin-bottom:6px !important;
+  }
+  .result-badge{ min-width:0; aspect-ratio:1; border-radius:6px !important; border-width:1px !important; font-size:0.55rem !important; gap:0 !important; }
+  .result-badge span.icon{ font-size:0.62rem !important; }
+  .restart-btn{ width:min(100%,260px); min-height:29px !important; font-size:0.62rem !important; padding:5px !important; border-radius:7px !important; }
+
+  @media (max-height:500px) and (orientation:landscape){
+    .result-wrap{padding:2px 5px;}
+    .result-wrap .q-number{font-size:0.52rem;}
+    .result-score{font-size:1.15rem !important;}
+    .result-label{font-size:0.52rem !important;}
+    .result-time{font-size:0.5rem !important;margin-bottom:3px !important;}
+    .result-grid{max-width:420px;gap:2px !important;margin-bottom:4px !important;}
+    .result-badge{font-size:0.46rem !important;}
+    .result-badge span.icon{font-size:0.52rem !important;}
+    .restart-btn{width:210px;min-height:25px !important;font-size:0.52rem !important;padding:4px !important;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="brand">
+    <h1>사각형 탐정 퀴즈</h1>
+    <p>여러 가지 사각형의 성질 · 중2-2</p>
+  </div>
+
+  <div class="top-bar">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="score-chip" id="score-chip">점수 0 / 10</div>
+  </div>
+
+  <div class="card">
+    <div class="quiz-wrap" id="quiz-wrap">
+      <div class="hint-banner">
+        💡 <span>그림의 실제 길이·각도는 판정에 사용하지 않습니다! 표시된 기호만 논리적으로 보고 분류하세요.</span>
+      </div>
+      <div class="q-number" id="q-number">문제 1 / 10</div>
+      <div class="q-title">아래 사각형은 어떤 도형일까요?</div>
+      <div class="figure-wrap">
+        <svg id="quad-svg" viewBox="0 0 300 280"></svg>
+      </div>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback">
+        <div class="verdict" id="verdict"></div>
+        <div class="explain" id="explain"></div>
+      </div>
+    </div>
+
+    <div class="result-wrap" id="result-wrap">
+      <div class="q-number">퀴즈 완료!</div>
+      <div class="result-score" id="result-score">0 / 10</div>
+      <div class="result-label" id="result-label">정답률 0%</div>
+      <div class="result-time" id="result-time">걸린 시간 0초</div>
+      <div class="result-grid" id="result-grid"></div>
+      <button class="restart-btn" id="restart-btn">다시 도전하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// 선택지 카테고리에 '사다리꼴' 추가
+var CATS = ['사다리꼴','등변사다리꼴','평행사변형','직사각형','마름모','정사각형','판별 불가'];
+var TOTAL = 10;
+
+var NS='http://www.w3.org/2000/svg';
+function make(tag, attrs){
+  var el=document.createElementNS(NS,tag);
+  for(var k in attrs) el.setAttribute(k,attrs[k]);
+  return el;
+}
+function sub(a,b){return {x:a.x-b.x,y:a.y-b.y};}
+function add(a,b){return {x:a.x+b.x,y:a.y+b.y};}
+function scl(a,s){return {x:a.x*s,y:a.y*s};}
+function norm(a){
+  var d=Math.hypot(a.x,a.y)||1;
+  return {x:a.x/d,y:a.y/d};
+}
+function perp(a){return {x:-a.y,y:a.x};}
+function mid(a,b){return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};}
+
+function drawTick(svg,p,q,count){
+  var d=norm(sub(q,p)), n=perp(d), m=mid(p,q), spacing=6;
+  for(var i=0;i<count;i++){
+    var off=(i-(count-1)/2)*spacing, c=add(m,scl(d,off));
+    svg.appendChild(make('line',{
+      x1:add(c,scl(n,6)).x,y1:add(c,scl(n,6)).y,
+      x2:add(c,scl(n,-6)).x,y2:add(c,scl(n,-6)).y,class:'mark-tick'
+    }));
+  }
+}
+
+function drawParallel(svg,p,q,count){
+  var d=norm(sub(q,p)),n=perp(d),m=mid(p,q),spacing=9;
+  for(var i=0;i<count;i++){
+    var off=(i-(count-1)/2)*spacing,c=add(m,scl(d,off));
+    var tip=add(c,scl(d,5)), back=add(c,scl(d,-5));
+    var a=add(back,scl(n,4)),b=add(back,scl(n,-4));
+    svg.appendChild(make('polyline',{
+      points:a.x+','+a.y+' '+tip.x+','+tip.y+' '+b.x+','+b.y,class:'mark-arrow'
+    }));
+  }
+}
+
+function vertexDirs(p,i){
+  return {
+    vertex:p[i],
+    d1:norm(sub(p[(i+3)%4],p[i])),
+    d2:norm(sub(p[(i+1)%4],p[i]))
+  };
+}
+
+function drawRight(svg,v,d1,d2){
+  var s=11,p1=add(v,scl(d1,s)),p2=add(p1,scl(d2,s)),p3=add(v,scl(d2,s));
+  svg.appendChild(make('polyline',{
+    points:p1.x+','+p1.y+' '+p2.x+','+p2.y+' '+p3.x+','+p3.y,
+    class:'mark-right-angle'
+  }));
+}
+
+function drawArc(svg,v,d1,d2,count){
+  var bis=norm(add(d1,d2));
+  for(var i=0;i<count;i++){
+    var r=18+i*6,p1=add(v,scl(d1,r)),p2=add(v,scl(d2,r));
+    var c=add(mid(p1,p2),scl(bis,r*.25));
+    svg.appendChild(make('path',{
+      d:'M '+p1.x+' '+p1.y+' Q '+c.x+' '+c.y+' '+p2.x+' '+p2.y,
+      class:'mark-arc'
+    }));
+  }
+}
+
+function diagonal(pts,name){
+  return name==='AC'?[pts[0],pts[2]]:[pts[1],pts[3]];
+}
+
+function intersect(a,b,c,d){
+  var A=b.y-a.y,B=a.x-b.x,C=A*a.x+B*a.y;
+  var D=d.y-c.y,E=c.x-d.x,F=D*c.x+E*c.y,det=A*E-D*B;
+  if(Math.abs(det)<1e-9)return mid(a,b);
+  return {x:(C*E-B*F)/det,y:(A*F-C*D)/det};
+}
+
+function applyMark(svg,pts,m){
+  if(m.type==='tick'){
+    drawTick(svg,pts[m.side],pts[(m.side+1)%4],m.count);
+  }else if(m.type==='parallel'){
+    drawParallel(svg,pts[m.side],pts[(m.side+1)%4],m.count);
+  }else if(m.type==='right'){
+    var v=vertexDirs(pts,m.vertex); drawRight(svg,v.vertex,v.d1,v.d2);
+  }else if(m.type==='angle'){
+    var a=vertexDirs(pts,m.vertex); drawArc(svg,a.vertex,a.d1,a.d2,m.count||1);
+  }else if(m.type==='diagTick'){
+    var d=diagonal(pts,m.diagonal); drawTick(svg,d[0],d[1],m.count||1);
+  }else if(m.type==='diagBisect'){
+    var d1=diagonal(pts,m.diagonal), d2=diagonal(pts,m.diagonal==='AC'?'BD':'AC');
+    var x=intersect(d1[0],d1[1],d2[0],d2[1]);
+    drawTick(svg,d1[0],x,m.count||1); drawTick(svg,x,d1[1],m.count||1);
+  }else if(m.type==='diagPerp'){
+    var a=diagonal(pts,'AC'),b=diagonal(pts,'BD'),x=intersect(a[0],a[1],b[0],b[1]);
+    drawRight(svg,x,norm(sub(a[0],x)),norm(sub(b[0],x)));
+  }
+}
+
+function renderFigure(pts,marks){
+  var svg=document.getElementById('quad-svg');
+  svg.innerHTML='';
+  svg.appendChild(make('polygon',{
+    points:pts.map(function(p){return p.x+','+p.y;}).join(' '),class:'quad-shape'
+  }));
+
+  var need={};
+  marks.forEach(function(m){
+    if(m.type==='diagTick'||m.type==='diagBisect')need[m.diagonal]=true;
+    if(m.type==='diagPerp'){need.AC=true;need.BD=true;}
+  });
+  Object.keys(need).forEach(function(n){
+    var d=diagonal(pts,n);
+    svg.appendChild(make('line',{x1:d[0].x,y1:d[0].y,x2:d[1].x,y2:d[1].y,class:'diagonal-line'}));
+  });
+
+  var center=pts.reduce(function(s,p){return {x:s.x+p.x/4,y:s.y+p.y/4};},{x:0,y:0});
+  ['A','B','C','D'].forEach(function(label,i){
+    var dir=norm(sub(pts[i],center)), lp=add(pts[i],scl(dir,16));
+    var t=make('text',{x:lp.x,y:lp.y,class:'vertex-label','text-anchor':'middle'});
+    t.setAttribute('dominant-baseline','middle');t.textContent=label;svg.appendChild(t);
+  });
+  marks.forEach(function(m){applyMark(svg,pts,m);});
+}
+
+function randRange(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function genQuadFromVectors(Lu, Lv, angleBetweenDeg){
+  var rad = angleBetweenDeg * Math.PI / 180;
+  var u = {x: Lu, y: 0};
+  var v = {x: Lv * Math.cos(rad), y: -Lv * Math.sin(rad)};
+  var p0 = {x: 0, y: 0};
+  var p1 = add(p0, u);
+  var p2 = add(p1, v);
+  var p3 = add(p0, v);
+  return [p0, p1, p2, p3];
+}
+
+function generateRandomPoints(type) {
+  var p = [];
+  if (type === 'parallelogram' || type === 'parallelogramDiag') {
+    p = genQuadFromVectors(randRange(60, 240), randRange(60, 240), randRange(20, 160));
+  } else if (type === 'rectangle') {
+    p = genQuadFromVectors(randRange(60, 260), randRange(50, 240), 90);
+  } else if (type === 'rhombus') {
+    var L = randRange(60, 190);
+    p = genQuadFromVectors(L, L, randRange(20, 160));
+  } else if (type === 'square') {
+    var s = randRange(70, 190);
+    p = genQuadFromVectors(s, s, 90);
+  } else if (type === 'isoscelesTrapezoid') {
+    var topW = randRange(30, 160);
+    var botW = topW + randRange(30, 180);
+    var h = randRange(60, 200);
+    var cx = 150;
+    p = [
+      {x: cx - botW/2, y: 70 + h},
+      {x: cx + botW/2, y: 70 + h},
+      {x: cx + topW/2, y: 70},
+      {x: cx - topW/2, y: 70}
+    ];
+  } else if (type === 'trapezoid') {
+    var topW = randRange(30, 150);
+    var botW = topW + randRange(30, 190);
+    var h = randRange(60, 200);
+    var shift = randRange(-60, 60);
+    p = [
+      {x: 50, y: 70 + h},
+      {x: 50 + botW, y: 70 + h},
+      {x: 50 + shift + topW, y: 70},
+      {x: 50 + shift, y: 70}
+    ];
+  } else {
+    // 특정 변이 우연히 평행/수평으로 보이지 않도록 중심각 기준으로 불규칙하게 배치
+    var cx0 = 150, cy0 = 150;
+    var baseAngles = [110, 25, -70, -155];
+    p = baseAngles.map(function(deg){
+      var a = (deg + randRange(-40, 40)) * Math.PI / 180;
+      var r = randRange(45, 165);
+      return {x: cx0 + r * Math.cos(a), y: cy0 + r * Math.sin(a)};
+    });
+  }
+
+  return p.map(function(pt){
+    return {
+      x: pt.x + randRange(-10, 10),
+      y: pt.y + randRange(-10, 10)
+    };
+  });
+}
+
+var FIGURES = {
+  parallelogram:{
+    type:'평행사변형',
+    marks:[
+      {type:'parallel',side:0,count:1},{type:'parallel',side:2,count:1},
+      {type:'parallel',side:1,count:2},{type:'parallel',side:3,count:2}
+    ],
+    explain:'두 쌍의 대변이 각각 평행하므로 평행사변형입니다.'
+  },
+  parallelogramDiag:{
+    type:'평행사변형',
+    marks:[
+      {type:'diagBisect',diagonal:'AC',count:1},
+      {type:'diagBisect',diagonal:'BD',count:2}
+    ],
+    explain:'두 대각선이 서로 다른 것을 이등분하므로 평행사변형입니다.'
+  },
+  rectangle:{
+    type:'직사각형',
+    marks:[
+      {type:'parallel',side:0,count:1},{type:'parallel',side:2,count:1},
+      {type:'parallel',side:1,count:2},{type:'parallel',side:3,count:2},
+      {type:'right',vertex:0}
+    ],
+    explain:'평행사변형에서 한 내각이 90°이므로 네 내각이 모두 90°인 직사각형입니다.'
+  },
+  rhombus:{
+    type:'마름모',
+    marks:[
+      {type:'tick',side:0,count:1},{type:'tick',side:1,count:1},
+      {type:'tick',side:2,count:1},{type:'tick',side:3,count:1}
+    ],
+    explain:'네 변의 길이가 모두 같으므로 마름모입니다.'
+  },
+  square:{
+    type:'정사각형',
+    marks:[
+      {type:'tick',side:0,count:1},{type:'tick',side:1,count:1},
+      {type:'tick',side:2,count:1},{type:'tick',side:3,count:1},
+      {type:'right',vertex:0}
+    ],
+    explain:'네 변의 길이가 모두 같고 한 내각이 90°이므로 정사각형입니다.'
+  },
+  isoscelesTrapezoid:{
+    type:'등변사다리꼴',
+    marks:[
+      {type:'parallel',side:0,count:1},{type:'parallel',side:2,count:1},
+      {type:'tick',side:1,count:1},{type:'tick',side:3,count:1}
+    ],
+    explain:'한 쌍의 대변이 평행하고, 평행하지 않은 다른 두 변의 길이가 같으므로 등변사다리꼴입니다.'
+  },
+  trapezoid:{
+    type:'사다리꼴',
+    marks:[
+      {type:'parallel',side:0,count:1},{type:'parallel',side:2,count:1}
+    ],
+    explain:'한 쌍의 대변만 평행하므로 사다리꼴입니다.'
+  },
+  ambiguous:{
+    type:'판별 불가',
+    marks:[
+      {type:'tick',side:0,count:1},{type:'tick',side:2,count:1}
+    ],
+    explain:'한 쌍의 대변 길이가 같다는 것만으로는 평행사변형이나 특정 사각형이라고 판별할 수 없습니다.'
+  },
+  oneRight:{
+    type:'판별 불가',
+    marks:[{type:'right',vertex:0}],
+    explain:'한 내각이 90°라는 사실만으로는 직사각형이나 사다리꼴이라고 단정할 수 없습니다.'
+  },
+  equalAdjacent:{
+    type:'판별 불가',
+    marks:[
+      {type:'tick',side:0,count:1},{type:'tick',side:1,count:1}
+    ],
+    explain:'이웃한 두 변이 같다는 사실만으로는 마름모나 정사각형이라고 단정할 수 없습니다.'
+  }
+};
+
+function classify(marks){
+  var hasRight = marks.some(function(m){ return m.type === 'right'; });
+  var hasDiagPerp = marks.some(function(m){ return m.type === 'diagPerp'; });
+  
+  var parallelSides = new Set(marks.filter(function(m){ return m.type === 'parallel'; }).map(function(m){ return m.side; }));
+  var tickSides = new Set(marks.filter(function(m){ return m.type === 'tick'; }).map(function(m){ return m.side; }));
+  
+  var diagBisectCount = marks.filter(function(m){ return m.type === 'diagBisect'; }).length;
+  var diagTickCount = marks.filter(function(m){ return m.type === 'diagTick'; }).length;
+
+  var isParallelogram = (parallelSides.has(0) && parallelSides.has(2) && parallelSides.has(1) && parallelSides.has(3)) || (diagBisectCount >= 2);
+  var isRhombus = (tickSides.size === 4) || (isParallelogram && hasDiagPerp);
+  var isRectangle = (isParallelogram && hasRight) || (isParallelogram && diagTickCount >= 2);
+
+  if (isRhombus && isRectangle) return '정사각형';
+  if (tickSides.size === 4 && hasRight) return '정사각형';
+  if (isRectangle) return '직사각형';
+  if (isRhombus) return '마름모';
+  if (isParallelogram) return '평행사변형';
+
+  var isOnePairParallel = (parallelSides.has(1) && parallelSides.has(3) && !parallelSides.has(0) && !parallelSides.has(2)) ||
+                          (parallelSides.has(0) && parallelSides.has(2) && !parallelSides.has(1) && !parallelSides.has(3));
+  if (isOnePairParallel) {
+    if ((parallelSides.has(1) && tickSides.has(0) && tickSides.has(2)) ||
+        (parallelSides.has(0) && tickSides.has(1) && tickSides.has(3))) {
+      return '등변사다리꼴';
+    }
+    return '사다리꼴';
+  }
+
+  return '판별 불가';
+}
+
+function rotateArray(arr, shift){
+  var n = arr.length, out = new Array(n);
+  for (var i = 0; i < n; i++) out[i] = arr[(i + shift) % n];
+  return out;
+}
+function rotateMarks(marks, shift){
+  return marks.map(function(m){
+    var nm = {};
+    for (var key in m) nm[key] = m[key];
+    if (nm.side !== undefined) nm.side = ((nm.side - shift) % 4 + 4) % 4;
+    if (nm.vertex !== undefined) nm.vertex = ((nm.vertex - shift) % 4 + 4) % 4;
+    return nm;
+  });
+}
+function rotatePointsByAngle(pts, angleDeg){
+  var cx = pts.reduce(function(s,p){return s+p.x;},0)/pts.length;
+  var cy = pts.reduce(function(s,p){return s+p.y;},0)/pts.length;
+  var rad = angleDeg * Math.PI/180, cos = Math.cos(rad), sin = Math.sin(rad);
+  return pts.map(function(p){
+    var dx = p.x - cx, dy = p.y - cy;
+    return { x: cx + dx*cos - dy*sin, y: cy + dx*sin + dy*cos };
+  });
+}
+
+function maybeMirror(pts){
+  // 50% 확률로 좌우 반전, 50% 확률로 상하 반전 -> 같은 유형이어도 매번 다른 모습으로 보이게 함
+  var mirrorX = Math.random() < 0.5;
+  var mirrorY = Math.random() < 0.5;
+  return pts.map(function(p){
+    return { x: mirrorX ? -p.x : p.x, y: mirrorY ? -p.y : p.y };
+  });
+}
+
+function fitToViewBox(pts, vbW, vbH, pad){
+  var minX=Math.min.apply(null,pts.map(function(p){return p.x;}));
+  var maxX=Math.max.apply(null,pts.map(function(p){return p.x;}));
+  var minY=Math.min.apply(null,pts.map(function(p){return p.y;}));
+  var maxY=Math.max.apply(null,pts.map(function(p){return p.y;}));
+  var w=maxX-minX||1, h=maxY-minY||1;
+  var scale=Math.min((vbW-2*pad)/w, (vbH-2*pad)/h, 1.4);
+  var cx=(minX+maxX)/2, cy=(minY+maxY)/2, tx=vbW/2, ty=vbH/2;
+  return pts.map(function(p){
+    return { x: tx+(p.x-cx)*scale, y: ty+(p.y-cy)*scale };
+  });
+}
+
+function shuffle(a){
+  a=a.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=a[i];a[i]=a[j];a[j]=t;
+  }
+  return a;
+}
+
+var QUESTION_KEYS=[
+  'parallelogram','parallelogramDiag','rectangle','rhombus','square',
+  'isoscelesTrapezoid','trapezoid','ambiguous','oneRight','equalAdjacent'
+];
+
+function buildQuestions(){
+  return shuffle(QUESTION_KEYS).map(function(k){
+    var f=FIGURES[k];
+    var shift=Math.floor(Math.random()*4);
+    var pts=rotateArray(generateRandomPoints(k), shift);
+    pts=rotatePointsByAngle(pts, randRange(0,360));
+    pts=maybeMirror(pts);
+    pts=fitToViewBox(pts, 300, 280, 34);
+    return {
+      category:classify(f.marks),
+      marks:rotateMarks(f.marks, shift),
+      explain:f.explain,
+      pts:pts
+    };
+  });
+}
+
+var questions=[],current=0,score=0,results=[],answered=false;
+var timerInterval=null,elapsedSeconds=0,autoNextTimeout=null;
+var TOTAL_DELAY=1200;
+
+var elQNumber=document.getElementById('q-number');
+var elOptions=document.getElementById('options');
+var elFeedback=document.getElementById('feedback');
+var elVerdict=document.getElementById('verdict');
+var elExplain=document.getElementById('explain');
+var elProgress=document.getElementById('progress-fill');
+var elScoreChip=document.getElementById('score-chip');
+var elQuizWrap=document.getElementById('quiz-wrap');
+var elResultWrap=document.getElementById('result-wrap');
+var elResultScore=document.getElementById('result-score');
+var elResultLabel=document.getElementById('result-label');
+var elResultGrid=document.getElementById('result-grid');
+var elResultTime=document.getElementById('result-time');
+var elRestart=document.getElementById('restart-btn');
+
+function startTimer(){
+  if(timerInterval)clearInterval(timerInterval);
+  elapsedSeconds=0;
+  timerInterval=setInterval(function(){elapsedSeconds++;},1000);
+}
+function stopTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+}
+function start(){
+  if(autoNextTimeout)clearTimeout(autoNextTimeout);
+  questions=buildQuestions();current=0;score=0;results=[];
+  elQuizWrap.classList.remove('hide');
+  elResultWrap.classList.remove('show');
+  elScoreChip.textContent='점수 0 / '+TOTAL;
+  startTimer();renderQuestion();
+}
+function renderQuestion(){
+  answered=false;
+  var q=questions[current];
+  elQNumber.textContent='문제 '+(current+1)+' / '+TOTAL;
+  elProgress.style.width=(current/TOTAL*100)+'%';
+  renderFigure(q.pts,q.marks);
+  elOptions.innerHTML='';
+  
+  CATS.forEach(function(cat){
+    var b=document.createElement('button');
+    b.className='opt-btn';b.textContent=cat;
+    b.addEventListener('click',function(){selectAnswer(cat,b);});
+    elOptions.appendChild(b);
+  });
+  elFeedback.className='feedback';
+}
+function selectAnswer(choice,button){
+  if(answered)return;
+  answered=true;
+  var q=questions[current],correct=choice===q.category;
+  if(correct)score++;
+  results.push(correct);
+
+  elOptions.querySelectorAll('.opt-btn').forEach(function(b){
+    b.disabled=true;
+    if(b.textContent===q.category)b.classList.add('correct');
+    else if(b===button&&!correct)b.classList.add('wrong');
+  });
+
+  elVerdict.textContent=correct?'정답이에요! 🎉':'아쉬워요! 정답은 "'+q.category+'" 입니다.';
+  elExplain.textContent=q.explain;
+  elFeedback.className='feedback show '+(correct?'correct':'wrong');
+  elScoreChip.textContent='점수 '+score+' / '+TOTAL;
+  elProgress.style.width=((current+1)/TOTAL*100)+'%';
+
+  autoNextTimeout=setTimeout(nextQuestion,TOTAL_DELAY);
+}
+function nextQuestion(){
+  if(autoNextTimeout)clearTimeout(autoNextTimeout);
+  current++;
+  if(current>=TOTAL)showResults();else renderQuestion();
+}
+function showResults(){
+  stopTimer();
+  elQuizWrap.classList.add('hide');
+  elResultWrap.classList.add('show');
+  elResultScore.textContent=score+' / '+TOTAL;
+  elResultLabel.textContent='정답률 '+Math.round(score/TOTAL*100)+'%';
+  var mm=Math.floor(elapsedSeconds/60),ss=elapsedSeconds%60;
+  elResultTime.textContent=mm?'걸린 시간 '+mm+'분 '+ss+'초':'걸린 시간 '+ss+'초';
+  elResultGrid.innerHTML='';
+  results.forEach(function(ok,i){
+    var b=document.createElement('div');b.className='result-badge '+(ok?'correct':'wrong');
+    b.innerHTML='<div>'+(i+1)+'</div><span class="icon">'+(ok?'✓':'✕')+'</span>';
+    elResultGrid.appendChild(b);
+  });
+}
+elRestart.addEventListener('click',start);
+start();
+})();
+</script>
+</body>
+</html>
