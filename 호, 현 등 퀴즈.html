@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원의 구성 요소 퀴즈</title>
+<style>
+  :root{
+    --accent:#6366f1;
+    --accent-dark:#4338ca;
+    --good:#16a34a;
+    --bad:#dc2626;
+    --ink:#1e293b;
+    --card-bg:#ffffff;
+    --page-bg1:#eef2ff;
+    --page-bg2:#fdf4ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+    background:linear-gradient(160deg,var(--page-bg1),var(--page-bg2));
+    color:var(--ink);
+    min-height:100%;
+  }
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    padding:14px 14px 24px;
+    display:flex;
+    flex-direction:column;
+  }
+  h1{
+    font-size:1.25rem;
+    text-align:center;
+    margin:4px 0 10px;
+    color:var(--accent-dark);
+  }
+  .screen{display:none;}
+  .screen.active{display:flex;flex-direction:column;flex:1;}
+
+  /* ---- start / end screens ---- */
+  #startScreen, #endScreen{
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap:14px;
+    padding:20px 10px;
+  }
+  .panel{
+    background:var(--card-bg);
+    border-radius:20px;
+    padding:22px 20px;
+    box-shadow:0 6px 20px rgba(99,102,241,0.15);
+    width:100%;
+  }
+  .panel p{line-height:1.6;font-size:0.95rem;color:#475569;}
+  .term-badges{
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0;
+  }
+  .term-badges span{
+    background:#eef2ff;color:var(--accent-dark);
+    padding:5px 12px;border-radius:999px;font-size:0.85rem;font-weight:600;
+  }
+  button.primary{
+    background:var(--accent);
+    color:#fff;border:none;
+    padding:13px 28px;
+    border-radius:14px;
+    font-size:1.05rem;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(99,102,241,0.4);
+    transition:transform .12s ease;
+  }
+  button.primary:active{transform:scale(0.96);}
+
+  /* ---- quiz top bar ---- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:8px;
+  }
+  #progressText{
+    font-weight:700;color:var(--accent-dark);font-size:0.95rem;
+  }
+  .zoomControls{display:flex;gap:6px;}
+  .zoomControls button{
+    width:30px;height:30px;border-radius:8px;border:1px solid #c7d2fe;
+    background:#fff;color:var(--accent-dark);font-size:1rem;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .zoomControls button:active{background:#eef2ff;}
+
+  /* ---- diagram viewport ---- */
+  #viewport{
+    width:100%;
+    max-width:340px;
+    aspect-ratio:1/1;
+    margin:0 auto 10px;
+    background:#f8fafc;
+    border:2px solid #dbeafe;
+    border-radius:20px;
+    overflow:hidden;
+    position:relative;
+    touch-action:none;
+    user-select:none;
+  }
+  #diagram{width:100%;height:100%;display:block;}
+  .pt-label{
+    font-size:20px;
+    font-weight:700;
+    fill:#334155;
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  }
+
+  #prompt{
+    text-align:center;
+    font-size:0.92rem;
+    color:#475569;
+    margin:2px 0 10px;
+    padding:0 4px;
+  }
+
+  /* ---- answer cards ---- */
+  #cardsGrid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  @media (max-width:480px){
+    #cardsGrid{grid-template-columns:repeat(2,1fr);}
+  }
+  .card{
+    background:var(--card-bg);
+    border:2px solid #e2e8f0;
+    border-radius:14px;
+    padding:10px 4px 8px;
+    min-height:56px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    transition:transform .1s ease, border-color .15s ease;
+  }
+  .card:active{transform:scale(0.95);}
+  .card:disabled{cursor:default;}
+  .card.correct{border-color:var(--good);background:#f0fdf4;}
+  .card.wrong{border-color:var(--bad);background:#fef2f2;}
+
+  .word-card{font-size:1rem;font-weight:700;color:var(--ink);}
+
+  .notation{
+    position:relative;
+    display:inline-block;
+    font-family:Georgia,'Times New Roman',serif;
+    font-weight:700;
+    font-size:1.45rem;
+    color:var(--ink);
+    padding:0 4px;
+    margin-top:16px;
+  }
+  .notation.seg{border-top:3px solid var(--ink);padding-top:4px;}
+  .notation.line{border-top:3px solid var(--ink);padding-top:4px;}
+  .notation.line::before{content:'\25C0';position:absolute;top:-10px;left:-7px;font-size:9px;}
+  .notation.line::after{content:'\25B6';position:absolute;top:-10px;right:-7px;font-size:9px;}
+  .notation.arc{padding-top:10px;}
+  .notation.arc::before{
+    content:'';position:absolute;top:-3px;left:6%;width:88%;height:16px;
+    border:3px solid transparent;border-top-color:var(--ink);border-radius:50%;
+  }
+  .notation.angle{font-size:1.4rem;margin-top:4px;}
+
+  #feedback{
+    text-align:center;
+    min-height:26px;
+    font-weight:700;
+    margin-top:10px;
+    font-size:0.95rem;
+  }
+  .feedback.good{color:var(--good);}
+  .feedback.bad{color:var(--bad);}
+
+  #resultSummary p{font-size:1rem;margin:6px 0;color:#334155;}
+  .final-score{font-size:1.5rem !important;color:var(--accent-dark) !important;font-weight:800;margin-top:12px !important;}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>⭕ 원의 구성 요소 퀴즈</h1>
+
+  <div id="startScreen" class="screen active">
+    <div class="panel">
+      <p>원 <b>O</b> 위에 네 점 <b>A, B, C, D</b>가 있어요.<br>
+      그림에서 <span style="color:var(--bad);font-weight:700;">빨간색으로 강조된 도형</span>이<br>
+      아래 배운 개념 중 무엇에 해당하는지 골라보세요!</p>
+      <button class="primary" id="startBtn">시작하기</button>
+    </div>
+  </div>
+
+  <div id="quizScreen" class="screen">
+    <div class="topbar">
+      <div id="progressText">문제 1 / 12</div>
+      <div class="zoomControls">
+        <button id="zoomOutBtn" title="축소">－</button>
+        <button id="zoomResetBtn" title="초기화">⟲</button>
+        <button id="zoomInBtn" title="확대">＋</button>
+      </div>
+    </div>
+
+    <div id="viewport">
+      <svg id="diagram" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+        <g id="zoomGroup"></g>
+      </svg>
+    </div>
+
+    <div id="prompt">빨간색으로 표시된 도형은 무엇일까요? 알맞은 카드를 선택하세요.</div>
+    <div id="cardsGrid"></div>
+    <div id="feedback"></div>
+  </div>
+
+  <div id="endScreen" class="screen">
+    <div class="panel">
+      <h2 style="margin-top:0;color:var(--accent-dark);">퀴즈 종료! 🎉</h2>
+      <div id="resultSummary"></div>
+      <button class="primary" id="restartBtn" style="margin-top:16px;">다시 도전하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============== 기본 유틸 ============== */
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+  function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function polar(cx,cy,r,deg){
+    const rad = deg*Math.PI/180;
+    return {x: cx + r*Math.cos(rad), y: cy + r*Math.sin(rad)};
+  }
+  function pairsEqual(p1,p2){
+    return (p1.a===p2.a && p1.b===p2.b) || (p1.a===p2.b && p1.b===p2.a);
+  }
+  function extendLine(p1,p2,extra){
+    const dx=p2.x-p1.x, dy=p2.y-p1.y;
+    const len=Math.hypot(dx,dy) || 1;
+    const ux=dx/len, uy=dy/len;
+    return {
+      p1:{x:p1.x-ux*extra, y:p1.y-uy*extra},
+      p2:{x:p2.x+ux*extra, y:p2.y+uy*extra}
+    };
+  }
+  function sortedLabels(pair, scene){
+    const l1 = scene.slots[pair.a].label;
+    const l2 = scene.slots[pair.b].label;
+    return [l1,l2].sort();
+  }
+
+  const CX=200, CY=200, R=130;
+
+  /* ============== 장면(점 배치) 생성 ============== */
+  function generateScene(){
+    const bases = [-90, 0, 90, 180];
+    const labels = shuffle(['A','B','C','D']);
+    const slots = bases.map((b,i)=>{
+      const jitter = (Math.random()*40 - 20); // -20 ~ 20
+      const angle = b + jitter;
+      const p = polar(CX,CY,R,angle);
+      return {slot:i, angle:angle, label:labels[i], x:p.x, y:p.y};
+    });
+    const sides = [0,1,2,3].map(i=>({a:i, b:(i+1)%4}));
+    const diags = [{a:0,b:2},{a:1,b:3}];
+    return {slots, sides, diags};
+  }
+
+  /* ============== 문제(보기 카드 + 정답) 생성 ============== */
+  function buildQuestion(category, sub, scene){
+    if(category === 'arcChord'){
+      const sides = shuffle(scene.sides);
+      const arcCards = sides.map(p=>({type:'arc', pair:p}));
+      const chordCards = sides.map(p=>({type:'chord', pair:p}));
+      const options = shuffle(arcCards.concat(chordCards));
+      const targetPair = randChoice(scene.sides);
+      options.forEach(o=>{ o.correct = (o.type===sub && pairsEqual(o.pair, targetPair)); });
+      return {options, target:{type:sub, pair:targetPair}};
+    }
+    if(category === 'centralAngle'){
+      const sides = shuffle(scene.sides);
+      const angleCards = sides.map(p=>({type:'centralAngle', pair:p}));
+      const arcCards = sides.map(p=>({type:'arc', pair:p}));
+      const options = shuffle(angleCards.concat(arcCards));
+      const targetPair = randChoice(scene.sides);
+      options.forEach(o=>{ o.correct = (o.type==='centralAngle' && pairsEqual(o.pair, targetPair)); });
+      return {options, target:{type:'centralAngle', pair:targetPair}};
+    }
+    if(category === 'sectorSegment'){
+      const sidesShuffled = shuffle(scene.sides);
+      const sectorPairs = [sidesShuffled[0], sidesShuffled[1]];
+      const segmentPairs = [sidesShuffled[2], sidesShuffled[3]];
+      const arcPairs = [sidesShuffled[0], sidesShuffled[2]];
+      const lineSegPairs = scene.diags.slice();
+      const cards = [
+        ...sectorPairs.map(p=>({type:'sector', pair:p})),
+        ...segmentPairs.map(p=>({type:'segment', pair:p})),
+        ...lineSegPairs.map(p=>({type:'lineSeg', pair:p})),
+        ...arcPairs.map(p=>({type:'arc', pair:p})),
+      ];
+      const options = shuffle(cards);
+      const pool = (sub === 'sector') ? sectorPairs : segmentPairs;
+      const targetPair = randChoice(pool);
+      options.forEach(o=>{ o.correct = (o.type===sub && pairsEqual(o.pair, targetPair)); });
+      return {options, target:{type:sub, pair:targetPair}};
+    }
+    if(category === 'secant'){
+      const allPairs = scene.sides.concat(scene.diags);
+      const linePairs = shuffle(allPairs).slice(0,4);
+      const segPairs = shuffle(allPairs).slice(0,4);
+      const cards = [
+        ...linePairs.map(p=>({type:'secant', pair:p})),
+        ...segPairs.map(p=>({type:'chord', pair:p})),
+      ];
+      const options = shuffle(cards);
+      const targetPair = randChoice(linePairs);
+      options.forEach(o=>{ o.correct = (o.type==='secant' && pairsEqual(o.pair, targetPair)); });
+      return {options, target:{type:'secant', pair:targetPair}};
+    }
+    throw new Error('unknown category');
+  }
+
+  function renderCardHTML(card, scene){
+    const [l1,l2] = sortedLabels(card.pair, scene);
+    switch(card.type){
+      case 'arc': return `<span class="word-card">호${l1}${l2}</span>`;
+      case 'chord': return `<span class="word-card">현${l1}${l2}</span>`;
+      case 'lineSeg': return `<span class="notation seg">${l1}${l2}</span>`;
+      case 'secant': return `<span class="word-card">할선${l1}${l2}</span>`;
+      case 'centralAngle': return `<span class="notation angle">∠${l1}O${l2}</span>`;
+      case 'sector': return `<span class="word-card">부채꼴 ${l1}O${l2}</span>`;
+      case 'segment': return `<span class="word-card">활꼴 ${l1}${l2}</span>`;
+      default: return '';
+    }
+  }
+
+  function highlightSVG(target, scene){
+    const a = scene.slots[target.pair.a];
+    const b = scene.slots[target.pair.b];
+    const RED = '#dc2626';
+    switch(target.type){
+      case 'arc': {
+        const d = `M ${a.x} ${a.y} A ${R} ${R} 0 0 1 ${b.x} ${b.y}`;
+        return `<path d="${d}" fill="none" stroke="${RED}" stroke-width="7" stroke-linecap="round"/>`;
+      }
+      case 'chord': {
+        return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${RED}" stroke-width="7" stroke-linecap="round"/>`;
+      }
+      case 'secant': {
+        const ext = extendLine(a,b,50);
+        return `<line x1="${ext.p1.x}" y1="${ext.p1.y}" x2="${ext.p2.x}" y2="${ext.p2.y}" stroke="${RED}" stroke-width="6" stroke-linecap="round"/>`;
+      }
+      case 'centralAngle': {
+        const arcA = polar(CX,CY,34,a.angle), arcB = polar(CX,CY,34,b.angle);
+        const arcPath = `M ${arcA.x} ${arcA.y} A 34 34 0 0 1 ${arcB.x} ${arcB.y}`;
+        return `<line x1="${CX}" y1="${CY}" x2="${a.x}" y2="${a.y}" stroke="${RED}" stroke-width="6" stroke-linecap="round"/>
+                <line x1="${CX}" y1="${CY}" x2="${b.x}" y2="${b.y}" stroke="${RED}" stroke-width="6" stroke-linecap="round"/>
+                <path d="${arcPath}" fill="none" stroke="${RED}" stroke-width="4"/>`;
+      }
+      case 'sector': {
+        const d = `M ${CX} ${CY} L ${a.x} ${a.y} A ${R} ${R} 0 0 1 ${b.x} ${b.y} Z`;
+        return `<path d="${d}" fill="rgba(220,38,38,0.22)" stroke="${RED}" stroke-width="5" stroke-linejoin="round"/>`;
+      }
+      case 'segment': {
+        const d = `M ${a.x} ${a.y} A ${R} ${R} 0 0 1 ${b.x} ${b.y} Z`;
+        return `<path d="${d}" fill="rgba(220,38,38,0.22)" stroke="${RED}" stroke-width="5" stroke-linejoin="round"/>`;
+      }
+      default: return '';
+    }
+  }
+
+  function renderDiagram(scene, target){
+    let html = `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#94a3b8" stroke-width="3"/>`;
+    html += `<circle cx="${CX}" cy="${CY}" r="4" fill="#334155"/>`;
+    html += `<text x="${CX}" y="${CY-12}" class="pt-label" text-anchor="middle">O</text>`;
+    scene.slots.forEach(s=>{
+      html += `<circle cx="${s.x}" cy="${s.y}" r="6" fill="#334155"/>`;
+      const lp = polar(CX,CY,R+24,s.angle);
+      html += `<text x="${lp.x}" y="${lp.y}" class="pt-label" text-anchor="middle" dominant-baseline="middle">${s.label}</text>`;
+    });
+    html += highlightSVG(target, scene);
+    document.getElementById('zoomGroup').innerHTML = html;
+  }
+
+  /* ============== 화면 전환 ============== */
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  /* ============== 줌 / 팬 ============== */
+  const viewport = document.getElementById('viewport');
+  const zoomGroup = document.getElementById('zoomGroup');
+  let scaleV = 1, panX = 0, panY = 0;
+  const pointers = new Map();
+  let lastDist = null;
+  let dragStart = null;
+
+  function applyTransform(){
+    zoomGroup.setAttribute('transform', `translate(${panX} ${panY}) scale(${scaleV})`);
+  }
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+  function resetView(){ scaleV=1; panX=0; panY=0; applyTransform(); }
+
+  viewport.addEventListener('pointerdown', e=>{
+    viewport.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(pointers.size===1){
+      dragStart = {x:e.clientX, y:e.clientY, panX, panY};
+    }
+    if(pointers.size===2){
+      const pts = [...pointers.values()];
+      lastDist = dist(pts[0], pts[1]);
+    }
+  });
+  viewport.addEventListener('pointermove', e=>{
+    if(!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if(pointers.size===1 && dragStart){
+      const rect = viewport.getBoundingClientRect();
+      const ratio = 400/rect.width;
+      panX = dragStart.panX + (e.clientX-dragStart.x)*ratio;
+      panY = dragStart.panY + (e.clientY-dragStart.y)*ratio;
+      applyTransform();
+    } else if(pointers.size===2){
+      const pts = [...pointers.values()];
+      const d = dist(pts[0], pts[1]);
+      if(lastDist){
+        const factor = d/lastDist;
+        scaleV = clamp(scaleV*factor, 1, 3);
+        applyTransform();
+      }
+      lastDist = d;
+    }
+  });
+  function endPointer(e){
+    pointers.delete(e.pointerId);
+    if(pointers.size<2) lastDist = null;
+    if(pointers.size===0) dragStart = null;
+  }
+  viewport.addEventListener('pointerup', endPointer);
+  viewport.addEventListener('pointercancel', endPointer);
+  viewport.addEventListener('pointerleave', endPointer);
+  viewport.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const delta = e.deltaY>0 ? -0.1 : 0.1;
+    scaleV = clamp(scaleV+delta, 1, 3);
+    applyTransform();
+  }, {passive:false});
+
+  document.getElementById('zoomInBtn').addEventListener('click', ()=>{ scaleV=clamp(scaleV+0.25,1,3); applyTransform(); });
+  document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ scaleV=clamp(scaleV-0.25,1,3); applyTransform(); });
+  document.getElementById('zoomResetBtn').addEventListener('click', resetView);
+
+  /* ============== 퀴즈 진행 ============== */
+  const CATS = [
+    {category:'arcChord', sub:'arc'},
+    {category:'arcChord', sub:'arc'},
+    {category:'arcChord', sub:'chord'},
+    {category:'arcChord', sub:'chord'},
+    {category:'sectorSegment', sub:'sector'},
+    {category:'sectorSegment', sub:'sector'},
+    {category:'sectorSegment', sub:'segment'},
+    {category:'sectorSegment', sub:'segment'},
+    {category:'secant', sub:'secant'},
+    {category:'secant', sub:'secant'},
+    {category:'centralAngle', sub:'centralAngle'},
+    {category:'centralAngle', sub:'centralAngle'},
+  ];
+
+  let questions = [];
+  let currentIndex = 0;
+  let correctCount = 0, wrongCount = 0;
+  let startTime = null;
+  let answered = false;
+  let currentScene = null, currentOptions = null;
+
+  function startQuiz(){
+    questions = shuffle(CATS);
+    currentIndex = 0;
+    correctCount = 0;
+    wrongCount = 0;
+    startTime = Date.now();
+    showScreen('quizScreen');
+    loadQuestion();
+  }
+
+  function loadQuestion(){
+    answered = false;
+    resetView();
+    const fb = document.getElementById('feedback');
+    fb.textContent = '';
+    fb.className = '';
+    document.getElementById('progressText').textContent = `문제 ${currentIndex+1} / ${questions.length}`;
+
+    const scene = generateScene();
+    const q = questions[currentIndex];
+    const {options, target} = buildQuestion(q.category, q.sub, scene);
+    currentScene = scene;
+    currentOptions = options;
+
+    renderDiagram(scene, target);
+    renderCards(options);
+  }
+
+  function renderCards(options){
+    const grid = document.getElementById('cardsGrid');
+    grid.innerHTML = '';
+    options.forEach((opt)=>{
+      const btn = document.createElement('button');
+      btn.className = 'card';
+      btn.innerHTML = renderCardHTML(opt, currentScene);
+      btn.addEventListener('click', ()=>onAnswer(opt, btn));
+      grid.appendChild(btn);
+    });
+  }
+
+  function onAnswer(opt, btnEl){
+    if(answered) return;
+    answered = true;
+    const cardEls = document.querySelectorAll('#cardsGrid .card');
+    cardEls.forEach((el, i)=>{
+      el.disabled = true;
+      if(currentOptions[i].correct) el.classList.add('correct');
+    });
+    const fb = document.getElementById('feedback');
+    if(opt.correct){
+      correctCount++;
+      fb.textContent = '정답입니다! 🎉';
+      fb.className = 'feedback good';
+    } else {
+      wrongCount++;
+      btnEl.classList.add('wrong');
+      fb.textContent = '아쉬워요! 정답을 확인해보세요.';
+      fb.className = 'feedback bad';
+    }
+    setTimeout(()=>{
+      currentIndex++;
+      if(currentIndex >= questions.length){
+        finishQuiz();
+      } else {
+        loadQuestion();
+      }
+    }, 1400);
+  }
+
+  function finishQuiz(){
+    const elapsedSec = Math.round((Date.now()-startTime)/1000);
+    const score = correctCount*10 - wrongCount*20 - elapsedSec;
+    document.getElementById('resultSummary').innerHTML = `
+      <p>정답: ${correctCount}개 / 오답: ${wrongCount}개</p>
+      <p>걸린 시간: ${elapsedSec}초</p>
+      <p class="final-score">최종 점수: ${score}점</p>
+    `;
+    showScreen('endScreen');
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startQuiz);
+  document.getElementById('restartBtn').addEventListener('click', startQuiz);
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>삼각형의 닮음 조건 탐구</title>
+<style>
+  :root{
+    --paper:#FBF6EC;
+    --paper-2:#F3ECDC;
+    --ink:#2E2A24;
+    --ink-soft:#6B6357;
+    --line:#DDD3BE;
+    --card:#FFFFFF;
+
+    --c1:#1F8A70;   /* case 1 - deep teal (SSS) */
+    --c1-soft:#E4F4EE;
+    --c2:#E0622C;   /* case 2 - clay orange (SAS) */
+    --c2-soft:#FBEAE0;
+    --c3:#3E63C2;   /* case 3 - indigo blue (ASA) */
+    --c3-soft:#E7EDFB;
+
+    --gold:#C99A3B;
+    --gold-soft:#FBF1DC;
+    --danger:#C24444;
+  }
+  :root[data-theme="dark"]{
+    --paper:#211F1B; --paper-2:#2A2721; --ink:#F1ECE0; --ink-soft:#C9C0AC; --line:#4A4536; --card:#2E2B24;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% 42px;
+    opacity:.35;
+    pointer-events:none;
+    z-index:0;
+  }
+  .app{ position:relative; z-index:1; max-width:920px; margin:0 auto; padding:20px 16px 60px; }
+
+  /* ---------- top bar ---------- */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; gap:10px;}
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-badge{
+    width:38px;height:38px;border-radius:10px;
+    background:conic-gradient(from 210deg, var(--c1), var(--c2), var(--c3), var(--c1));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff; font-weight:800; font-size:15px; flex:none;
+  }
+  .brand h1{ font-size:17px; margin:0; letter-spacing:-.2px; }
+  .brand p{ margin:0; font-size:12px; color:var(--ink-soft); }
+  .back-btn{
+    border:none; background:var(--card); color:var(--ink); border:1.5px solid var(--line);
+    padding:8px 14px; border-radius:999px; font-size:13px; cursor:pointer; font-weight:600;
+    display:flex; align-items:center; gap:6px;
+  }
+  .back-btn:hover{ background:var(--paper-2); }
+
+  /* ---------- generic panel ---------- */
+  .panel{
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:20px;
+    padding:22px 20px;
+    box-shadow: 0 2px 0 var(--line);
+  }
+  .hero{ text-align:center; padding:22px 10px 6px; }
+  .hero h2{ font-size:22px; margin:0 0 8px; letter-spacing:-.3px; }
+  .hero p{ margin:0; color:var(--ink-soft); font-size:14.5px; line-height:1.6; }
+
+  /* ---------- case cards on main screen ---------- */
+  .case-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:22px; }
+  @media (max-width:680px){ .case-grid{ grid-template-columns:1fr; } }
+
+  .case-card{
+    position:relative; text-align:left; cursor:pointer; border:none;
+    border-radius:18px; padding:18px 16px 16px; font-family:inherit;
+    color:var(--ink);
+    transition:transform .15s ease;
+  }
+  .case-card:hover{ transform:translateY(-3px); }
+  .case-card:active{ transform:translateY(-1px); }
+  .case-card .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:26px;height:26px;border-radius:50%;
+    font-weight:800; font-size:13px; color:#fff; margin-bottom:10px;
+  }
+  .case-card h3{ font-size:15px; margin:0 0 6px; line-height:1.4; }
+  .case-card .cond{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; min-height:52px; }
+  .case-card .status{
+    margin-top:12px; font-size:11.5px; font-weight:700;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .cc1{ background:var(--c1-soft); border:1.5px solid #bfe4d6; }
+  .cc1 .num{ background:var(--c1); }
+  .cc1 .status{ color:var(--c1); }
+  .cc2{ background:var(--c2-soft); border:1.5px solid #f2c8ae; }
+  .cc2 .num{ background:var(--c2); }
+  .cc2 .status{ color:var(--c2); }
+  .cc3{ background:var(--c3-soft); border:1.5px solid #c4d1f2; }
+  .cc3 .num{ background:var(--c3); }
+  .cc3 .status{ color:var(--c3); }
+
+  .final-btn{
+    margin-top:16px; width:100%; border:none; border-radius:18px; padding:20px 18px;
+    font-family:inherit; cursor:pointer; text-align:left;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .final-btn.locked{
+    background:var(--paper-2); color:var(--ink-soft); cursor:not-allowed;
+    border:1.5px dashed var(--line);
+  }
+  .final-btn.unlocked{
+    background:linear-gradient(120deg, var(--gold-soft), #fff);
+    border:1.5px solid var(--gold); color:var(--ink);
+    box-shadow:0 2px 0 var(--gold);
+  }
+  .final-btn .ft{ font-size:15.5px; font-weight:800; }
+  .final-btn .fs{ font-size:12px; color:var(--ink-soft); margin-top:3px; }
+  .final-btn .arrow{ font-size:20px; }
+
+  /* ---------- case screen ---------- */
+  .case-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .case-tag{ font-size:12px; font-weight:800; color:#fff; padding:4px 11px; border-radius:999px; }
+  .case-title{ font-size:17px; font-weight:800; margin:0; }
+  .case-sub{ color:var(--ink-soft); font-size:13.5px; margin:6px 0 0; }
+
+  .steps-dots{ display:flex; gap:6px; margin:16px 0 4px; }
+  .dot{ flex:1; height:5px; border-radius:99px; background:var(--line); }
+  .dot.on{ background:currentColor; }
+
+  .stage{ margin-top:18px; }
+  .stage-title{ font-weight:800; font-size:15.5px; margin:0 0 10px; }
+
+  .tri-row{ display:flex; gap:18px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+  .tri-block{ flex:1 1 220px; max-width:280px; text-align:center; }
+  .tri-block .tri-label{ font-weight:800; font-size:13px; margin-bottom:6px; }
+  .canvas-wrap{
+    background:var(--paper-2); border-radius:16px; padding:8px;
+    border:1.5px dashed var(--line);
+  }
+  .tri-svg{ width:auto; height:auto; max-width:100%; max-height:210px; display:block; touch-action:none; cursor:grab; }
+  .tri-svg:active{ cursor:grabbing; }
+  .zoom-hint{ font-size:10.5px; color:var(--ink-soft); margin-top:6px; }
+  .info-list{ list-style:none; padding:0; margin:10px 0 0; font-size:13px; color:var(--ink-soft); }
+  .info-list li{ padding:2px 0; }
+  .info-list b{ color:var(--ink); }
+
+  .info-panel{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+  .info-col{ background:var(--paper-2); border-radius:12px; padding:10px 16px; font-size:13px; min-width:150px; border:1.5px solid var(--line); }
+  .info-col .ic-title{ font-weight:800; font-size:13px; margin-bottom:5px; }
+  .info-col div.ic-row{ color:var(--ink-soft); padding:1px 0; }
+  .info-col div.ic-row b{ color:var(--ink); }
+
+  .match-canvas-wrap{ background:var(--paper-2); border-radius:16px; padding:10px 14px; border:1.5px dashed var(--line); max-width:680px; margin:0 auto; display:flex; align-items:center; justify-content:center; }
+  .triGroup polygon{ transition: opacity .3s ease; }
+  .merge-status{ text-align:center; font-weight:700; min-height:20px; margin-top:10px; font-size:13.5px; }
+  .quiz-section{ margin-top:6px; }
+
+  .given-box{
+    background:var(--paper-2); border-left:4px solid var(--case-color, var(--c1));
+    border-radius:10px; padding:12px 14px; margin:14px 0; font-size:14px; line-height:1.7;
+  }
+
+  .def-box{
+    background:var(--card); border:1.5px solid var(--line); border-radius:16px;
+    padding:22px 18px; margin-top:14px;
+  }
+  .def-box .term{ font-weight:800; font-size:15px; margin-bottom:10px; }
+  .def-box p{ font-size:15px; line-height:1.85; margin:0; }
+  .em{ font-weight:800; padding:0 2px; border-radius:5px; }
+  .em-up{ color:#fff; background:var(--c2); }
+  .em-down{ color:#fff; background:var(--c3); }
+
+  .slider-row{ display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:16px; }
+  .slider-row input[type=range]{ width:100%; max-width:420px; accent-color: var(--case-color,var(--c1)); }
+  .scale-read{ font-size:14px; font-weight:700; color:var(--ink-soft); }
+  .match-msg{ font-size:13.5px; font-weight:700; min-height:20px; text-align:center; margin-top:2px; }
+  .match-msg.ok{ color:var(--c1); }
+  .match-msg.near{ color:var(--gold); }
+
+  .quiz-options{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px; }
+  .opt-btn{
+    border:1.5px solid var(--line); background:var(--card); color:var(--ink);
+    padding:11px 18px; border-radius:12px; font-weight:800; font-size:14px; cursor:pointer;
+    font-family:inherit;
+  }
+  .opt-btn:hover{ background:var(--paper-2); }
+  .opt-btn.correct{ background:var(--c1-soft); border-color:var(--c1); color:var(--c1); }
+  .opt-btn.wrong{ background:#FBEAEA; border-color:var(--danger); color:var(--danger); }
+  .feedback{ text-align:center; font-size:13.5px; font-weight:700; min-height:20px; margin-top:12px; }
+  .feedback.ok{ color:var(--c1); }
+  .feedback.bad{ color:var(--danger); }
+
+  .summary-card{
+    background:var(--paper-2); border-radius:16px; padding:20px 18px; margin-top:14px;
+    border-left:5px solid var(--case-color, var(--c1));
+  }
+  .summary-card p{ font-size:15px; line-height:1.9; margin:0 0 4px; }
+  .summary-card .rule{ font-weight:800; }
+  .summary-card .key{ font-weight:800; padding:0 3px; }
+
+  .nav-row{ display:flex; justify-content:space-between; align-items:center; margin-top:24px; gap:10px; }
+  .btn{
+    border:none; border-radius:12px; padding:12px 22px; font-weight:800; font-size:14.5px;
+    cursor:pointer; font-family:inherit;
+  }
+  .btn-primary{ background:var(--case-color, var(--c1)); color:#fff; }
+  .btn-primary:disabled{ background:var(--line); color:var(--ink-soft); cursor:not-allowed; }
+  .btn-ghost{ background:transparent; color:var(--ink-soft); }
+  .btn-ghost:hover{ color:var(--ink); }
+
+  /* ---------- summary (image2) screen ---------- */
+  .rule-box{
+    border:1.5px solid var(--line); border-radius:18px; padding:18px 16px; margin-top:16px;
+    background:var(--card);
+  }
+  .rule-box h3{ margin:0 0 12px; font-size:16px; }
+  .rule-item{ display:flex; gap:14px; align-items:center; padding:16px 6px; border-top:1px dashed var(--line); flex-wrap:wrap;}
+  .rule-item:first-of-type{ border-top:none; }
+  .rule-num{
+    flex:none; width:28px;height:28px;border-radius:50%; color:#fff; font-weight:800; font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .rule-text{ flex:1 1 220px; font-size:13.8px; line-height:1.6; }
+  .rule-text b{ display:block; font-size:14.5px; margin-bottom:3px; }
+  .rule-name{ font-weight:800; color:var(--gold); }
+  .rule-svg{ flex:none; width:210px; height:auto; }
+
+  .hidden{ display:none !important; }
+  .fade-in{ animation:fadeIn .25s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .shake{ animation:shake .35s; }
+  @keyframes shake{ 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(3px)} 30%,50%,70%{transform:translateX(-5px)} 40%,60%{transform:translateX(5px)} }
+
+  .vlabel{ font-size:15px; font-weight:800; }
+  .slabel{ font-size:12px; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge">△</div>
+      <div>
+        <h1>삼각형의 닮음 조건 탐구</h1>
+        <p>중학교 2학년 · 도형의 닮음</p>
+      </div>
+    </div>
+    <button class="back-btn hidden" id="backBtn">← 목록으로</button>
+  </div>
+
+  <div id="screen-root"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== 데이터 ===================== */
+function dist(p,q){ return Math.hypot(p.x-q.x, p.y-q.y); }
+function fmt(n){ const r = Math.round(n*10)/10; return (Object.is(r,-0)?0:r).toString(); }
+
+const CASES = {
+  1:{
+    id:1, colorHex:'#1F8A70', softClass:'cc1',
+    name:'경우 1', badge:'SSS',
+    condition:'대응하는 세 쌍의 변의 길이의 비가 같을 때',
+    given:'AB : DE = BC : EF = AC : DF = 2 : 3',
+    left:[{x:0,y:0,label:'A'},{x:4,y:0,label:'B'},{x:0,y:3,label:'C'}],
+    right:[{x:0,y:0,label:'D'},{x:6,y:0,label:'E'},{x:0,y:4.5,label:'F'}],
+    ratio:1.5, ratioLabel:'2 : 3',
+    angleVerts:null, sideIdx:[0,1,2],
+    infoLeft:()=>{ const p=CASES[1].left; return [`AB = ${fmt(dist(p[0],p[1]))}`,`BC = ${fmt(dist(p[1],p[2]))}`,`AC = ${fmt(dist(p[0],p[2]))}`]; },
+    infoRight:()=>{ const p=CASES[1].right; return [`DE = ${fmt(dist(p[0],p[1]))}`,`EF = ${fmt(dist(p[1],p[2]))}`,`DF = ${fmt(dist(p[0],p[2]))}`]; },
+    correct:'SSS',
+    quizPrompt:'두 삼각형이 완전히 포개졌습니다. 두 삼각형이 합동인 이유는 무엇일까요?',
+    summaryTitle:'대응하는 세 쌍의 변의 길이의 비가 같을 때',
+    summaryLead:'하나의 삼각형을 확대 또는 축소하면 다른 삼각형과',
+    summaryKey:'SSS',
+    summaryTail:'합동이 되기 때문에 두 삼각형은 서로 닮음이다.'
+  },
+  2:{
+    id:2, colorHex:'#E0622C', softClass:'cc2',
+    name:'경우 2', badge:'SAS',
+    condition:'대응하는 두 쌍의 변의 길이의 비가 같고 그 끼인각의 크기가 같을 때',
+    given:'AB : DE = BC : EF = 2 : 3,  ∠B = ∠E',
+    left:[{x:0,y:0,label:'B'},{x:2,y:3.464,label:'A'},{x:6,y:0,label:'C'}],
+    right:[{x:0,y:0,label:'E'},{x:3,y:5.196,label:'D'},{x:9,y:0,label:'F'}],
+    ratio:1.5, ratioLabel:'2 : 3',
+    angleVerts:[{idx:0,deg:'60°'}], sideIdx:[0,2],
+    infoLeft:()=>{ const p=CASES[2].left; return [`AB = ${fmt(dist(p[1],p[0]))}`,`BC = ${fmt(dist(p[0],p[2]))}`,`∠B = 60°`]; },
+    infoRight:()=>{ const p=CASES[2].right; return [`DE = ${fmt(dist(p[1],p[0]))}`,`EF = ${fmt(dist(p[0],p[2]))}`,`∠E = 60°`]; },
+    correct:'SAS',
+    quizPrompt:'두 삼각형이 완전히 포개졌습니다. 두 삼각형이 합동인 이유는 무엇일까요?',
+    summaryTitle:'대응하는 두 쌍의 변의 길이의 비가 같고 그 끼인각의 크기가 같을 때',
+    summaryLead:'하나의 삼각형을 확대 또는 축소하면 다른 삼각형과',
+    summaryKey:'SAS',
+    summaryTail:'합동이 되기 때문에 두 삼각형은 서로 닮음이다.'
+  },
+  3:{
+    id:3, colorHex:'#3E63C2', softClass:'cc3',
+    name:'경우 3', badge:'ASA',
+    condition:'대응하는 두 쌍의 각의 크기가 각각 같을 때',
+    given:'∠B = ∠E = 50°,  ∠C = ∠F = 70°',
+    left:[{x:0,y:0,label:'B'},{x:3.4873,y:4.1560,label:'A'},{x:5,y:0,label:'C'}],
+    right:[{x:0,y:0,label:'E'},{x:5.5797,y:6.6497,label:'D'},{x:8,y:0,label:'F'}],
+    ratio:1.6, ratioLabel:'5 : 8',
+    angleVerts:[{idx:0,deg:'50°'},{idx:2,deg:'70°'}], sideIdx:[],
+    infoLeft:()=>{ return [`∠B = 50°`,`∠C = 70°`]; },
+    infoRight:()=>{ return [`∠E = 50°`,`∠F = 70°`]; },
+    correct:'ASA',
+    quizPrompt:'두 삼각형이 완전히 포개졌습니다. 두 삼각형이 합동인 이유는 무엇일까요?',
+    summaryTitle:'대응하는 두 쌍의 각의 크기가 각각 같을 때',
+    summaryLead:'하나의 삼각형을 확대 또는 축소하면 다른 삼각형과',
+    summaryKey:'ASA',
+    summaryTail:'합동이 되기 때문에 두 삼각형은 서로 닮음이다.'
+  }
+};
+const REASON_OPTIONS = ['SSS','SAS','ASA','RHA','RHS'];
+
+/* ===================== 상태 ===================== */
+let progress = {1:false,2:false,3:false};
+try{
+  const saved = JSON.parse(localStorage.getItem('triSimilarityProgress')||'null');
+  if(saved) progress = saved;
+}catch(e){ /* ignore */ }
+function saveProgress(){
+  try{ localStorage.setItem('triSimilarityProgress', JSON.stringify(progress)); }catch(e){}
+}
+
+let session = { caseId:null, step:0, phase:'scale', matched:false, answered:false, sliderVal:1.0 };
+
+/* ===================== SVG 렌더 (공통 평면) ===================== */
+// pts는 항상 pts[0]이 로컬 원점(0,0)에 오도록 설계되어 있고,
+// 나머지 두 점 중 하나는 y=0(밑변), 다른 하나가 꼭짓점(위쪽)이 되도록 구성되어 있다.
+function localPx(pts, unit, mul){
+  return pts.map(p=>({x:p.x*unit*mul, y:-p.y*unit*mul, label:p.label}));
+}
+function polyAndLabelsMarkup(px, color, dashed, angleVerts, sideVals){
+  let s = `<polygon points="${px.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="${color}22" stroke="${color}" stroke-width="3" ${dashed?'stroke-dasharray="8 6"':''} stroke-linejoin="round" stroke-linecap="round"/>`;
+  const cx=(px[0].x+px[1].x+px[2].x)/3, cy=(px[0].y+px[1].y+px[2].y)/3;
+  px.forEach(p=>{
+    const dx=p.x-cx, dy=p.y-cy, len=Math.hypot(dx,dy)||1;
+    const lx=p.x+dx/len*20, ly=p.y+dy/len*20;
+    s += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" class="vlabel" fill="${color}" text-anchor="middle" dominant-baseline="middle">${p.label}</text>`;
+  });
+  if(sideVals){
+    for(let i=0;i<3;i++){
+      if(sideVals[i]==null) continue;
+      const a=px[i], b=px[(i+1)%3];
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      const dx=mx-cx, dy=my-cy, len=Math.hypot(dx,dy)||1;
+      const lx=mx+dx/len*15, ly=my+dy/len*15;
+      s += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" class="slabel" fill="${color}" text-anchor="middle" font-weight="800">${sideVals[i]}</text>`;
+    }
+  }
+  if(angleVerts){
+    angleVerts.forEach(av=>{
+      const c=px[av.idx], p1=px[(av.idx+2)%3], p2=px[(av.idx+1)%3];
+      const r=22;
+      const a1=Math.atan2(p1.y-c.y,p1.x-c.x), a2=Math.atan2(p2.y-c.y,p2.x-c.x);
+      let diff=a2-a1; while(diff<=-Math.PI) diff+=2*Math.PI; while(diff>Math.PI) diff-=2*Math.PI;
+      const sweep = diff>0?1:0;
+      const start={x:c.x+r*Math.cos(a1), y:c.y+r*Math.sin(a1)};
+      const end={x:c.x+r*Math.cos(a2), y:c.y+r*Math.sin(a2)};
+      const mid=a1+diff/2;
+      const lx=c.x+(r+15)*Math.cos(mid), ly=c.y+(r+15)*Math.sin(mid);
+      s += `<path d="M ${start.x.toFixed(1)} ${start.y.toFixed(1)} A ${r} ${r} 0 0 ${sweep} ${end.x.toFixed(1)} ${end.y.toFixed(1)}" fill="none" stroke="${color}" stroke-width="2.2"/>`;
+      s += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" class="slabel" fill="${color}" text-anchor="middle">${av.deg}</text>`;
+    });
+  }
+  return s;
+}
+function sideValsFor(pts, sideIdx, mul){
+  const arr=[null,null,null];
+  (sideIdx||[]).forEach(i=>{ arr[i] = fmt(dist(pts[i], pts[(i+1)%3]) * mul); });
+  return arr;
+}
+function triExtent(pts, unit, mul){
+  // pts[0]=(0,0) 기준, x는 항상 >=0, y(수학)의 절댓값 최대가 높이
+  const maxX = Math.max(...pts.map(p=>p.x));
+  const maxYabs = Math.max(...pts.map(p=>Math.abs(p.y)));
+  return { w:maxX*unit*mul, h:maxYabs*unit*mul };
+}
+
+// 하나의 SVG(같은 평면) 위에 두 삼각형을 실제 비율 그대로, 바닥선을 맞춰 나란히 배치
+// leftMul: 왼쪽 삼각형에 곱해지는 배율(슬라이더용, 기본 1)
+// layoutMul: 캔버스 크기를 예약할 때 기준으로 삼는 배율(슬라이더 최대값 등, 흔들림 방지용)
+function buildMatchSvg(c, opts){
+  opts = opts||{};
+  const unit = opts.unit||30;
+  const gap = opts.gap!=null?opts.gap:56;
+  const leftMul = opts.leftMul!=null?opts.leftMul:1;
+  const layoutMul = opts.layoutMul!=null?opts.layoutMul:leftMul;
+  const dashedRight = !!opts.dashedRight;
+  const pad = 34;
+
+  const extL = triExtent(c.left, unit, layoutMul);
+  const extR = triExtent(c.right, unit, 1);
+  const totalH = pad*2 + Math.max(extL.h, extR.h);
+  const baselineY = pad + Math.max(extL.h, extR.h);
+  const leftAnchor = { x: pad, y: baselineY };
+  const rightAnchor = { x: pad + extL.w + gap, y: baselineY };
+  const totalW = rightAnchor.x + extR.w + pad;
+
+  const pxLeft = localPx(c.left, unit, leftMul);
+  const pxRight = localPx(c.right, unit, 1);
+
+  const rightMarkup = polyAndLabelsMarkup(pxRight, c.colorHex, dashedRight, c.angleVerts, sideValsFor(c.right, c.sideIdx, 1));
+  const leftMarkup = polyAndLabelsMarkup(pxLeft, c.colorHex, false, c.angleVerts, sideValsFor(c.left, c.sideIdx, leftMul));
+
+  return {
+    html: `<svg viewBox="0 0 ${totalW.toFixed(1)} ${totalH.toFixed(1)}" width="${totalW.toFixed(1)}" height="${totalH.toFixed(1)}" class="tri-svg" xmlns="http://www.w3.org/2000/svg">
+      <g class="zoomG"><g class="content">
+        <g id="matchRight" class="triGroup" transform="translate(${rightAnchor.x},${rightAnchor.y})">${rightMarkup}</g>
+        <g id="matchLeft" class="triGroup" transform="translate(${leftAnchor.x},${leftAnchor.y})">${leftMarkup}</g>
+      </g></g>
+    </svg>`,
+    leftAnchor, rightAnchor, unit
+  };
+}
+function updateMatchLeft(svgRoot, c, leftMul){
+  const g = svgRoot.querySelector('#matchLeft');
+  if(!g) return;
+  const px = localPx(c.left, session._unit, leftMul);
+  g.innerHTML = polyAndLabelsMarkup(px, c.colorHex, false, c.angleVerts, sideValsFor(c.left, c.sideIdx, leftMul));
+}
+function animateGroup(el, from, to, duration, onDone){
+  const start = performance.now();
+  function tick(now){
+    const t = Math.min(1, (now-start)/duration);
+    const ease = 1 - Math.pow(1-t, 3);
+    const x = from.x + (to.x-from.x)*ease;
+    const y = from.y + (to.y-from.y)*ease;
+    el.setAttribute('transform', `translate(${x.toFixed(2)},${y.toFixed(2)})`);
+    if(t<1) requestAnimationFrame(tick);
+    else if(onDone) onDone();
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ===================== 팬/줌 ===================== */
+function attachPanZoom(svgEl){
+  const g = svgEl.querySelector('.zoomG');
+  let scale=1, tx=0, ty=0, dragging=false, last=null, pinch=null;
+  function apply(){ g.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`); }
+  svgEl.addEventListener('pointerdown', e=>{ dragging=true; last={x:e.clientX,y:e.clientY}; try{svgEl.setPointerCapture(e.pointerId);}catch(err){} });
+  svgEl.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx=e.clientX-last.x, dy=e.clientY-last.y; last={x:e.clientX,y:e.clientY};
+    tx+=dx; ty+=dy; apply();
+  });
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>svgEl.addEventListener(ev, ()=>{dragging=false;}));
+  svgEl.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const d = e.deltaY>0?-0.12:0.12;
+    scale = Math.min(2.6, Math.max(0.55, scale+d));
+    apply();
+  }, {passive:false});
+  svgEl.addEventListener('dblclick', ()=>{ scale=1; tx=0; ty=0; apply(); });
+  svgEl.addEventListener('touchmove', e=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      if(pinch!=null){ scale = Math.min(2.6, Math.max(0.55, scale+(d-pinch)*0.006)); apply(); }
+      pinch=d;
+    }
+  }, {passive:false});
+  svgEl.addEventListener('touchend', ()=>{ pinch=null; });
+}
+function attachAllPanZoom(root){
+  root.querySelectorAll('.tri-svg').forEach(attachPanZoom);
+}
+
+/* ===================== 화면 렌더 ===================== */
+const rootEl = document.getElementById('screen-root');
+const backBtn = document.getElementById('backBtn');
+backBtn.addEventListener('click', ()=>{ session.caseId=null; renderMain(); });
+
+function allDone(){ return progress[1] && progress[2] && progress[3]; }
+
+function renderMain(){
+  backBtn.classList.add('hidden');
+  const c1=CASES[1], c2=CASES[2], c3=CASES[3];
+  rootEl.innerHTML = `
+    <div class="hero">
+      <h2>△ABC와 △DEF, 언제 서로 닮음일까요?</h2>
+      <p>세 가지 탐구 활동을 모두 완료하면 삼각형의 닮음 조건이 정리돼요.</p>
+    </div>
+    <div class="case-grid">
+      ${[c1,c2,c3].map(c=>`
+        <button class="case-card ${c.softClass}" data-case="${c.id}">
+          <span class="num">${c.id}</span>
+          <h3>${c.name}</h3>
+          <div class="cond">${c.condition}</div>
+          <div class="status">${progress[c.id]?'✅ 완료':'▶ 탐구 시작'}</div>
+        </button>
+      `).join('')}
+    </div>
+    <button class="final-btn ${allDone()?'unlocked':'locked'}" id="finalBtn" ${allDone()?'':'disabled'}>
+      <div>
+        <div class="ft">${allDone()?'🎉 삼각형의 닮음 조건':'🔒 삼각형의 닮음 조건'}</div>
+        <div class="fs">${allDone()?'세 가지 조건을 한눈에 정리해서 볼 수 있어요':'세 가지 활동을 모두 완료하면 열려요 (' + [1,2,3].filter(i=>progress[i]).length + '/3)'}</div>
+      </div>
+      <div class="arrow">${allDone()?'→':''}</div>
+    </button>
+  `;
+  rootEl.querySelectorAll('.case-card').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = parseInt(btn.dataset.case,10);
+      session = { caseId:id, step:0, phase:'scale', matched:false, answered:false, sliderVal:1.0 };
+      renderCase();
+    });
+  });
+  const fb = document.getElementById('finalBtn');
+  if(allDone()){
+    fb.addEventListener('click', renderSummary);
+  }
+}
+
+function stepDots(color){
+  let s='<div class="steps-dots" style="color:'+color+'">';
+  for(let i=0;i<4;i++) s += `<div class="dot ${i<=session.step?'on':''}"></div>`;
+  s+='</div>';
+  return s;
+}
+
+function renderCase(){
+  backBtn.classList.remove('hidden');
+  const c = CASES[session.caseId];
+  let body='';
+  if(session.step===0) body = stepIntro(c);
+  else if(session.step===1) body = stepDefinition(c);
+  else if(session.step===2) body = stepMatch(c);
+  else body = stepSummary(c);
+
+  rootEl.innerHTML = `
+    <div class="panel fade-in" style="--case-color:${c.colorHex}">
+      <div class="case-head">
+        <span class="case-tag" style="background:${c.colorHex}">${c.name}</span>
+        <h2 class="case-title">${c.condition}</h2>
+      </div>
+      <p class="case-sub">${stepLabel(session.step)}</p>
+      ${stepDots(c.colorHex)}
+      ${body}
+    </div>
+  `;
+  wireCaseStep(c);
+  attachAllPanZoom(rootEl);
+}
+
+function stepLabel(i){
+  return ['1단계 · 조건 살펴보기','2단계 · 닮음의 뜻','3단계 · 크기 맞추고 합동 확인하기','4단계 · 정리하기'][i];
+}
+
+function infoPanelHtml(c){
+  return `
+    <div class="info-panel">
+      <div class="info-col">
+        <div class="ic-title" style="color:${c.colorHex}">△ABC (원래 삼각형)</div>
+        ${c.infoLeft().map(t=>`<div class="ic-row"><b>${t}</b></div>`).join('')}
+      </div>
+      <div class="info-col">
+        <div class="ic-title" style="color:${c.colorHex}">△DEF (목표 삼각형)</div>
+        ${c.infoRight().map(t=>`<div class="ic-row"><b>${t}</b></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function stepIntro(c){
+  const built = buildMatchSvg(c, {unit:25, gap:85, leftMul:1, layoutMul:1, dashedRight:false});
+  return `
+    <div class="given-box" style="--case-color:${c.colorHex}"><b>주어진 조건</b> &nbsp; ${c.given}</div>
+    <div class="match-canvas-wrap">${built.html}</div>
+    <p class="zoom-hint" style="text-align:center">💡 △ABC와 △DEF는 같은 평면 위에, 실제 길이 비 그대로 그려져 있어요. 드래그로 이동, 휠/두 손가락으로 확대·축소해 보세요.</p>
+    ${infoPanelHtml(c)}
+    <div class="nav-row">
+      <span></span>
+      <button class="btn btn-primary" id="nextBtn" style="--case-color:${c.colorHex}">다음</button>
+    </div>
+  `;
+}
+
+function stepDefinition(c){
+  return `
+    <div class="def-box">
+      <div class="term">&lt; 닮음 &gt;</div>
+      <p>한 도형을 일정한 비율로 <span class="em em-up">확대</span> 또는 <span class="em em-down">축소</span>한 도형이 다른 도형과 합동일 때, 이 두 도형은 서로 닮음인 관계에 있다고 한다.</p>
+    </div>
+    <p class="zoom-hint" style="text-align:center; margin-top:14px;">다음 단계에서 실제로 삼각형을 확대·축소해 볼 거예요.</p>
+    <div class="nav-row">
+      <span></span>
+      <button class="btn btn-primary" id="nextBtn" style="--case-color:${c.colorHex}">다음</button>
+    </div>
+  `;
+}
+
+function stepMatch(c){
+  const sliderMax = Math.round((c.ratio+0.8)*100)/100;
+  session._unit = 28;
+  session._sliderMax = sliderMax;
+  const built = buildMatchSvg(c, {unit:session._unit, gap:95, leftMul:session.sliderVal, layoutMul:sliderMax, dashedRight:true});
+  session._leftAnchor = built.leftAnchor;
+  session._rightAnchor = built.rightAnchor;
+
+  const nextEnabled = (session.phase==='scale' && session.matched) || (session.phase==='quiz' && session.answered);
+  const nextLabel = session.phase==='merging' ? '포개는 중…' : (session.phase==='scale' && session.matched) ? '포개기' : (session.phase==='quiz') ? '다음' : '다음';
+
+  return `
+    <p style="font-size:14px; color:var(--ink-soft); text-align:center; margin:0 0 4px;">
+      △ABC를 슬라이더로 확대·축소해서, △DEF와 <b style="color:${c.colorHex}">크기가 같아지도록</b> 만들어보세요.
+    </p>
+    <div class="match-canvas-wrap"><div id="matchSvgWrap">${built.html}</div></div>
+    ${infoPanelHtml(c)}
+    <div class="slider-row" id="sliderRow">
+      <input type="range" id="scaleSlider" min="1" max="${sliderMax}" step="0.01" value="${session.sliderVal}" ${session.phase!=='scale'?'disabled':''}>
+      <div class="scale-read">현재 배율(△ABC) : <span id="scaleReadVal">×${session.sliderVal.toFixed(2)}</span></div>
+      <div class="match-msg" id="matchMsg"></div>
+    </div>
+    <div class="merge-status" id="mergeStatus"></div>
+    <div class="quiz-section ${session.phase==='quiz'?'':'hidden'}" id="quizContainer">${session.phase==='quiz'?quizContentHtml(c):''}</div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="prevBtn">← 이전</button>
+      <button class="btn btn-primary" id="nextBtn" style="--case-color:${c.colorHex}" ${nextEnabled?'':'disabled'}>${nextLabel}</button>
+    </div>
+  `;
+}
+
+function quizContentHtml(c){
+  return `
+    <div class="given-box" style="--case-color:${c.colorHex}">${c.quizPrompt}</div>
+    <div class="quiz-options">${REASON_OPTIONS.map(o=>`<button class="opt-btn" data-opt="${o}">${o}</button>`).join('')}</div>
+    <div class="feedback" id="quizFeedback"></div>
+  `;
+}
+
+function stepSummary(c){
+  return `
+    <div class="summary-card" style="--case-color:${c.colorHex}">
+      <p class="rule">${c.summaryTitle}</p>
+      <p>${c.summaryLead} <span class="key" style="color:${c.colorHex}">${c.summaryKey}</span>${c.summaryTail}</p>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-ghost" id="prevBtn">← 이전</button>
+      <button class="btn btn-primary" id="finishBtn" style="--case-color:${c.colorHex}">활동 끝내기</button>
+    </div>
+  `;
+}
+
+function wireCaseStep(c){
+  const nextBtn = document.getElementById('nextBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const finishBtn = document.getElementById('finishBtn');
+
+  if(finishBtn) finishBtn.addEventListener('click', ()=>{
+    progress[c.id] = true; saveProgress();
+    session.caseId=null; renderMain();
+  });
+
+  if(session.step===0 || session.step===1){
+    if(nextBtn) nextBtn.addEventListener('click', ()=>{ session.step++; renderCase(); });
+    if(prevBtn) prevBtn.addEventListener('click', ()=>{ session.step--; renderCase(); });
+  } else if(session.step===2){
+    wireMatchStage(c, nextBtn, prevBtn);
+  } else if(session.step===3){
+    if(prevBtn) prevBtn.addEventListener('click', ()=>{
+      session.step--; session.phase='scale'; session.matched=false; session.answered=false; session.sliderVal=1.0;
+      renderCase();
+    });
+  }
+}
+
+function wireMatchStage(c, nextBtn, prevBtn){
+  const slider = document.getElementById('scaleSlider');
+  const readVal = document.getElementById('scaleReadVal');
+  const msg = document.getElementById('matchMsg');
+  const svgWrap = document.getElementById('matchSvgWrap');
+  const mergeStatus = document.getElementById('mergeStatus');
+  const quizContainer = document.getElementById('quizContainer');
+
+  if(prevBtn) prevBtn.addEventListener('click', ()=>{
+    if(session.phase==='scale'){
+      session.step--; renderCase();
+    } else {
+      session.phase='scale'; session.matched=false; session.answered=false; session.sliderVal=1.0;
+      renderCase();
+    }
+  });
+
+  slider.addEventListener('input', ()=>{
+    const v = parseFloat(slider.value);
+    session.sliderVal = v;
+    readVal.textContent = '×'+v.toFixed(2);
+    const svgRoot = svgWrap.querySelector('svg');
+    updateMatchLeft(svgRoot, c, v);
+    const diff = Math.abs(v-c.ratio);
+    if(diff < 0.03){
+      session.matched = true;
+      msg.textContent = '🎉 정확히 크기가 같아졌어요! 이제 포개어 볼까요?';
+      msg.className='match-msg ok';
+      nextBtn.disabled=false;
+      nextBtn.textContent='포개기';
+    } else if(diff < 0.3){
+      session.matched=false;
+      msg.textContent = '거의 다 왔어요, 조금만 더 조절해보세요!';
+      msg.className='match-msg near';
+      nextBtn.disabled=true;
+      nextBtn.textContent='다음';
+    } else {
+      session.matched=false;
+      msg.textContent='';
+      nextBtn.disabled=true;
+      nextBtn.textContent='다음';
+    }
+  });
+
+  nextBtn.addEventListener('click', ()=>{
+    if(session.phase==='scale' && session.matched){
+      startMerge();
+    } else if(session.phase==='quiz' && session.answered){
+      session.step=3; renderCase();
+    }
+  });
+
+  function startMerge(){
+    session.phase='merging';
+    nextBtn.disabled=true;
+    nextBtn.textContent='포개는 중…';
+    slider.disabled=true;
+    msg.textContent='';
+    mergeStatus.textContent = '△ABC가 이동해서 △DEF와 정확히 포개지고 있어요…';
+
+    const svgRoot = svgWrap.querySelector('svg');
+    const leftG = svgRoot.querySelector('#matchLeft');
+    const rightG = svgRoot.querySelector('#matchRight');
+    const from = { x:session._leftAnchor.x, y:session._leftAnchor.y };
+    const to = { x:session._rightAnchor.x, y:session._rightAnchor.y };
+
+    animateGroup(leftG, from, to, 900, ()=>{
+      // 병합 완료: 대응 관계를 보여주는 라벨로 다시 그리고, 뒤에 있던 점선 삼각형은 숨긴다
+      const combinedPts = c.right.map((p,i)=>({x:p.x, y:p.y, label:`${c.left[i].label}·${p.label}`}));
+      const px = localPx(combinedPts, session._unit, 1);
+      leftG.innerHTML = polyAndLabelsMarkup(px, c.colorHex, false, c.angleVerts, sideValsFor(c.right, c.sideIdx, 1));
+      rightG.style.display='none';
+      mergeStatus.textContent = '🎉 두 삼각형이 정확히 포개졌습니다! (두 도형이 완전히 합동)';
+      session.phase='quiz';
+      quizContainer.classList.remove('hidden');
+      quizContainer.classList.add('fade-in');
+      quizContainer.innerHTML = quizContentHtml(c);
+      wireQuiz(c, nextBtn, quizContainer);
+      nextBtn.textContent='다음';
+      nextBtn.disabled = !session.answered;
+    });
+  }
+}
+
+function wireQuiz(c, nextBtn, quizContainer){
+  const fb = quizContainer.querySelector('#quizFeedback');
+  quizContainer.querySelectorAll('.opt-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(session.answered) return;
+      const val = btn.dataset.opt;
+      if(val === c.correct){
+        btn.classList.add('correct');
+        fb.textContent = `정답이에요! ${c.correct} 합동 조건을 이용해 두 삼각형이 합동임을 알 수 있어요.`;
+        fb.className='feedback ok';
+        session.answered = true;
+        nextBtn.disabled=false;
+        quizContainer.querySelectorAll('.opt-btn').forEach(b=>{ if(b!==btn) b.style.opacity=.5; });
+      } else {
+        btn.classList.add('wrong');
+        btn.classList.add('shake');
+        fb.textContent = '다시 한 번 생각해보세요.';
+        fb.className='feedback bad';
+        setTimeout(()=>btn.classList.remove('wrong','shake'), 500);
+      }
+    });
+  });
+}
+
+/* ===================== 최종 정리 화면 ===================== */
+function miniPairSvg(kind, colorHex){
+  const unit=32, gap=88, pad=22, k=1.6;
+  const T =[{x:0,y:0,label:'A'},{x:2.3,y:0,label:'B'},{x:0.85,y:1.55,label:'C'}];
+  const Tp=[{x:0,y:0,label:"A′"},{x:2.3,y:0,label:"B′"},{x:0.85,y:1.55,label:"C′"}];
+  const grey='#C9BFA6', hi=colorHex||'#C99A3B';
+
+  function toPx(pts, mul){ return pts.map(p=>({x:p.x*unit*mul, y:-p.y*unit*mul, label:p.label})); }
+  const pxSmall = toPx(T,1), pxBig = toPx(Tp,k);
+  const hSmall = 1.55*unit, hBig = 1.55*unit*k;
+  const wSmall = 2.3*unit, wBig = 2.3*unit*k;
+  const baselineY = pad + Math.max(hSmall,hBig);
+  const leftAnchor = {x:pad, y:baselineY};
+  const rightAnchor = {x:pad+wSmall+gap, y:baselineY};
+  const totalW = rightAnchor.x + wBig + pad;
+  const totalH = baselineY + pad*0.7;
+
+  let edgesOn=[false,false,false], anglesOn=[false,false,false];
+  if(kind===1){ edgesOn=[true,true,true]; }
+  else if(kind===2){ edgesOn=[true,true,false]; anglesOn=[false,true,false]; }
+  else if(kind===3){ anglesOn=[false,true,true]; }
+
+  function edgeLine(px,i,on){
+    const a=px[i], b=px[(i+1)%3];
+    return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${on?hi:'transparent'}" stroke-width="3.4" stroke-linecap="round"/>`;
+  }
+  function angleArc(px, idx, on){
+    if(!on) return '';
+    const c=px[idx], p1=px[(idx+2)%3], p2=px[(idx+1)%3], r=13;
+    const a1=Math.atan2(p1.y-c.y,p1.x-c.x), a2=Math.atan2(p2.y-c.y,p2.x-c.x);
+    let diff=a2-a1; while(diff<=-Math.PI) diff+=2*Math.PI; while(diff>Math.PI) diff-=2*Math.PI;
+    const sweep=diff>0?1:0;
+    const s={x:c.x+r*Math.cos(a1),y:c.y+r*Math.sin(a1)}, e={x:c.x+r*Math.cos(a2),y:c.y+r*Math.sin(a2)};
+    return `<path d="M ${s.x.toFixed(1)} ${s.y.toFixed(1)} A ${r} ${r} 0 0 ${sweep} ${e.x.toFixed(1)} ${e.y.toFixed(1)}" fill="none" stroke="${hi}" stroke-width="2.4"/>`;
+  }
+  function labelsMarkup(px){
+    const cx=(px[0].x+px[1].x+px[2].x)/3, cy=(px[0].y+px[1].y+px[2].y)/3;
+    return px.map(p=>{
+      const dx=p.x-cx, dy=p.y-cy, len=Math.hypot(dx,dy)||1;
+      const lx=p.x+dx/len*15, ly=p.y+dy/len*15;
+      return `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="11" font-weight="800" fill="#6B6357" text-anchor="middle" dominant-baseline="middle">${p.label}</text>`;
+    }).join('');
+  }
+  function shapeMarkup(px){
+    let s = `<polygon points="${px.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="${hi}12" stroke="${grey}" stroke-width="1.8"/>`;
+    for(let i=0;i<3;i++) s += edgeLine(px,i,edgesOn[i]);
+    for(let i=0;i<3;i++) s += angleArc(px,i,anglesOn[i]);
+    s += labelsMarkup(px);
+    return s;
+  }
+
+  return `<svg viewBox="0 0 ${totalW.toFixed(1)} ${totalH.toFixed(1)}" width="${totalW.toFixed(1)}" height="${totalH.toFixed(1)}" class="rule-svg" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(${leftAnchor.x},${leftAnchor.y})">${shapeMarkup(pxSmall)}</g>
+    <g transform="translate(${rightAnchor.x},${rightAnchor.y})">${shapeMarkup(pxBig)}</g>
+  </svg>`;
+}
+
+function renderSummary(){
+  backBtn.classList.remove('hidden');
+  rootEl.innerHTML = `
+    <div class="panel fade-in">
+      <div class="hero" style="padding-top:4px;">
+        <h2>삼각형의 닮음 조건</h2>
+        <p>두 삼각형은 다음 조건 중 하나를 만족시킬 때, 서로 닮은 도형이다.</p>
+      </div>
+      <div class="rule-box">
+        <div class="rule-item">
+          <div class="rule-num" style="background:${CASES[1].colorHex}">1</div>
+          <div class="rule-text"><b>대응하는 세 쌍의 변의 길이의 비가 같을 때 <span class="rule-name">(SSS닮음)</span></b>a : a′ = b : b′ = c : c′</div>
+          ${miniPairSvg(1, CASES[1].colorHex)}
+        </div>
+        <div class="rule-item">
+          <div class="rule-num" style="background:${CASES[2].colorHex}">2</div>
+          <div class="rule-text"><b>대응하는 두 쌍의 변의 길이의 비가 같고 그 끼인각의 크기가 같을 때 <span class="rule-name">(SAS닮음)</span></b>a : a′ = c : c′,  ∠B = ∠B′</div>
+          ${miniPairSvg(2, CASES[2].colorHex)}
+        </div>
+        <div class="rule-item">
+          <div class="rule-num" style="background:${CASES[3].colorHex}">3</div>
+          <div class="rule-text"><b>대응하는 두 쌍의 각의 크기가 각각 같을 때 <span class="rule-name">(AA닮음)</span></b>∠B = ∠B′,  ∠C = ∠C′</div>
+          ${miniPairSvg(3, CASES[3].colorHex)}
+        </div>
+      </div>
+      <div class="nav-row" style="justify-content:center;">
+        <button class="btn btn-primary" id="toMainBtn" style="--case-color:${CASES[1].colorHex}">목록으로 돌아가기</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('toMainBtn').addEventListener('click', renderMain);
+}
+
+/* ===================== 시작 ===================== */
+renderMain();
+})();
+</script>
+</body>
+</html>
