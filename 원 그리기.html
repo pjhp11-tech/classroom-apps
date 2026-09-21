@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EDF5FF">
+<title>정확한 원 그리기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --paper:#EDF5FF;
+  --grid:#D9E7FB;
+  --ink:#1B2A5C;
+  --ink-soft:#56628F;
+  --blue:#3D7BFF;
+  --sun:#FFCF3F;
+  --coral:#FF6F59;
+  --mint:#1DBF8E;
+  --amber:#F5A11B;
+  --ring:var(--blue);
+  --display:'Jua','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR','Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{
+  font-family:var(--body);
+  color:var(--ink);
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+  overflow:hidden;
+  overscroll-behavior:none;
+  word-break:keep-all;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.screen{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
+.screen[hidden]{display:none}
+
+/* ───────── 공통 버튼 ───────── */
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;
+  border:2.5px solid var(--ink);border-radius:999px;
+  background:#fff;font-weight:700;font-size:.92rem;line-height:1;
+  box-shadow:0 3px 0 var(--ink);
+  transition:transform .08s,box-shadow .08s;
+}
+.pill:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.pill svg{width:16px;height:16px;flex:none}
+
+/* ───────── 메인 화면 ───────── */
+.home{display:flex;padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom))}
+.home-inner{
+  margin:auto;width:100%;max-width:640px;padding:24px 0;
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;
+}
+.hero{width:min(60vw,250px)}
+.hero svg{display:block;width:100%;height:auto;overflow:visible}
+.hero .perfect{fill:none;stroke:var(--coral);stroke-width:3;stroke-dasharray:9 8;stroke-linecap:round}
+.hero .wobbly{
+  fill:none;stroke:var(--ink);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:1;
+  animation:draw 1.9s .35s cubic-bezier(.45,.05,.3,1) both;
+}
+.hero .badge-in{transform-box:fill-box;transform-origin:center;animation:pop .45s 2.15s cubic-bezier(.3,1.6,.5,1) both}
+.hero .badge-text{font-family:var(--display);font-size:19px;fill:var(--ink);text-anchor:middle}
+@keyframes draw{from{stroke-dashoffset:1}}
+@keyframes pop{from{transform:scale(0)}}
+
+h1{
+  font-family:var(--display);font-weight:400;
+  font-size:clamp(2.5rem,10vw,3.7rem);line-height:1.1;letter-spacing:-.01em;
+}
+.lead{font-size:1.06rem;line-height:1.65;color:var(--ink-soft);max-width:22em}
+
+.btn-start{
+  margin-top:8px;
+  font-family:var(--display);font-size:1.75rem;line-height:1;
+  padding:17px 50px 19px;
+  background:var(--sun);color:var(--ink);
+  border:3px solid var(--ink);border-radius:999px;
+  box-shadow:0 6px 0 var(--ink);
+  transition:transform .08s,box-shadow .08s;
+}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--ink)}
+.btn-start:active{transform:translateY(6px);box-shadow:0 0 0 var(--ink)}
+
+.steps{
+  list-style:none;padding:0;margin-top:18px;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:12px 24px;
+  font-size:.95rem;font-weight:600;
+}
+.steps li{display:flex;align-items:center;gap:9px}
+.steps .n{
+  width:28px;height:28px;flex:none;display:grid;place-items:center;
+  border:2.5px solid var(--ink);border-radius:50%;background:#fff;
+  font-family:var(--display);font-size:.95rem;line-height:1;
+}
+
+/* ───────── 화이트보드 화면 ───────── */
+.board{overflow:hidden}
+.board-inner{
+  height:100%;max-width:980px;margin:0 auto;
+  display:flex;flex-direction:column;gap:14px;
+  padding:
+    max(12px,env(safe-area-inset-top))
+    max(14px,env(safe-area-inset-right))
+    max(18px,env(safe-area-inset-bottom))
+    max(14px,env(safe-area-inset-left));
+}
+.bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bar-title{
+  flex:1;text-align:center;white-space:nowrap;
+  font-family:var(--display);font-weight:400;font-size:1.4rem;
+}
+.stats{display:flex;gap:8px}
+.stat{
+  padding:7px 12px;border:2.5px solid var(--ink);border-radius:999px;
+  background:#fff;font-size:.82rem;font-weight:700;line-height:1;white-space:nowrap;
+}
+.stat.best{background:var(--sun)}
+.stat b{font-family:var(--display);font-weight:400;font-size:1.05rem;margin-left:5px}
+
+.pad-wrap{
+  position:relative;flex:1;min-height:0;
+  background:#fff;
+  border:2.5px solid var(--ink);border-radius:22px;
+  box-shadow:0 5px 0 var(--ink);
+  overflow:hidden;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+#pad{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+
+.hint{
+  position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:8px;
+  text-align:center;color:var(--ink-soft);font-size:.9rem;padding:20px;
+  pointer-events:none;transition:opacity .2s;
+}
+.hint.off{opacity:0}
+.hint svg{width:84px;height:84px}
+.hint b{font-family:var(--display);font-weight:400;font-size:1.35rem;color:var(--ink)}
+
+.retry{
+  position:absolute;top:12px;right:12px;
+  opacity:0;pointer-events:none;transform:translateY(-4px);
+  transition:opacity .2s,transform .2s,box-shadow .08s;
+}
+.retry.on{opacity:1;pointer-events:auto;transform:none}
+.retry.on:active{transform:translateY(3px)}
+
+.legend{
+  position:absolute;left:12px;bottom:12px;max-width:calc(100% - 24px);
+  display:none;flex-wrap:wrap;align-items:center;gap:4px 14px;
+  padding:6px 12px;border:2px solid var(--ink);border-radius:999px;
+  background:rgba(255,255,255,.94);
+  font-size:.72rem;font-weight:700;line-height:1.2;pointer-events:none;
+}
+.legend.on{display:flex}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg{display:inline-block;flex:none}
+.lg.line{width:18px;border-top:4px solid var(--ink);border-radius:2px}
+.lg.dash{width:18px;border-top:3px dashed var(--coral)}
+.lg.dot{width:12px;height:12px;border:2px solid var(--ink);border-radius:50%}
+.lg.start{background:var(--mint)}
+.lg.end{background:var(--sun)}
+
+/* 점수 패널 */
+.panel{
+  flex:none;min-height:136px;
+  display:grid;grid-template-columns:auto 1fr;align-items:center;gap:16px;
+  padding:14px 18px;
+  background:#fff;border:2.5px solid var(--ink);border-radius:22px;
+  box-shadow:0 5px 0 var(--ink);
+}
+.ring{position:relative;width:88px;height:88px}
+.ring svg{display:block;width:100%;height:100%}
+.ring circle{fill:none;stroke-width:11}
+.ring .track{stroke:#E6EEFB}
+.ring .bar-fill{
+  stroke:var(--ring);stroke-linecap:round;
+  stroke-dasharray:100;stroke-dashoffset:100;
+  transform:rotate(-90deg);transform-box:fill-box;transform-origin:center;
+  transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1);
+}
+.panel[data-state="idle"] .bar-fill,
+.panel[data-state="drawing"] .bar-fill,
+.panel[data-state="error"] .bar-fill{opacity:0}
+.ring-num{
+  position:absolute;inset:0;display:grid;place-content:center;justify-items:center;
+  font-family:var(--display);line-height:1;
+}
+.ring-num b{font-weight:400;font-size:2rem}
+.ring-num small{font-size:.8rem;margin-top:2px;color:var(--ink-soft)}
+.panel[data-state="result"] .ring-num b{color:var(--ring)}
+.panel[data-state="error"] .ring-num b{color:var(--coral)}
+
+.panel-text h2{font-family:var(--display);font-weight:400;font-size:1.3rem;line-height:1.25}
+.panel-text p{margin-top:4px;font-size:.9rem;line-height:1.5;color:var(--ink-soft)}
+.chips{list-style:none;padding:0;margin-top:9px;display:flex;flex-wrap:wrap;gap:6px;visibility:hidden}
+.panel[data-state="result"] .chips{visibility:visible}
+.chips li{
+  padding:4px 10px;border:2px solid var(--ink);border-radius:999px;
+  background:#F3F8FF;font-size:.75rem;font-weight:700;line-height:1.2;
+}
+.chips b{font-family:var(--display);font-weight:400;font-size:.9rem;margin-left:3px}
+
+@media (min-width:720px){
+  .board-inner{gap:16px}
+  .bar-title{font-size:1.6rem}
+  .panel{min-height:150px;padding:18px 26px;gap:24px}
+  .ring{width:112px;height:112px}
+  .ring-num b{font-size:2.5rem}
+  .panel-text h2{font-size:1.5rem}
+  .panel-text p{font-size:1rem}
+  .chips li{font-size:.82rem}
+}
+@media (max-width:520px){
+  .steps{flex-direction:column;align-items:flex-start;gap:10px;width:fit-content}
+}
+@media (max-width:420px){
+  .bar-title{display:none}
+  .stats{margin-left:auto}
+  .ring{width:80px;height:80px}
+  .panel{gap:14px;padding:14px 16px}
+  .chips{gap:5px}
+  .chips li{padding:3px 8px;font-size:.72rem}
+}
+
+/* 색종이 */
+#confetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:50}
+#confetti i{
+  position:absolute;top:-24px;border-radius:50%;border:2px solid var(--ink);
+  animation:fall var(--dur) cubic-bezier(.3,.6,.5,1) forwards;
+}
+@keyframes fall{to{transform:translate(var(--dx),108vh) rotate(160deg)}}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════ 메인 화면 ═════════ -->
+<main id="home" class="screen home">
+  <div class="home-inner">
+    <div class="hero" aria-hidden="true">
+      <svg viewBox="0 0 220 220">
+        <!-- 완벽한 원(기준) -->
+        <circle class="perfect" cx="110" cy="110" r="78"/>
+        <!-- 손으로 그린 원 -->
+        <path class="wobbly" pathLength="1"
+          d="M112 31 C156 28 192 66 190 108 C188 152 150 193 108 190 C66 188 28 154 30 112 C33 70 72 34 114 35"/>
+        <g transform="translate(184 38) rotate(12)">
+          <g class="badge-in">
+            <circle r="31" fill="#FFCF3F" stroke="#1B2A5C" stroke-width="3"/>
+            <text class="badge-text" y="7">몇 점?</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <h1>정확한 원 그리기</h1>
+    <p class="lead">컴퍼스 없이 손으로만 그려 봐요.<br>내가 그린 원은 100점 중 몇 점일까요?</p>
+
+    <button class="btn-start" id="startBtn" type="button">시작하기</button>
+
+    <ol class="steps">
+      <li><span class="n">1</span>원을 한 번에 그려요</li>
+      <li><span class="n">2</span>펜을 떼면 바로 채점</li>
+      <li><span class="n">3</span>최고 점수에 도전!</li>
+    </ol>
+  </div>
+</main>
+
+<!-- ═════════ 화이트보드 화면 ═════════ -->
+<main id="board" class="screen board" hidden>
+  <div class="board-inner">
+    <header class="bar">
+      <button class="pill" id="homeBtn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>
+        홈
+      </button>
+      <h2 class="bar-title">정확한 원 그리기</h2>
+      <div class="stats">
+        <span class="stat best">최고<b id="bestVal">--</b></span>
+        <span class="stat">시도<b id="triesVal">0</b></span>
+      </div>
+    </header>
+
+    <div class="pad-wrap" id="padWrap">
+      <canvas id="pad" aria-label="원을 그리는 화이트보드"></canvas>
+
+      <div class="hint" id="hint">
+        <svg viewBox="0 0 84 84" fill="none" aria-hidden="true"><circle cx="42" cy="42" r="34" stroke="#FF6F59" stroke-width="3" stroke-dasharray="8 7" stroke-linecap="round"/></svg>
+        <b>여기에 원을 그려 보세요</b>
+        <span>손가락이나 펜, 마우스로 그려요</span>
+      </div>
+
+      <div class="legend" id="legend" aria-hidden="true">
+        <span><i class="lg line"></i>내 선</span>
+        <span><i class="lg dash"></i>가장 잘 맞는 원</span>
+        <span><i class="lg dot start"></i>시작</span>
+        <span><i class="lg dot end"></i>끝</span>
+      </div>
+
+      <button class="pill retry" id="retryBtn" type="button">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.8-4.1"/><path d="M2.5 2.5v3.2h3.2"/></svg>
+        다시 그리기
+      </button>
+    </div>
+
+    <section class="panel" id="panel" data-state="idle">
+      <div class="ring" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="43"/>
+          <circle class="bar-fill" id="ringBar" cx="50" cy="50" r="43" pathLength="100"/>
+        </svg>
+        <div class="ring-num"><b id="scoreNum">?</b><small id="scoreUnit">점</small></div>
+      </div>
+      <div class="panel-text">
+        <h2 id="msgTitle">원을 그려 보세요!</h2>
+        <p id="msgTip">펜을 떼는 순간 점수가 나와요. 시작한 곳으로 돌아와 원을 닫아 주세요.</p>
+        <ul class="chips" id="chips">
+          <li>모양<b id="cShape">-</b></li>
+          <li>매끈함<b id="cSmooth">-</b></li>
+          <li>닫힘<b id="cClose">-</b></li>
+        </ul>
+      </div>
+    </section>
+    <p class="sr" id="srScore" aria-live="polite"></p>
+  </div>
+</main>
+
+<div id="confetti" aria-hidden="true"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ════════════════════════════════════════════
+   채점 로직 (DOM과 무관한 순수 함수)
+   ════════════════════════════════════════════ */
+// ==== ANALYSIS START
+function dist(a, b){ return Math.hypot(a.x - b.x, a.y - b.y); }
+
+// 그린 선을 같은 간격의 n개 점으로 다시 뽑기 (천천히 그린 구간이 더 유리해지지 않게)
+function resample(pts, total, n){
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i-1] + dist(pts[i-1], pts[i]));
+  const out = [];
+  let j = 1;
+  for (let k = 0; k < n; k++){
+    const t = total * k / (n - 1);
+    while (j < pts.length - 1 && cum[j] < t) j++;
+    const seg = cum[j] - cum[j-1];
+    const u = seg > 0 ? Math.min(1, Math.max(0, (t - cum[j-1]) / seg)) : 0;
+    out.push({
+      x: pts[j-1].x + (pts[j].x - pts[j-1].x) * u,
+      y: pts[j-1].y + (pts[j].y - pts[j-1].y) * u
+    });
+  }
+  return out;
+}
+
+function solve3(A, b){
+  const M = [[...A[0], b[0]], [...A[1], b[1]], [...A[2], b[2]]];
+  for (let i = 0; i < 3; i++){
+    let p = i;
+    for (let k = i + 1; k < 3; k++) if (Math.abs(M[k][i]) > Math.abs(M[p][i])) p = k;
+    if (Math.abs(M[p][i]) < 1e-12) return null;
+    [M[i], M[p]] = [M[p], M[i]];
+    for (let k = i + 1; k < 3; k++){
+      const f = M[k][i] / M[i][i];
+      for (let j = i; j < 4; j++) M[k][j] -= f * M[i][j];
+    }
+  }
+  const x = [0, 0, 0];
+  for (let i = 2; i >= 0; i--){
+    let s = M[i][3];
+    for (let j = i + 1; j < 3; j++) s -= M[i][j] * x[j];
+    x[i] = s / M[i][i];
+  }
+  return x;
+}
+
+// 점들에 가장 잘 맞는 원 찾기 (대수적 초기값 + 가우스-뉴턴 정밀화)
+function fitCircle(P){
+  const n = P.length;
+  let mx = 0, my = 0;
+  for (const p of P){ mx += p.x; my += p.y; }
+  mx /= n; my /= n;
+  let Suu = 0, Svv = 0, Suv = 0, Suuu = 0, Svvv = 0, Suvv = 0, Svuu = 0;
+  for (const p of P){
+    const u = p.x - mx, v = p.y - my;
+    Suu += u*u; Svv += v*v; Suv += u*v;
+    Suuu += u*u*u; Svvv += v*v*v; Suvv += u*v*v; Svuu += v*u*u;
+  }
+  const det = Suu * Svv - Suv * Suv;
+  if (Math.abs(det) < 1e-9) return null;
+  const b1 = 0.5 * (Suuu + Suvv), b2 = 0.5 * (Svvv + Svuu);
+  const uc = (b1 * Svv - b2 * Suv) / det;
+  const vc = (Suu * b2 - Suv * b1) / det;
+  let cx = mx + uc, cy = my + vc;
+  let r = Math.sqrt(uc*uc + vc*vc + (Suu + Svv) / n);
+
+  for (let it = 0; it < 15; it++){
+    const a = [[0,0,0],[0,0,0],[0,0,0]], g = [0,0,0];
+    for (const p of P){
+      const dx = p.x - cx, dy = p.y - cy;
+      const d = Math.hypot(dx, dy) || 1e-9;
+      const res = d - r;
+      const J = [-dx / d, -dy / d, -1];
+      for (let i = 0; i < 3; i++){
+        g[i] += J[i] * res;
+        for (let j = 0; j < 3; j++) a[i][j] += J[i] * J[j];
+      }
+    }
+    const d = solve3(a, [-g[0], -g[1], -g[2]]);
+    if (!d) break;
+    cx += d[0]; cy += d[1]; r += d[2];
+    if (Math.abs(d[0]) + Math.abs(d[1]) + Math.abs(d[2]) < 1e-6) break;
+  }
+  if (!isFinite(cx) || !isFinite(cy) || !isFinite(r)) return null;
+  return { cx, cy, r };
+}
+
+// 오차가 작을수록 100에 가까운 점수로 바꾸기
+function toScore(err){ return 100 * Math.exp(-Math.pow(err / 0.11, 1.2)); }
+
+function analyze(raw){
+  let L = 0;
+  for (let i = 1; i < raw.length; i++) L += dist(raw[i-1], raw[i]);
+  if (raw.length < 8 || L < 100) return { ok: false, reason: 'short' };
+
+  const N = 256;
+  const P = resample(raw, L, N);
+  const fit = fitCircle(P);
+  if (!fit) return { ok: false, reason: 'open' };
+  const { cx, cy, r } = fit;
+  if (r < 24) return { ok: false, reason: 'small' };
+
+  // 얼마나 한 바퀴를 돌았는지
+  const ang = P.map(p => Math.atan2(p.y - cy, p.x - cx));
+  let sweep = 0;
+  for (let i = 1; i < N; i++){
+    let d = ang[i] - ang[i-1];
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    sweep += d;
+  }
+  const turns = Math.abs(sweep) / (2 * Math.PI);
+  if (turns < 0.65) return { ok: false, reason: 'open' };
+
+  // 반지름 오차 (기준 원에서 얼마나 벗어났는지)
+  const res = P.map(p => Math.hypot(p.x - cx, p.y - cy) - r);
+  let ss = 0;
+  for (const v of res) ss += v * v;
+  const err = Math.sqrt(ss / N) / r;
+
+  // 오차를 '타원 정도'와 '울퉁불퉁한 정도'로 나누기
+  let sa = 0, sb = 0;
+  for (let i = 0; i < N; i++){
+    sa += res[i] * Math.cos(2 * ang[i]);
+    sb += res[i] * Math.sin(2 * ang[i]);
+  }
+  const a2 = 2 * sa / N, b2 = 2 * sb / N;
+  const ov  = Math.hypot(a2, b2) / Math.SQRT2 / r;
+  const wob = Math.sqrt(Math.max(0, err * err - ov * ov));
+  const phiDeg = 0.5 * Math.atan2(b2, a2) * 180 / Math.PI;
+
+  // 시작점과 끝점이 만났는지 (처음/끝 30% 구간과 비교해서 겹쳐 그린 경우도 인정)
+  const k = Math.floor(N * 0.3);
+  const s = P[0], e = P[N-1];
+  let g1 = Infinity, g2 = Infinity;
+  for (let i = 0; i < k; i++) g1 = Math.min(g1, dist(e, P[i]));
+  for (let i = N - k; i < N; i++) g2 = Math.min(g2, dist(s, P[i]));
+  const gap = Math.min(g1, g2) / r;
+  const closeMult = 1 - Math.min(0.4, Math.max(0, gap - 0.04) * 0.8);
+
+  const score = Math.max(0, Math.min(100, Math.round(toScore(err) * closeMult)));
+
+  return {
+    ok: true, score, err, ov, wob, gap, closeMult, phiDeg, turns,
+    shape:   Math.round(toScore(ov)),
+    smooth:  Math.round(toScore(wob)),
+    closure: Math.round(100 * (1 - Math.min(1, Math.max(0, gap - 0.04) * 2))),
+    cx, cy, r, dir: sweep >= 0 ? 1 : -1
+  };
+}
+// ==== ANALYSIS END
+
+/* ════════════════════════════════════════════
+   화면 / 그리기
+   ════════════════════════════════════════════ */
+const $ = s => document.querySelector(s);
+const home = $('#home'), board = $('#board');
+const wrap = $('#padWrap'), canvas = $('#pad'), ctx = canvas.getContext('2d');
+const hint = $('#hint'), legend = $('#legend'), retryBtn = $('#retryBtn');
+const panel = $('#panel'), ringBar = $('#ringBar');
+const scoreNum = $('#scoreNum'), scoreUnit = $('#scoreUnit');
+const msgTitle = $('#msgTitle'), msgTip = $('#msgTip'), srScore = $('#srScore');
+const cShape = $('#cShape'), cSmooth = $('#cSmooth'), cClose = $('#cClose');
+const bestVal = $('#bestVal'), triesVal = $('#triesVal');
+
+const INK = '#1B2A5C', CORAL = '#FF6F59', MINT = '#1DBF8E', SUN = '#FFCF3F';
+const BLUE = '#3D7BFF', AMBER = '#F5A11B';
+const PEN_W = 4;
+const reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+// 최고 점수 저장 (저장이 막힌 환경에서는 이번 접속 동안만 기억)
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
+};
+let best = parseInt(store.get('circle_best'), 10) || 0;
+let tries = 0;
+if (best) bestVal.textContent = best;
+
+let W = 0, H = 0, dpr = 1;
+let pts = [];
+let drawing = false, activeId = null;
+let result = null;
+let refToken = 0, countToken = 0;
+
+function resize(){
+  const r = wrap.getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return;
+  W = Math.round(r.width); H = Math.round(r.height);
+  dpr = Math.min(window.devicePixelRatio || 1, 3);
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  render();
+}
+
+function pen(){
+  ctx.lineWidth = PEN_W; ctx.strokeStyle = INK; ctx.fillStyle = INK;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([]);
+}
+
+function dot(p, fill){
+  ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke();
+}
+
+function render(refP){
+  if (refP === undefined) refP = 1;
+  ctx.clearRect(0, 0, W, H);
+
+  // 가장 잘 맞는 원(비교용 기준선). 그린 선은 고치지 않고 그대로 둡니다.
+  if (result && result.ok && refP > 0){
+    const a0 = Math.atan2(pts[0].y - result.cy, pts[0].x - result.cx);
+    ctx.save();
+    ctx.setLineDash([9, 8]); ctx.lineCap = 'round';
+    ctx.lineWidth = 3; ctx.strokeStyle = CORAL;
+    ctx.beginPath();
+    ctx.arc(result.cx, result.cy, result.r, a0, a0 + result.dir * Math.PI * 2 * refP, result.dir < 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 학생이 그린 선 (보정 없이 원본 그대로)
+  pen();
+  if (pts.length === 1){
+    ctx.beginPath(); ctx.arc(pts[0].x, pts[0].y, PEN_W / 2, 0, Math.PI * 2); ctx.fill();
+  } else if (pts.length > 1){
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+  }
+
+  if (result && result.ok && refP >= 1 && pts.length > 1){
+    dot(pts[0], MINT);
+    dot(pts[pts.length - 1], SUN);
+  }
+}
+
+function addPoint(ev){
+  const rc = canvas.getBoundingClientRect();
+  const p = { x: ev.clientX - rc.left, y: ev.clientY - rc.top };
+  const last = pts[pts.length - 1];
+  if (last && dist(last, p) < 1.2) return;
+  pts.push(p);
+  pen();
+  if (last){
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(p.x, p.y, PEN_W / 2, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+canvas.addEventListener('pointerdown', e => {
+  if (activeId !== null) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  activeId = e.pointerId;
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  clearStroke();
+  drawing = true;
+  hint.classList.add('off');
+  retryBtn.classList.add('on');
+  setState('drawing', '그리는 중…', '시작한 곳까지 돌아와서 원을 완성해요.', '…', '');
+  addPoint(e);
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (!drawing || e.pointerId !== activeId) return;
+  e.preventDefault();
+  const list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+  if (list && list.length) for (const ev of list) addPoint(ev);
+  else addPoint(e);
+});
+
+function endStroke(e, cancelled){
+  if (!drawing || e.pointerId !== activeId) return;
+  drawing = false; activeId = null;
+  try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+  if (cancelled){ clearStroke(); toIdle(); return; }
+  finish();
+}
+canvas.addEventListener('pointerup', e => endStroke(e, false));
+canvas.addEventListener('pointercancel', e => endStroke(e, true));
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ───────── 결과 표시 ───────── */
+function setState(state, title, tip, num, unit){
+  panel.dataset.state = state;
+  msgTitle.textContent = title;
+  msgTip.textContent = tip;
+  scoreNum.textContent = num;
+  scoreUnit.textContent = unit;
+  if (state !== 'result') ringBar.style.strokeDashoffset = 100;
+}
+
+function toIdle(){
+  hint.classList.remove('off');
+  retryBtn.classList.remove('on');
+  legend.classList.remove('on');
+  setState('idle', '원을 그려 보세요!', '펜을 떼는 순간 점수가 나와요. 시작한 곳으로 돌아와 원을 닫아 주세요.', '?', '점');
+}
+
+function clearStroke(){
+  pts = []; result = null;
+  refToken++; countToken++;
+  legend.classList.remove('on');
+  render();
+}
+
+const ERRORS = {
+  short: ['선이 너무 짧아요', '화이트보드를 크게 써서 원을 한 번에 그려 주세요.'],
+  small: ['원이 너무 작아요', '조금 더 크게 그려야 정확하게 채점할 수 있어요.'],
+  open:  ['원이 완성되지 않았어요', '펜을 떼지 말고 한 바퀴를 끝까지 돌려서 그려 주세요.']
+};
+
+function tier(s){
+  if (s >= 97) return { c: MINT,  t: '컴퍼스로 그린 것 같아요!' };
+  if (s >= 90) return { c: MINT,  t: '정말 훌륭한 원이에요!' };
+  if (s >= 80) return { c: BLUE,  t: '멋진 원이에요!' };
+  if (s >= 65) return { c: BLUE,  t: '꽤 동그래요!' };
+  if (s >= 45) return { c: AMBER, t: '조금만 더 연습해요' };
+  return { c: CORAL, t: '다시 한번 도전해 봐요!' };
+}
+
+function makeTip(m){
+  if (m.gap > 0.12 && m.closeMult < 0.94)
+    return '시작한 곳과 끝난 곳이 만나지 않았어요. 출발점까지 돌아와서 이어 보세요.';
+  if (m.ov >= 0.03 && m.ov >= m.wob * 0.8){
+    const d = Math.abs(m.phiDeg);
+    if (d < 22.5) return '가로로 길쭉한 타원이 됐어요. 세로 길이를 조금 더 늘려 보세요.';
+    if (d > 67.5) return '세로로 길쭉한 타원이 됐어요. 가로 길이를 조금 더 늘려 보세요.';
+    return (m.phiDeg < 0 ? '／' : '＼') + ' 대각선 방향으로 길쭉해졌어요. 반대 방향으로 조금 더 넓혀 보세요.';
+  }
+  if (m.wob >= 0.03)
+    return '선이 조금 울퉁불퉁해요. 손목을 고정하고 일정한 속도로 그려 보세요.';
+  if (m.score >= 90) return '거의 완벽해요! 이 느낌 그대로 한 번 더 그려 볼까요?';
+  return '좋아요! 계속 연습하면 점점 더 동그래질 거예요.';
+}
+
+function countUp(target){
+  const t = ++countToken;
+  if (reduceMotion){ scoreNum.textContent = target; return; }
+  const t0 = performance.now(), dur = 900;
+  const tick = now => {
+    if (t !== countToken) return;
+    const p = Math.min(1, (now - t0) / dur);
+    scoreNum.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function animateRef(){
+  const token = ++refToken;
+  const t0 = performance.now(), dur = 750;
+  const step = now => {
+    if (token !== refToken) return;
+    const p = Math.min(1, (now - t0) / dur);
+    render(1 - Math.pow(1 - p, 3));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function finish(){
+  result = analyze(pts);
+
+  if (!result.ok){
+    const [t, tip] = ERRORS[result.reason] || ERRORS.open;
+    setState('error', t, tip, '!', '');
+    srScore.textContent = t + '. ' + tip;
+    render();
+    return;
+  }
+
+  const m = result;
+  tries++;
+  triesVal.textContent = tries;
+  const prevBest = best;
+  const isBest = m.score > prevBest;
+  if (isBest){ best = m.score; store.set('circle_best', String(best)); bestVal.textContent = best; }
+
+  const tr = tier(m.score);
+  panel.style.setProperty('--ring', tr.c);
+  setState('result', (isBest && prevBest > 0 ? '새 기록! ' : '') + tr.t, makeTip(m), reduceMotion ? m.score : 0, '점');
+  cShape.textContent = m.shape;
+  cSmooth.textContent = m.smooth;
+  cClose.textContent = m.closure;
+  srScore.textContent = `${m.score}점. ${tr.t} ${makeTip(m)}`;
+
+  // 링 채우기는 다음 프레임에 시작해야 애니메이션이 보입니다
+  requestAnimationFrame(() => { ringBar.style.strokeDashoffset = 100 - m.score; });
+  countUp(m.score);
+
+  legend.classList.add('on');
+  if (reduceMotion) render(1); else { render(0); animateRef(); }
+  if (m.score >= 90) confetti();
+}
+
+function confetti(){
+  if (reduceMotion) return;
+  const box = $('#confetti');
+  const colors = [CORAL, SUN, MINT, BLUE];
+  for (let i = 0; i < 30; i++){
+    const s = document.createElement('i');
+    const size = 10 + Math.random() * 12;
+    s.style.cssText =
+      `left:${Math.random() * 100}%;width:${size}px;height:${size}px;` +
+      `background:${colors[i % colors.length]};` +
+      `animation-delay:${(Math.random() * 0.3).toFixed(2)}s;` +
+      `--dx:${((Math.random() - 0.5) * 180).toFixed(0)}px;` +
+      `--dur:${(1.5 + Math.random()).toFixed(2)}s`;
+    box.appendChild(s);
+    setTimeout(() => s.remove(), 2900);
+  }
+}
+
+/* ───────── 화면 전환 ───────── */
+function showBoard(){
+  home.hidden = true; board.hidden = false;
+  clearStroke(); toIdle();
+  requestAnimationFrame(resize);
+}
+function showHome(){
+  board.hidden = true; home.hidden = false;
+  drawing = false; activeId = null;
+}
+
+$('#startBtn').addEventListener('click', showBoard);
+$('#homeBtn').addEventListener('click', showHome);
+retryBtn.addEventListener('click', () => { clearStroke(); toIdle(); });
+
+if (window.ResizeObserver) new ResizeObserver(() => { if (!board.hidden) resize(); }).observe(wrap);
+window.addEventListener('resize', () => { if (!board.hidden) resize(); });
+window.addEventListener('orientationchange', () => setTimeout(() => { if (!board.hidden) resize(); }, 200));
+})();
+</script>
+</body>
+</html>
