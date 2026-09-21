@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>부채꼴의 중심각과 호의 관계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EAF3FF;
+    --bg-2: #DCEBFF;
+    --paper: #FFFFFF;
+    --paper-soft:#F6FAFF;
+    --ink: #1C2B4A;
+    --ink-soft:#5A6B8C;
+    --line: #C9DCF7;
+    --accent: #2F6FED;
+    --accent-ink:#FFFFFF;
+    --gold:#FFC94A;
+
+    --color-ga: #0FB5AE;   /* 가 : AOB */
+    --color-na: #FF9F1C;   /* 나 : BOC */
+    --color-da: #8B5CF6;   /* 다 : BOD */
+    --color-ra: #FF5C8A;   /* 라 : BOE */
+
+    --ok: #1E9E5A;
+    --bad:#E14E4E;
+
+    --shadow: 0 10px 26px rgba(28,43,74,0.10);
+    --radius: 18px;
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --bg:#10182B; --bg-2:#0B1220; --paper:#182238; --paper-soft:#131C31;
+      --ink:#EAF1FF; --ink-soft:#9FB0D0; --line:#2A3A5C;
+      --accent:#5B8CFF; --accent-ink:#0B1220; --gold:#FFC94A;
+      --shadow: 0 10px 26px rgba(0,0,0,0.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10182B; --bg-2:#0B1220; --paper:#182238; --paper-soft:#131C31;
+    --ink:#EAF1FF; --ink-soft:#9FB0D0; --line:#2A3A5C;
+    --accent:#5B8CFF; --accent-ink:#0B1220; --gold:#FFC94A;
+    --shadow: 0 10px 26px rgba(0,0,0,0.45);
+  }
+  html,body{
+    height:100%;
+    margin:0;
+  }
+  * { box-sizing: border-box; }
+  body{
+    background: radial-gradient(1100px 700px at 85% -10%, var(--bg-2), var(--bg));
+    color: var(--ink);
+    font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif;
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
+    overflow-x:hidden;
+  }
+  h1,h2,h3, .heading-font{ font-family:'Jua','Gowun Dodum',sans-serif; font-weight:400; }
+
+  button{ font-family:inherit; cursor:pointer; }
+  button:focus-visible, input:focus-visible{
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen{ display:none; flex:1; min-height:100%; }
+  .screen.active{ display:flex; }
+
+  /* ===== Main screen ===== */
+  #main-screen{
+    align-items:center; justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    padding: 32px 20px;
+    position:relative;
+  }
+  .deco-ring{
+    position:absolute; border-radius:50%;
+    border: 3px dashed var(--line);
+    opacity:.7;
+  }
+  .deco-ring.r1{ width:340px; height:340px; top:8%; left:6%; }
+  .deco-ring.r2{ width:220px; height:220px; bottom:10%; right:8%; border-color: var(--gold);}
+  .hero-wedge{
+    width:150px; height:150px; margin-bottom: 18px;
+  }
+  #main-screen h1{
+    font-size: clamp(28px, 5.2vw, 48px);
+    line-height:1.35;
+    margin: 6px 0 30px;
+    color: var(--ink);
+    max-width: 16ch;
+  }
+  #main-screen h1 .hl{ color: var(--accent); }
+  .btn-primary{
+    background: var(--accent);
+    color: var(--accent-ink);
+    border:none;
+    border-radius: 999px;
+    padding: 16px 42px;
+    font-size: 20px;
+    font-family:'Jua',sans-serif;
+    box-shadow: var(--shadow);
+    transition: transform .15s ease;
+  }
+  .btn-primary:hover{ transform: translateY(-2px); }
+  .btn-primary:active{ transform: translateY(0px) scale(.98); }
+
+  /* ===== Explore screen ===== */
+  #explore-screen{ flex-direction:column; height:100%; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 10px 18px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    gap:10px; flex-wrap:wrap;
+  }
+  .topbar h2{ margin:0; font-size: 19px; }
+  .icon-btn{
+    background: var(--paper-soft);
+    border:1px solid var(--line);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size:14px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .icon-btn:hover{ background: var(--bg-2); }
+
+  .work-area{
+    flex:1;
+    display:grid;
+    grid-template-columns: minmax(0,1.15fr) minmax(0,1fr);
+    gap: 14px;
+    padding: 14px;
+    overflow:auto;
+  }
+  @media (max-width: 920px){
+    .work-area{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background: var(--paper);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    display:flex;
+    flex-direction:column;
+    min-height: 0;
+  }
+
+  /* diagram panel */
+  #diagram-panel{ position:relative; }
+  .panel-title{
+    font-size:15px; color: var(--ink-soft); margin:0 0 8px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .zoom-controls{ display:flex; gap:6px; }
+  .zoom-controls button{
+    width:30px; height:30px; border-radius:8px; border:1px solid var(--line);
+    background: var(--paper-soft); color:var(--ink); font-size:16px; line-height:1;
+  }
+  .stage{
+    flex:1;
+    min-height: 260px;
+    border-radius: 14px;
+    background:
+      radial-gradient(circle at 30% 20%, var(--paper-soft), var(--bg) 75%);
+    position:relative;
+    overflow:hidden;
+    touch-action:none;
+    border: 1px dashed var(--line);
+  }
+  .stage svg{
+    width:100%; height:100%;
+    display:block;
+    cursor: grab;
+    transform-origin: center center;
+  }
+  .stage.dragging svg{ cursor:grabbing; }
+  .stage.clickable svg{ cursor:pointer; }
+
+  .fold-controls{
+    display:flex; align-items:center; justify-content:center;
+    gap: 10px; margin-top: 12px; flex-wrap:wrap;
+  }
+  .btn{
+    border:none; border-radius: 12px; padding: 11px 18px;
+    font-size:15px; font-family:'Jua',sans-serif; color:#fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,.12);
+    transition: transform .12s ease, opacity .12s ease;
+  }
+  .btn:hover{ transform: translateY(-1px); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; }
+  .btn.fold{ background: var(--gold); color:#4A3300; }
+  .btn.unfold{ background: var(--accent); }
+  .btn.reset{ background: var(--ink-soft); }
+  .fold-dots{ display:flex; gap:6px; margin: 0 4px; }
+  .fold-dots span{
+    width:10px; height:10px; border-radius:50%;
+    background: var(--line); display:inline-block;
+  }
+  .fold-dots span.done{ background: var(--gold); }
+  .hint{ text-align:center; font-size:13px; color: var(--ink-soft); margin-top:8px; min-height:18px;}
+
+  /* data panel */
+  #data-panel{ gap: 14px; position:relative; }
+  .lock-overlay{
+    position:absolute; inset:0;
+    background: rgba(255,255,255,.72);
+    backdrop-filter: blur(1.5px);
+    border-radius: var(--radius);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:8px;
+    text-align:center; padding: 20px;
+    font-size:15px; color: var(--ink-soft);
+    z-index: 5;
+  }
+  :root[data-theme="dark"] .lock-overlay{ background: rgba(16,24,43,.78); }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .lock-overlay{ background: rgba(16,24,43,.78); }
+  }
+  .lock-overlay .lock-icon{ font-size:30px; }
+
+  table.sector-table{
+    width:100%; border-collapse: collapse; font-size: 14px;
+  }
+  .sector-table th, .sector-table td{
+    border: 1px solid var(--line);
+    padding: 8px 6px;
+    text-align:center;
+  }
+  .sector-table th{
+    background: var(--paper-soft);
+    font-weight:600; color: var(--ink-soft); font-size:13px;
+  }
+  .swatch{
+    display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:-1px;
+  }
+  .sector-table input{
+    width: 62px; max-width:100%;
+    padding: 6px 4px;
+    border-radius:8px;
+    border: 1.5px solid var(--line);
+    text-align:center;
+    font-size:14px;
+    font-family:'Gowun Dodum',sans-serif;
+    background: var(--paper-soft);
+    color: var(--ink);
+  }
+  .sector-table td.given{ font-family:'Jua',sans-serif; font-size:15px; background: var(--paper-soft); }
+  .sector-table input.correct{ border-color: var(--ok); background: #E9F9EE; }
+  .sector-table input.wrong{ border-color: var(--bad); background: #FDECEC; }
+  :root[data-theme="dark"] .sector-table input.correct{ background: rgba(30,158,90,.18); }
+  :root[data-theme="dark"] .sector-table input.wrong{ background: rgba(225,78,78,.18); }
+
+  .row-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; flex-wrap:wrap;}
+  .btn-small{
+    border:1px solid var(--line); background: var(--paper-soft); color:var(--ink);
+    border-radius:9px; padding:7px 12px; font-size:13px;
+  }
+  .btn-small:hover{ background: var(--bg-2); }
+  .btn-small.primary{ background: var(--accent); color:#fff; border-color: var(--accent); }
+
+  .summary-box{
+    border-top: 2px dashed var(--line);
+    padding-top: 12px;
+    font-size:14px;
+    line-height:2;
+  }
+  .summary-box .cap{
+    font-family:'Jua',sans-serif; font-size:15px; margin-bottom:6px; color: var(--accent);
+  }
+  .blank{
+    width: 84px;
+    text-align:center;
+    border:none;
+    border-bottom: 2px solid var(--ink-soft);
+    background: transparent;
+    font-size:14px;
+    color: var(--ink);
+    font-family:'Gowun Dodum',sans-serif;
+    padding: 2px 3px;
+  }
+  .blank.correct{ border-bottom-color: var(--ok); color: var(--ok); font-weight:700; }
+  .blank.wrong{ border-bottom-color: var(--bad); }
+
+  #feedback-msg{
+    font-size:13px; min-height:18px; margin-top:4px; font-weight:600;
+  }
+  #feedback-msg.ok{ color: var(--ok); }
+  #feedback-msg.bad{ color: var(--bad); }
+
+  @media (max-width: 480px){
+    .sector-table{ font-size:12px; }
+    .sector-table input{ width:48px; font-size:12px; }
+    .blank{ width:64px; font-size:13px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ MAIN SCREEN ============ -->
+<section id="main-screen" class="screen active">
+  <div class="deco-ring r1" aria-hidden="true"></div>
+  <div class="deco-ring r2" aria-hidden="true"></div>
+  <svg class="hero-wedge" viewBox="0 0 150 150" aria-hidden="true">
+    <circle cx="75" cy="75" r="62" fill="none" stroke="#C9DCF7" stroke-width="2" stroke-dasharray="4 6"/>
+    <path d="M75,75 L75,13 A62,62 0 0,1 119,31 Z" fill="#0FB5AE" opacity="0.85"/>
+    <path d="M75,75 L119,31 A62,62 0 0,1 137,75 Z" fill="#FF9F1C" opacity="0.85"/>
+    <circle cx="75" cy="75" r="3" fill="#1C2B4A"/>
+  </svg>
+  <h1>부채꼴의 <span class="hl">중심각</span>과<br><span class="hl">호</span>의 관계</h1>
+  <button class="btn-primary" id="go-explore">탐구하기</button>
+</section>
+
+<!-- ============ EXPLORE SCREEN ============ -->
+<section id="explore-screen" class="screen">
+  <div class="topbar">
+    <button class="icon-btn" id="go-main">← 메인으로</button>
+    <h2>원 종이를 접었다 펴며 알아보기</h2>
+    <button class="icon-btn" id="reset-all">⟲ 다시 시작</button>
+  </div>
+
+  <div class="work-area">
+    <!-- diagram -->
+    <div class="panel" id="diagram-panel">
+      <div class="panel-title">
+        <span>원 모양 종이</span>
+        <span class="zoom-controls">
+          <button id="zoom-out" title="축소">−</button>
+          <button id="zoom-reset" title="원래대로">⟳</button>
+          <button id="zoom-in" title="확대">+</button>
+        </span>
+      </div>
+      <div class="stage" id="stage">
+        <svg id="paper-svg" viewBox="0 0 400 400"></svg>
+      </div>
+      <div class="fold-controls">
+        <button class="btn fold" id="fold-btn">종이를 반으로 접기</button>
+        <span class="fold-dots" id="fold-dots">
+          <span></span><span></span><span></span>
+        </span>
+        <button class="btn unfold" id="unfold-btn" disabled>종이 펴기</button>
+        <button class="btn reset" id="redo-fold-btn" style="display:none;">다시 접기</button>
+      </div>
+      <div class="hint" id="hint-text">종이를 반으로 3번 접어 보자.</div>
+    </div>
+
+    <!-- data / table -->
+    <div class="panel" id="data-panel">
+      <div class="lock-overlay" id="lock-overlay">
+        <div class="lock-icon">🔒</div>
+        <div>종이를 3번 접었다 펼친 뒤,<br>원을 한 번 더 눌러 부채꼴을 확인하면<br>표를 채울 수 있어요.</div>
+      </div>
+
+      <div>
+        <div class="panel-title" style="margin-bottom:6px; align-items:flex-start;">
+          <span>(가)의 중심각 = <b>x</b>, 호의 길이 = <b>l</b>, 넓이 = <b>S</b>일 때, 표를 채워 보자</span>
+        </div>
+        <table class="sector-table" id="sector-table">
+          <thead>
+            <tr>
+              <th>부채꼴</th>
+              <th>중심각의 크기</th>
+              <th>호의 길이</th>
+              <th>부채꼴의 넓이</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="swatch" style="background:var(--color-ga)"></span>(가) AOB</td>
+              <td class="given">x°</td>
+              <td class="given">l</td>
+              <td class="given">S</td>
+            </tr>
+            <tr>
+              <td><span class="swatch" style="background:var(--color-na)"></span>(나) BOC</td>
+              <td><input data-cell="na-angle" data-coef="1" data-var="x" inputmode="text" placeholder="?"></td>
+              <td><input data-cell="na-arc" data-coef="1" data-var="l" inputmode="text" placeholder="?"></td>
+              <td><input data-cell="na-area" data-coef="1" data-var="s" inputmode="text" placeholder="?"></td>
+            </tr>
+            <tr>
+              <td><span class="swatch" style="background:var(--color-da)"></span>(다) COD</td>
+              <td><input data-cell="da-angle" data-coef="2" data-var="x" inputmode="text" placeholder="?"></td>
+              <td><input data-cell="da-arc" data-coef="2" data-var="l" inputmode="text" placeholder="?"></td>
+              <td><input data-cell="da-area" data-coef="2" data-var="s" inputmode="text" placeholder="?"></td>
+            </tr>
+            <tr>
+              <td><span class="swatch" style="background:var(--color-ra)"></span>(라) DOE</td>
+              <td><input data-cell="ra-angle" data-coef="3" data-var="x" inputmode="text" placeholder="?"></td>
+              <td><input data-cell="ra-arc" data-coef="3" data-var="l" inputmode="text" placeholder="?"></td>
+              <td><input data-cell="ra-area" data-coef="3" data-var="s" inputmode="text" placeholder="?"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="row-actions">
+          <button class="btn-small primary" id="check-btn">정답 확인</button>
+        </div>
+        <div id="feedback-msg"></div>
+      </div>
+
+      <div class="summary-box">
+        <div class="cap">이 표를 통해 알 수 있는 것 — 부채꼴의 중심각과 호의 관계</div>
+        <div>
+          1. 한 원에서 중심각의 크기가 같은 두 부채꼴의
+          ( <input class="blank" data-blank="b1" placeholder="?"> )와
+          ( <input class="blank" data-blank="b2" placeholder="?"> )는 각각 같다.
+        </div>
+        <div>
+          2. 한 원에서 부채꼴의
+          ( <input class="blank" data-blank="b3" placeholder="?"> )와
+          ( <input class="blank" data-blank="b4" placeholder="?"> )는 각각
+          ( <input class="blank" data-blank="b5" placeholder="?"> )에 정비례한다.
+        </div>
+        <div class="row-actions">
+          <button class="btn-small primary" id="check-blanks-btn">빈칸 확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Screen navigation ---------------- */
+  const mainScreen = document.getElementById('main-screen');
+  const exploreScreen = document.getElementById('explore-screen');
+  document.getElementById('go-explore').addEventListener('click', ()=>{
+    mainScreen.classList.remove('active');
+    exploreScreen.classList.add('active');
+  });
+  document.getElementById('go-main').addEventListener('click', ()=>{
+    exploreScreen.classList.remove('active');
+    mainScreen.classList.add('active');
+  });
+
+  /* ---------------- Geometry helpers ---------------- */
+  const CX = 200, CY = 200, R = 148;
+  function pt(thetaDeg){
+    const t = thetaDeg * Math.PI / 180;
+    return { x: CX + R * Math.sin(t), y: CY - R * Math.cos(t) };
+  }
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs){
+    const e = document.createElementNS(NS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  const svg = document.getElementById('paper-svg');
+
+  /* ---------------- Folding state ---------------- */
+  let foldCount = 0;          // 0..3
+  let currentAngle = 360;     // visible wedge span while folding
+  let animRAF = null;
+  let unfolded = false;
+  let revealed = false;       // (가)~(라) colors shown on the paper
+
+  const foldBtn = document.getElementById('fold-btn');
+  const unfoldBtn = document.getElementById('unfold-btn');
+  const redoFoldBtn = document.getElementById('redo-fold-btn');
+  const foldDots = document.querySelectorAll('#fold-dots span');
+  const hintText = document.getElementById('hint-text');
+  const lockOverlay = document.getElementById('lock-overlay');
+
+  function updateDots(){
+    foldDots.forEach((d,i)=> d.classList.toggle('done', i < foldCount));
+  }
+
+  function drawFoldedWedge(angle){
+    // Clears svg and draws a single wedge/sector spanning from angle 0 up to
+    // the given angle, with the edge at 0 (point A) always fixed in place —
+    // folding always collapses the far edge toward that fixed edge.
+    svg.innerHTML = '';
+    if(angle >= 359.9){
+      svg.appendChild(el('circle',{
+        cx:CX, cy:CY, r:R, fill:'#BFEFE9', stroke:'#0FB5AE', 'stroke-width':2
+      }));
+    } else {
+      const p1 = pt(0), p2 = pt(angle);
+      const largeArc = angle > 180 ? 1 : 0;
+      const d = `M${CX},${CY} L${p1.x.toFixed(2)},${p1.y.toFixed(2)} A${R},${R} 0 ${largeArc} 1 ${p2.x.toFixed(2)},${p2.y.toFixed(2)} Z`;
+      svg.appendChild(el('path',{ d, fill:'#BFEFE9', stroke:'#0FB5AE', 'stroke-width':2, 'stroke-linejoin':'round' }));
+    }
+  }
+
+  function animateAngle(from, to, duration, onDone){
+    if(animRAF) cancelAnimationFrame(animRAF);
+    const t0 = performance.now();
+    function step(now){
+      let p = Math.min(1, (now - t0) / duration);
+      const ease = p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2; // easeInOutQuad
+      const angle = from + (to - from) * ease;
+      currentAngle = angle;
+      drawFoldedWedge(angle);
+      if(p < 1){
+        animRAF = requestAnimationFrame(step);
+      } else {
+        animRAF = null;
+        if(onDone) onDone();
+      }
+    }
+    animRAF = requestAnimationFrame(step);
+  }
+
+  function drawUnfoldedCircle(){
+    // The paper itself stays exactly as it started — just the fold lines
+    // (dashed) are added, showing 8 congruent sectors. No colors here.
+    svg.innerHTML = '';
+    const g = el('g',{});
+    svg.appendChild(g);
+
+    g.appendChild(el('circle',{ cx:CX, cy:CY, r:R, fill:'#BFEFE9', stroke:'#0FB5AE', 'stroke-width':2 }));
+
+    for(let a=0; a<360; a+=45){
+      const p = pt(a);
+      g.appendChild(el('line',{
+        x1:CX, y1:CY, x2:p.x.toFixed(2), y2:p.y.toFixed(2),
+        stroke:'#0FB5AE', 'stroke-width':1.4, 'stroke-dasharray':'5 5', opacity:0.75
+      }));
+    }
+    g.appendChild(el('circle',{ cx:CX, cy:CY, r:2.5, fill:'#0FB5AE' }));
+  }
+
+  function sectorPathMain(a1,a2){
+    const p1 = pt(a1), p2 = pt(a2);
+    const large = (a2-a1) > 180 ? 1 : 0;
+    return `M${CX},${CY} L${p1.x.toFixed(2)},${p1.y.toFixed(2)} A${R},${R} 0 ${large} 1 ${p2.x.toFixed(2)},${p2.y.toFixed(2)} Z`;
+  }
+
+  function drawUnfoldedColoredCircle(){
+    // Reveals the non-overlapping (가)(나)(다)(라) sectors on the actual paper.
+    svg.innerHTML = '';
+    const g = el('g',{});
+    svg.appendChild(g);
+
+    g.appendChild(el('circle',{ cx:CX, cy:CY, r:R, fill:'#E4EAF3', stroke:'#0FB5AE', 'stroke-width':2 }));
+    g.appendChild(el('path',{ d: sectorPathMain(0,45),    fill:'var(--color-ga)' }));
+    g.appendChild(el('path',{ d: sectorPathMain(45,90),   fill:'var(--color-na)' }));
+    g.appendChild(el('path',{ d: sectorPathMain(90,180),  fill:'var(--color-da)' }));
+    g.appendChild(el('path',{ d: sectorPathMain(180,315), fill:'var(--color-ra)' }));
+
+    // fold-line creases, still visible on top of the colors
+    for(let a=0; a<360; a+=45){
+      const p = pt(a);
+      g.appendChild(el('line',{
+        x1:CX, y1:CY, x2:p.x.toFixed(2), y2:p.y.toFixed(2),
+        stroke:'#FFFFFF', 'stroke-width':1.4, 'stroke-dasharray':'5 5', opacity:0.85
+      }));
+    }
+
+    const labels = [
+      {a:0,   t:'A', dx:0,  dy:-14},
+      {a:45,  t:'B', dx:13, dy:-6},
+      {a:90,  t:'C', dx:17, dy:2},
+      {a:180, t:'D', dx:0,  dy:18},
+      {a:315, t:'E', dx:-15,dy:-4}
+    ];
+    labels.forEach(L=>{
+      const p = pt(L.a);
+      g.appendChild(el('circle',{ cx:p.x.toFixed(2), cy:p.y.toFixed(2), r:3, fill:'#1C2B4A' }));
+      const t = el('text',{ x:(p.x+L.dx).toFixed(2), y:(p.y+L.dy).toFixed(2), fill:'#1C2B4A', 'font-size':16, 'font-family':"'Jua',sans-serif", 'text-anchor':'middle' });
+      t.textContent = L.t;
+      g.appendChild(t);
+    });
+    g.appendChild(el('circle',{ cx:CX, cy:CY, r:3, fill:'#1C2B4A' }));
+    // Place the "O" label inside the leftover (uncolored) slice between E and A,
+    // a short distance from the centre, so it never sits over a colored sector.
+    const oAngle = 337.5 * Math.PI / 180;
+    const oDist = 24;
+    const ox = CX + oDist * Math.sin(oAngle);
+    const oy = CY - oDist * Math.cos(oAngle);
+    const ot = el('text',{ x:ox.toFixed(2), y:oy.toFixed(2), fill:'#1C2B4A', 'font-size':15, 'font-family':"'Jua',sans-serif", 'text-anchor':'middle' });
+    ot.textContent = 'O';
+    g.appendChild(ot);
+  }
+
+  /* ---------------- Reference diagram (non-overlapping 가·나·다·라) ---------------- */
+
+  function refreshButtons(){
+    foldBtn.disabled = unfolded || foldCount >= 3;
+    unfoldBtn.disabled = unfolded || foldCount < 3;
+    redoFoldBtn.style.display = unfolded ? 'inline-block' : 'none';
+    foldBtn.style.display = unfolded ? 'none' : 'inline-block';
+    unfoldBtn.style.display = unfolded ? 'none' : 'inline-block';
+    updateDots();
+    stage.classList.toggle('clickable', unfolded && !revealed);
+    if(revealed){
+      hintText.textContent = '색칠된 (가)~(라) 부채꼴을 오른쪽 표에서 확인해 보자.';
+      lockOverlay.style.display = 'none';
+    } else if(unfolded){
+      hintText.textContent = '원을 한 번 더 눌러서 (가)~(라) 부채꼴을 확인해 보자.';
+      lockOverlay.style.display = 'flex';
+    } else if(foldCount >= 3){
+      hintText.textContent = '이제 "종이 펴기"를 눌러 펼쳐 보자.';
+    } else if(foldCount === 0){
+      hintText.textContent = '종이를 반으로 3번 접어 보자.';
+    } else {
+      hintText.textContent = `${foldCount}번 접었어요. ${3-foldCount}번 더 접어 보자.`;
+    }
+  }
+
+  foldBtn.addEventListener('click', ()=>{
+    if(foldCount >= 3) return;
+    const target = currentAngle/2;
+    foldBtn.disabled = true; unfoldBtn.disabled = true;
+    animateAngle(currentAngle, target, 500, ()=>{
+      foldCount++;
+      refreshButtons();
+    });
+  });
+
+  unfoldBtn.addEventListener('click', ()=>{
+    if(foldCount < 3) return;
+    foldBtn.disabled = true; unfoldBtn.disabled = true;
+    animateAngle(currentAngle, 360, 700, ()=>{
+      unfolded = true;
+      drawUnfoldedCircle();
+      refreshButtons();
+    });
+  });
+
+  redoFoldBtn.addEventListener('click', ()=> resetExploration());
+
+  function resetExploration(){
+    if(animRAF) cancelAnimationFrame(animRAF);
+    foldCount = 0; currentAngle = 360; unfolded = false; revealed = false;
+    drawFoldedWedge(360);
+    lockOverlay.style.display = 'flex';
+    refreshButtons();
+    clearTable();
+    clearBlanks();
+  }
+
+  document.getElementById('reset-all').addEventListener('click', resetExploration);
+
+  /* ---------------- Zoom & Pan ---------------- */
+  const stage = document.getElementById('stage');
+  let zoom = 1, panX = 0, panY = 0;
+  const pointers = new Map();
+  let dragStart = null;
+  let pinchStart = null;
+
+  function applyTransform(){
+    svg.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  }
+  function clampZoom(z){ return Math.min(3, Math.max(0.6, z)); }
+
+  stage.addEventListener('pointerdown', (e)=>{
+    stage.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY});
+    if(pointers.size === 1){
+      dragStart = { x:e.clientX, y:e.clientY, panX, panY };
+      stage.classList.add('dragging');
+    } else if(pointers.size === 2){
+      const pts = [...pointers.values()];
+      pinchStart = { dist: Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y), zoom };
+    }
+  });
+  stage.addEventListener('pointermove', (e)=>{
+    if(!pointers.has(e.pointerId)) return;
+    const rec = pointers.get(e.pointerId);
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, startX:rec.startX, startY:rec.startY});
+    if(pointers.size === 1 && dragStart){
+      panX = dragStart.panX + (e.clientX - dragStart.x);
+      panY = dragStart.panY + (e.clientY - dragStart.y);
+      applyTransform();
+    } else if(pointers.size === 2 && pinchStart){
+      const pts = [...pointers.values()];
+      const dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+      zoom = clampZoom(pinchStart.zoom * (dist / pinchStart.dist));
+      applyTransform();
+    }
+  });
+  function endPointer(e){
+    const rec = pointers.get(e.pointerId);
+    const wasSoleTap = rec && pointers.size === 1 &&
+      Math.hypot(e.clientX - rec.startX, e.clientY - rec.startY) < 8;
+    pointers.delete(e.pointerId);
+    stage.classList.remove('dragging');
+    if(pointers.size < 2) pinchStart = null;
+    if(pointers.size === 0) dragStart = null;
+    if(wasSoleTap && unfolded && !revealed){
+      revealed = true;
+      drawUnfoldedColoredCircle();
+      refreshButtons();
+    }
+  }
+  stage.addEventListener('pointerup', endPointer);
+  stage.addEventListener('pointercancel', endPointer);
+  stage.addEventListener('pointerleave', (e)=>{ if(pointers.has(e.pointerId)) endPointer(e); });
+
+  stage.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    zoom = clampZoom(zoom - e.deltaY * 0.0015);
+    applyTransform();
+  }, { passive:false });
+
+  document.getElementById('zoom-in').addEventListener('click', ()=>{ zoom = clampZoom(zoom+0.2); applyTransform(); });
+  document.getElementById('zoom-out').addEventListener('click', ()=>{ zoom = clampZoom(zoom-0.2); applyTransform(); });
+  document.getElementById('zoom-reset').addEventListener('click', ()=>{ zoom=1; panX=0; panY=0; applyTransform(); });
+
+  /* ---------------- Table answer checking ---------------- */
+  const cellInputs = document.querySelectorAll('.sector-table input[data-cell]');
+  function normalizeCell(str){
+    return (str||'').toString().toLowerCase().replace(/\s+/g,'').replace(/[×\*]/g,'').replace(/°/g,'');
+  }
+  function checkOneCell(input){
+    const raw = normalizeCell(input.value);
+    const coef = input.dataset.coef;
+    const vr = input.dataset.var;
+    if(!raw){ input.classList.remove('correct','wrong'); return null; }
+    const re = new RegExp(`^(\\d*)${vr}$`);
+    const m = raw.match(re);
+    let ok = false;
+    if(m){
+      const c = m[1] === '' ? '1' : m[1];
+      ok = (c === coef);
+    }
+    input.classList.toggle('correct', ok);
+    input.classList.toggle('wrong', !ok);
+    return ok;
+  }
+  cellInputs.forEach(inp=>{
+    inp.addEventListener('input', ()=>{ inp.classList.remove('correct','wrong'); });
+  });
+  function clearTable(){
+    cellInputs.forEach(inp=>{ inp.value=''; inp.classList.remove('correct','wrong'); });
+    document.getElementById('feedback-msg').textContent='';
+    document.getElementById('feedback-msg').className='';
+  }
+  document.getElementById('check-btn').addEventListener('click', ()=>{
+    let total=0, correct=0, blank=0;
+    cellInputs.forEach(inp=>{
+      total++;
+      const r = checkOneCell(inp);
+      if(r === null) blank++;
+      else if(r) correct++;
+    });
+    const msg = document.getElementById('feedback-msg');
+    if(blank > 0){
+      msg.textContent = `아직 채우지 않은 칸이 ${blank}개 있어요.`;
+      msg.className = 'bad';
+    } else if(correct === total){
+      msg.textContent = '정답이에요! 모든 칸을 맞혔어요. 🎉';
+      msg.className = 'ok';
+    } else {
+      msg.textContent = `${total-correct}개의 칸을 다시 확인해 보자.`;
+      msg.className = 'bad';
+    }
+  });
+
+  /* ---------------- Blank checking ---------------- */
+  const blankAnswers = {
+    b1: ['호의길이','호','길이','호길이'],
+    b2: ['넓이','면적'],
+    b3: ['호의길이','호','길이','호길이'],
+    b4: ['넓이','면적'],
+    b5: ['중심각의크기','중심각','중심각크기']
+  };
+  function normalizeBlank(s){ return (s||'').toString().replace(/\s+/g,''); }
+  const blanks = document.querySelectorAll('.blank');
+  blanks.forEach(b=> b.addEventListener('input', ()=> b.classList.remove('correct','wrong')));
+  function clearBlanks(){ blanks.forEach(b=>{ b.value=''; b.classList.remove('correct','wrong'); }); }
+  document.getElementById('check-blanks-btn').addEventListener('click', ()=>{
+    let allOk = true;
+    blanks.forEach(b=>{
+      const key = b.dataset.blank;
+      const ok = blankAnswers[key].includes(normalizeBlank(b.value));
+      b.classList.toggle('correct', ok);
+      b.classList.toggle('wrong', !ok);
+      if(!ok) allOk = false;
+    });
+    const msg = document.getElementById('feedback-msg');
+    msg.textContent = allOk ? '정확해요! 부채꼴의 성질을 잘 이해했어요. 🎉' : '틀린 빈칸이 있어요. 다시 생각해 보자.';
+    msg.className = allOk ? 'ok' : 'bad';
+  });
+
+  /* ---------------- init ---------------- */
+  drawFoldedWedge(360);
+  refreshButtons();
+})();
+</script>
+</body>
+</html>
