@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼각형과 평행선 - 길이 구하기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#FFF3D6; --bg2:#FFE3B3; --bg3:#FFD9C7;
+    --ink:#2B2438; --ink-soft:#6b6178;
+    --card:#FFFDF7;
+    --yes:#06A77D; --yes-soft:#DFF6EE;
+    --no:#F2545B; --no-soft:#FDE6E4;
+    --unknown:#6C63FF; --unknown-soft:#EAE8FF;
+    --grid-line: rgba(43,36,56,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;min-height:100%;}
+  body{
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    background: radial-gradient(circle at 15% 10%, #FFF9E8 0%, transparent 45%),
+                radial-gradient(circle at 85% 90%, #FFE0D0 0%, transparent 50%),
+                linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 45%, var(--bg3) 100%);
+    display:flex; align-items:center; justify-content:center;
+    padding:18px 14px;
+    -webkit-text-size-adjust:100%;
+    -webkit-overflow-scrolling:touch;
+  }
+  .app{width:100%; max-width:540px;}
+  h1,h2,h3{font-family:'Fredoka', sans-serif; margin:0;}
+  .card{
+    background:var(--card);
+    border-radius:24px;
+    box-shadow:0 10px 0 rgba(43,36,56,0.08), 0 16px 32px rgba(43,36,56,0.10);
+    border:3px solid var(--ink);
+    padding:20px 22px;
+    position:relative;
+  }
+  .start-emoji{font-size:40px; line-height:1; margin-bottom:4px;}
+  .start-title{font-size:24px; font-weight:700; margin:18px 0 22px 0; text-align:center; line-height:1.35;}
+  .start-desc{font-size:14px; color:var(--ink-soft); line-height:1.5; margin-bottom:12px;}
+  .rule-row{
+    display:flex; align-items:flex-start;
+    background:#FFF8EC; border:2px dashed #E9C98A; border-radius:14px;
+    padding:9px 11px; margin-bottom:8px; font-size:12.5px; line-height:1.45;
+  }
+  .rule-row > *:not(:first-child){ margin-left:8px; }
+  .rule-row b{font-family:'Fredoka'; font-weight:600;}
+  .btn{
+    font-family:'Fredoka', sans-serif; font-weight:600; font-size:16px;
+    border:3px solid var(--ink); border-radius:14px; padding:11px 18px;
+    cursor:pointer; background:var(--ink); color:#fff;
+    box-shadow:0 5px 0 rgba(43,36,56,0.35);
+    transition:transform .08s ease, box-shadow .08s ease;
+    width:100%;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(43,36,56,0.35);}
+  .btn-primary{margin-top:4px;}
+
+  .top-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+  .qcount{font-family:'Fredoka'; font-weight:600; font-size:13.5px; color:var(--ink-soft);}
+  .progress-track{background:#F1E9D8; border-radius:999px; height:8px; width:100%; overflow:hidden; border:2px solid var(--ink);}
+  .progress-fill{background:linear-gradient(90deg,#FFC24B,#F2545B); height:100%; border-radius:999px; transition:width .3s ease;}
+  .score-pill{font-family:'Fredoka'; font-weight:600; font-size:12px; background:var(--ink); color:#fff; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .stage{
+    position:relative;
+    height:min(46vh,300px);
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px), #FFFDF4;
+    background-size:18px 18px;
+    border:2px solid #EFE3C6; border-radius:16px;
+    margin:8px 0 6px 0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stage svg{width:100%; height:100%; display:block;}
+  .scale-note{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px;}
+  .question-text{font-family:'Fredoka'; font-weight:600; font-size:17px; text-align:center; margin:2px 0 12px 0;}
+  .choices-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:8px;}
+  .choice-btn{
+    font-family:'Fredoka'; font-weight:700; font-size:15px;
+    border-radius:13px; cursor:pointer; text-align:center;
+    padding:12px 6px;
+    background:#fff; color:var(--ink); border:2.5px solid var(--ink);
+    box-shadow:0 4px 0 rgba(43,36,56,0.28);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .choice-btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
+  .choice-btn.correct{background:var(--yes-soft); color:#046651; border-color:var(--yes); box-shadow:0 4px 0 #046651;}
+  .choice-btn.wrong{background:var(--no-soft); color:#9c1f26; border-color:var(--no); box-shadow:0 4px 0 #9c1f26;}
+  .choices-grid.disabled .choice-btn{pointer-events:none;}
+  .explain-note{margin-top:9px; font-size:12.5px; color:var(--ink-soft); text-align:center; line-height:1.45; min-height:14px;}
+  .explain-note b{color:var(--ink); font-family:'Fredoka'; font-weight:600;}
+
+  .result-emoji{font-size:40px; text-align:center; margin-bottom:2px;}
+  .result-score{font-family:'Fredoka'; font-weight:700; font-size:34px; text-align:center; margin:0;}
+  .result-sub{text-align:center; color:var(--ink-soft); font-size:13px; margin-bottom:10px;}
+  .result-msg{
+    text-align:center; font-family:'Fredoka'; font-weight:600; font-size:14.5px;
+    background:#FFF8EC; border:2px dashed #E9C98A; border-radius:14px; padding:9px; margin-bottom:12px;
+  }
+  .review-grid{display:grid; grid-template-columns:repeat(10,1fr); gap:5px; margin-bottom:14px;}
+  .dot{position:relative; width:100%; border-radius:7px; border:2px solid var(--ink); overflow:hidden;}
+  .dot::before{content:''; display:block; padding-top:100%;}
+  .dot span{position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; font-family:'Fredoka'; font-weight:600; font-size:10px; color:#fff;}
+  .dot.right{background:var(--yes);} .dot.wrong{background:var(--no);}
+</style>
+</head>
+<body>
+<div class="app"><div class="card" id="cardRoot"></div></div>
+
+<script>
+/* ---------------------------------------------------------
+   기본 유틸
+--------------------------------------------------------- */
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function pick(arr){ return arr[randInt(0, arr.length-1)]; }
+function fmtN(v){ return Math.round(v*10)/10; }
+function gcd(a,b){ return b? gcd(b,a%b) : a; }
+function pickCoprimePair(maxV){
+  let p,q;
+  do{ p=randInt(1,maxV); q=randInt(1,maxV); } while(p===q || gcd(p,q)!==1);
+  return [p,q];
+}
+function fitToViewbox(points, VBW, VBH, margin){
+  const xs=points.map(p=>p[0]), ys=points.map(p=>p[1]);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const w=(maxX-minX)||1, h=(maxY-minY)||1;
+  const scale = Math.min((VBW-2*margin)/w, (VBH-2*margin)/h);
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  const vcx=VBW/2, vcy=VBH/2;
+  return points.map(p=>[ (p[0]-cx)*scale+vcx, (p[1]-cy)*scale+vcy ]);
+}
+function labelWidth(text){ return Math.max(48, String(text).length*10+16); }
+function labelBox(x,y,text,isUnknown){
+  const w = labelWidth(text);
+  const fill = isUnknown ? '#FFF1D6' : '#FFFDF4';
+  const stroke = isUnknown ? '#D9A441' : '#2B2438';
+  return `<g><rect x="${(x-w/2).toFixed(1)}" y="${(y-13).toFixed(1)}" width="${w}" height="26" rx="13" fill="${fill}" stroke="${stroke}" stroke-width="2"></rect><text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="13" fill="#2B2438">${text}</text></g>`;
+}
+// 라벨 상자끼리 겹치면 서로 살짝 밀어내서 겹침을 해소한다 (여러 변이 한 꼭짓점에 모이는 경우 대비)
+function boxesOverlap(a,b){
+  return !(a.cx+a.w/2 < b.cx-b.w/2 || b.cx+b.w/2 < a.cx-a.w/2 || a.cy+a.h/2 < b.cy-b.h/2 || b.cy+b.h/2 < a.cy-a.h/2);
+}
+function resolveOverlaps(boxes, VBW, VBH, margin){
+  for(let iter=0; iter<14; iter++){
+    let moved=false;
+    for(let i=0;i<boxes.length;i++){
+      for(let j=i+1;j<boxes.length;j++){
+        const a=boxes[i], b=boxes[j];
+        if(boxesOverlap(a,b)){
+          moved=true;
+          let dx=b.cx-a.cx, dy=b.cy-a.cy;
+          let len=Math.hypot(dx,dy);
+          if(len<0.01){ dx=1; dy=0; len=1; }
+          dx/=len; dy/=len;
+          const push=6;
+          a.cx-=dx*push; a.cy-=dy*push;
+          b.cx+=dx*push; b.cy+=dy*push;
+          a.cx=Math.max(margin*0.35+a.w/2, Math.min(VBW-margin*0.35-a.w/2, a.cx));
+          a.cy=Math.max(margin*0.35+a.h/2, Math.min(VBH-margin*0.35-a.h/2, a.cy));
+          b.cx=Math.max(margin*0.35+b.w/2, Math.min(VBW-margin*0.35-b.w/2, b.cx));
+          b.cy=Math.max(margin*0.35+b.h/2, Math.min(VBH-margin*0.35-b.h/2, b.cy));
+        }
+      }
+    }
+    if(!moved) break;
+  }
+  const pad=4;
+  boxes.forEach(b=>{
+    b.cx = Math.max(margin*0.35+b.w/2+pad, Math.min(VBW-margin*0.35-b.w/2-pad, b.cx));
+    b.cy = Math.max(margin*0.35+b.h/2+pad, Math.min(VBH-margin*0.35-b.h/2-pad, b.cy));
+  });
+  return boxes;
+}
+function arrowMark(pos, dirDeg){
+  const s=7;
+  return `<polygon points="${-s},${-s} ${s},0 ${-s},${s}" fill="#2B2438" transform="translate(${pos[0].toFixed(1)},${pos[1].toFixed(1)}) rotate(${dirDeg.toFixed(1)})"></polygon>`;
+}
+function segLabelPos(seg, map, centroid, dist, awayFrom){
+  const [k1,k2] = seg;
+  const p1=map[k1], p2=map[k2];
+  // A에서 출발하는 변이 여러 개 겹치는 경우가 많아, A쪽 중점이 아니라 A에서 먼 쪽으로 치우쳐 배치한다
+  let t=0.5;
+  if(!awayFrom){ if(k1==='A') t=0.62; else if(k2==='A') t=0.38; }
+  const base=[p1[0]+(p2[0]-p1[0])*t, p1[1]+(p2[1]-p1[1])*t];
+  const dx=p2[0]-p1[0], dy=p2[1]-p1[1];
+  const len=Math.hypot(dx,dy)||1;
+  let perp=[-dy/len, dx/len];
+  const ref = awayFrom ? [base[0]-awayFrom[0], base[1]-awayFrom[1]] : [base[0]-centroid[0], base[1]-centroid[1]];
+  if(perp[0]*ref[0]+perp[1]*ref[1] < 0){ perp=[-perp[0],-perp[1]]; }
+  return [base[0]+perp[0]*dist, base[1]+perp[1]*dist];
+}
+function nameText(p,name,dx,dy){
+  return `<text x="${(p[0]+dx).toFixed(1)}" y="${(p[1]+dy).toFixed(1)}" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="15" fill="#2B2438">${name}</text>`;
+}
+
+/* ---------------------------------------------------------
+   문제 생성 - 유형 A (삼각형 내부 : D는 AB위, E는 AC위)
+--------------------------------------------------------- */
+const SEGMAP_A = {AB:['A','B'], AD:['A','D'], DB:['D','B'], AC:['A','C'], AE:['A','E'], EC:['E','C'], BC:['B','C'], DE:['D','E']};
+const TEMPLATES_A = [
+  {know:['AB','AD','AC'], find:'AE', text:'AB : AD = AC : AE'},
+  {know:['AB','AD','AE'], find:'AC', text:'AB : AD = AC : AE'},
+  {know:['AD','DB','AE'], find:'EC', text:'AD : DB = AE : EC'},
+  {know:['AD','DB','EC'], find:'AE', text:'AD : DB = AE : EC'},
+  {know:['AB','AD','BC'], find:'DE', text:'AB : AD = BC : DE'},
+  {know:['AB','AD','DE'], find:'BC', text:'AB : AD = BC : DE'},
+];
+function genTypeA(){
+  const [p,q] = pickCoprimePair(4);
+  const u=randInt(2,6), v=randInt(2,6), w=randInt(2,6);
+  const vals = {
+    AD:p*u, DB:q*u, AB:(p+q)*u,
+    AE:p*v, EC:q*v, AC:(p+q)*v,
+    DE:p*w, BC:(p+q)*w
+  };
+  const tmpl = pick(TEMPLATES_A);
+  const answer = vals[tmpl.find];
+  const knownVals = tmpl.know.map(k=>vals[k]);
+
+  const bw=randInt(70,100), bh=randInt(140,180), cw=randInt(70,100);
+  const A=[0,0], B=[-bw,bh], C=[cw,bh+randInt(-15,15)];
+  // 그림은 참고용이므로 실제 p,q 비율과 무관하게 항상 보기 좋은 위치에 D,E를 그린다
+  // (실제 비율이 1:4처럼 극단적이면 D 또는 E가 A에 너무 붙어 라벨이 겹치거나 잘려 보이는 문제 방지)
+  const tDraw = randInt(32,68)/100;
+  const D=[A[0]+(B[0]-A[0])*tDraw, A[1]+(B[1]-A[1])*tDraw];
+  const E=[A[0]+(C[0]-A[0])*tDraw, A[1]+(C[1]-A[1])*tDraw];
+
+  const labels = tmpl.know.map(k=>({seg:SEGMAP_A[k], text:String(fmtN(vals[k]))}));
+  labels.push({seg:SEGMAP_A[tmpl.find], text:'x', isUnknown:true});
+
+  return {
+    kind:'triangle', pts:{A,B,C,D,E}, labels,
+    parallelSegs:[['B','C'],['D','E']],
+    answer, knownVals,
+    explain:`${tmpl.text} 를 이용하면 ${tmpl.find} = ${fmtN(answer)}cm 이에요.`,
+    question:'위 그림에서 BC∥DE일 때, x의 길이를 구하세요.'
+  };
+}
+
+/* ---------------------------------------------------------
+   문제 생성 - 유형 B (연장선 : D,E가 A의 연장선 위, 나비 모양)
+--------------------------------------------------------- */
+const SEGMAP_B = {AB:['A','B'], AD:['A','D'], AC:['A','C'], AE:['A','E']};
+const TEMPLATES_B = [
+  {know:['AB','AD','AC'], find:'AE', text:'AB : AD = AC : AE'},
+  {know:['AB','AD','AE'], find:'AC', text:'AB : AD = AC : AE'},
+];
+function genTypeB(){
+  let [p,q] = pickCoprimePair(4);
+  if(p>q){ [p,q]=[q,p]; }
+  const u=randInt(2,5), v=randInt(2,5);
+  const vals = { AD:p*u, AB:q*u, AE:p*v, AC:q*v };
+  const tmpl = pick(TEMPLATES_B);
+  const answer = vals[tmpl.find];
+  const knownVals = tmpl.know.map(k=>vals[k]);
+
+  // 그림은 참고용이므로 실제 r=q/p 비율(최대 4배)과 무관하게 항상 보기 좋은 배율로 그린다
+  // (실제 비율이 크면 작은 삼각형 ADE가 너무 작아져 라벨이 겹치거나 잘려 보이는 문제 방지)
+  const rDraw = 1.25 + Math.random()*0.35;
+  const D=[-randInt(38,52), -randInt(50,64)];
+  const E=[randInt(38,52), -randInt(50,64)];
+  const A=[0,0];
+  const B=[-rDraw*D[0], -rDraw*D[1]];
+  const C=[-rDraw*E[0], -rDraw*E[1]];
+
+  const labels = tmpl.know.map(k=>({seg:SEGMAP_B[k], text:String(fmtN(vals[k]))}));
+  labels.push({seg:SEGMAP_B[tmpl.find], text:'x', isUnknown:true});
+
+  return {
+    kind:'triangle', pts:{A,B,C,D,E}, labels, extend:true,
+    parallelSegs:[['B','C'],['D','E']],
+    answer, knownVals,
+    explain:`${tmpl.text} 를 이용하면 ${tmpl.find} = ${fmtN(answer)}cm 이에요.`,
+    question:'위 그림에서 BC∥DE일 때, x의 길이를 구하세요.'
+  };
+}
+
+/* ---------------------------------------------------------
+   문제 생성 - 유형 C (세 평행선과 두 직선)
+--------------------------------------------------------- */
+const TEMPLATES_C = [
+  {know:['a','b','c'], find:'d'},
+  {know:['a','b','d'], find:'c'},
+  {know:['a','c','d'], find:'b'},
+  {know:['b','c','d'], find:'a'},
+];
+function genTypeC(){
+  const [p,q] = pickCoprimePair(4);
+  const u=randInt(2,6), v=randInt(2,6);
+  const vals = { a:p*u, b:q*u, c:p*v, d:q*v };
+  const tmpl = pick(TEMPLATES_C);
+  const answer = vals[tmpl.find];
+  const knownVals = tmpl.know.map(k=>vals[k]);
+
+  const labelsVal = {};
+  tmpl.know.forEach(k=> labelsVal[k]=String(fmtN(vals[k])));
+  labelsVal[tmpl.find]='x';
+
+  return {
+    kind:'parallelLines', labelsVal,
+    answer, knownVals,
+    explain:`l∥m∥n 이면 a:b=c:d 이므로 ${tmpl.find} = ${fmtN(answer)}cm 이에요.`,
+    question:'위 그림에서 l∥m∥n일 때, x의 길이를 구하세요.'
+  };
+}
+
+/* ---------------------------------------------------------
+   그리기
+--------------------------------------------------------- */
+function buildTriangleSVG(q){
+  const pts=q.pts;
+  const order=['A','B','C','D','E'];
+  const raw=order.map(k=>pts[k]);
+  const VBW=380, VBH=300, margin=76;
+  const proj=fitToViewbox(raw,VBW,VBH,margin);
+  const map={}; order.forEach((k,i)=>map[k]=proj[i]);
+  const centroid=[(map.A[0]+map.B[0]+map.C[0])/3, (map.A[1]+map.B[1]+map.C[1])/3];
+
+  let svg = `<polygon points="${map.A.join(',')} ${map.B.join(',')} ${map.C.join(',')}" fill="#FFEFC2" fill-opacity="0.35" stroke="#2B2438" stroke-width="3.5" stroke-linejoin="round"></polygon>`;
+  if(q.extend){
+    // 연장선(나비꼴) 도형: D-A-B, E-A-C가 각각 한 직선이 되도록 A-D, A-E 선을 추가로 그린다
+    svg += `<line x1="${map.A[0].toFixed(1)}" y1="${map.A[1].toFixed(1)}" x2="${map.D[0].toFixed(1)}" y2="${map.D[1].toFixed(1)}" stroke="#2B2438" stroke-width="3.5"></line>`;
+    svg += `<line x1="${map.A[0].toFixed(1)}" y1="${map.A[1].toFixed(1)}" x2="${map.E[0].toFixed(1)}" y2="${map.E[1].toFixed(1)}" stroke="#2B2438" stroke-width="3.5"></line>`;
+  }
+  svg += `<line x1="${map.D[0].toFixed(1)}" y1="${map.D[1].toFixed(1)}" x2="${map.E[0].toFixed(1)}" y2="${map.E[1].toFixed(1)}" stroke="#2B2438" stroke-width="3"></line>`;
+
+  order.forEach(name=>{
+    const p=map[name];
+    let ox=p[0]-centroid[0], oy=p[1]-centroid[1];
+    const len=Math.hypot(ox,oy)||1; ox/=len; oy/=len;
+    svg += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="#2B2438"></circle>`;
+    if(q.extend && name==='A') svg += nameText(p,name, 17, 5);
+    else svg += nameText(p,name, ox*18, oy*18+5);
+  });
+
+  q.parallelSegs.forEach(([k1,k2])=>{
+    const p1=map[k1], p2=map[k2];
+    const mid=[(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
+    const dirDeg=Math.atan2(p2[1]-p1[1],p2[0]-p1[0])*180/Math.PI;
+    svg += arrowMark(mid, dirDeg);
+  });
+
+  const labelBoxes = q.labels.map(lb=>{
+    let away=null, dist=26;
+    if(q.extend){
+      const key=lb.seg.join('');
+      if(key==='AD'){ away=map.E; dist=34; }
+      else if(key==='AE'){ away=map.D; dist=34; }
+    }
+    const [lx,ly] = segLabelPos(lb.seg, map, centroid, dist, away);
+    const text = lb.isUnknown ? 'x' : (lb.text+'cm');
+    return {cx:lx, cy:ly, w:labelWidth(text), h:26, text, isUnknown:!!lb.isUnknown};
+  });
+  resolveOverlaps(labelBoxes, VBW, VBH, margin);
+  labelBoxes.forEach(b=>{ svg += labelBox(b.cx,b.cy,b.text,b.isUnknown); });
+
+  return `<svg viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+function buildParallelLinesSVG(q){
+  const VBW=380, VBH=300;
+  const x0=55, x1=325;
+  const yL=45, yM=150, yN=255;
+  const t1top=[125,15], t1bot=[75,285];
+  const t2top=[255,15], t2bot=[305,285];
+  function xAtY(top,bot,y){ const t=(y-top[1])/(bot[1]-top[1]); return top[0]+(bot[0]-top[0])*t; }
+  const P1l=[xAtY(t1top,t1bot,yL),yL], P1m=[xAtY(t1top,t1bot,yM),yM], P1n=[xAtY(t1top,t1bot,yN),yN];
+  const P2l=[xAtY(t2top,t2bot,yL),yL], P2m=[xAtY(t2top,t2bot,yM),yM], P2n=[xAtY(t2top,t2bot,yN),yN];
+
+  let svg='';
+  [['l',yL],['m',yM],['n',yN]].forEach(([name,y])=>{
+    svg += `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#2B2438" stroke-width="3"></line>`;
+    svg += `<text x="${x0-22}" y="${y+5}" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="16" fill="#2B2438">${name}</text>`;
+    svg += arrowMark([x1-4,y],0);
+    svg += arrowMark([x0+4,y],180);
+  });
+  svg += `<line x1="${t1top[0]}" y1="${t1top[1]}" x2="${t1bot[0]}" y2="${t1bot[1]}" stroke="#2B2438" stroke-width="3"></line>`;
+  svg += `<line x1="${t2top[0]}" y1="${t2top[1]}" x2="${t2bot[0]}" y2="${t2bot[1]}" stroke="#2B2438" stroke-width="3"></line>`;
+  [P1l,P1m,P1n,P2l,P2m,P2n].forEach(p=>{ svg+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="#2B2438"></circle>`; });
+
+  function mid(p1,p2){ return [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2]; }
+  const mkText=v=> v==='x' ? 'x' : (v+'cm');
+  const aMid=mid(P1l,P1m), bMid=mid(P1m,P1n), cMid=mid(P2l,P2m), dMid=mid(P2m,P2n);
+  svg += labelBox(aMid[0]-26, aMid[1], mkText(q.labelsVal.a), q.labelsVal.a==='x');
+  svg += labelBox(bMid[0]-26, bMid[1], mkText(q.labelsVal.b), q.labelsVal.b==='x');
+  svg += labelBox(cMid[0]+26, cMid[1], mkText(q.labelsVal.c), q.labelsVal.c==='x');
+  svg += labelBox(dMid[0]+26, dMid[1], mkText(q.labelsVal.d), q.labelsVal.d==='x');
+
+  return `<svg viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+function buildSVG(q){
+  return q.kind==='triangle' ? buildTriangleSVG(q) : buildParallelLinesSVG(q);
+}
+
+/* ---------------------------------------------------------
+   보기 8개 생성
+--------------------------------------------------------- */
+function buildChoices(q){
+  const correct = q.answer;
+  const cands = new Set();
+  q.knownVals.forEach(v=>{ if(v!==correct) cands.add(v); });
+  [1,2,3,-1,-2,-3].forEach(d=>{ const v=correct+d; if(v>0) cands.add(v); });
+  const alt1=Math.round(correct*1.5); if(alt1>0 && alt1!==correct) cands.add(alt1);
+  const alt2=Math.round(correct/1.5); if(alt2>0 && alt2!==correct) cands.add(alt2);
+  if(correct*2!==correct) cands.add(correct*2);
+  const alt4=Math.max(1,Math.round(correct/2)); if(alt4!==correct) cands.add(alt4);
+  cands.delete(correct);
+  let distractors = shuffle(Array.from(cands)).slice(0,7);
+  let extra=4;
+  while(distractors.length<7){
+    const v = correct+extra;
+    if(v>0 && v!==correct && !distractors.includes(v)) distractors.push(v);
+    extra+= (extra>0? 1 : -1)*-1 + 4;
+    if(extra>200) break;
+  }
+  return shuffle([correct, ...distractors]);
+}
+
+/* ---------------------------------------------------------
+   상태 & 흐름
+--------------------------------------------------------- */
+const GENS = [genTypeA,genTypeA,genTypeA,genTypeB,genTypeB,genTypeC,genTypeC,genTypeC];
+const TOTAL = 20;
+let questions=[], current=0, score=0, userAnswers=[], answeredThis=false, startTime=0;
+
+function generateQuestionSet(){
+  const list=[];
+  for(let i=0;i<TOTAL;i++) list.push(pick(GENS)());
+  return list;
+}
+
+function startGame(){
+  questions = generateQuestionSet();
+  current=0; score=0; userAnswers=[];
+  startTime = Date.now();
+  renderQuiz();
+}
+
+function renderStart(){
+  document.getElementById('cardRoot').innerHTML = `
+    <div class="start-title">삼각형과 평행선 - 길이 구하기</div>
+    <button class="btn btn-primary" id="startBtn">게임 시작하기 →</button>
+  `;
+  document.getElementById('startBtn').onclick = startGame;
+}
+
+function renderQuiz(){
+  answeredThis=false;
+  const q = questions[current];
+  const choices = buildChoices(q);
+  const pct = Math.round((current)/questions.length*100);
+  document.getElementById('cardRoot').innerHTML = `
+    <div class="top-row">
+      <span class="qcount">문제 ${current+1} / ${questions.length}</span>
+      <span class="score-pill">맞은 개수 ${score}</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="stage">${buildSVG(q)}</div>
+    <div class="scale-note">※ 그림은 참고용이에요. 표시된 길이 정보로만 계산하세요.</div>
+    <div class="question-text">${q.question}</div>
+    <div class="choices-grid" id="choicesGrid">
+      ${choices.map(v=>`<div class="choice-btn" data-val="${v}">${v}cm</div>`).join('')}
+    </div>
+    <div class="explain-note" id="explainNote"></div>
+  `;
+  document.querySelectorAll('.choice-btn').forEach(btn=>{
+    btn.onclick = ()=> onAnswer(Number(btn.dataset.val), q);
+  });
+}
+
+function onAnswer(val, q){
+  if(answeredThis) return;
+  answeredThis = true;
+  const correct = (val === q.answer);
+  if(correct) score++;
+  userAnswers.push({correct});
+
+  const grid = document.getElementById('choicesGrid');
+  grid.classList.add('disabled');
+  document.querySelectorAll('.choice-btn').forEach(btn=>{
+    const v = Number(btn.dataset.val);
+    if(v === q.answer) btn.classList.add('correct');
+    else if(v === val) btn.classList.add('wrong');
+  });
+  const note = document.getElementById('explainNote');
+  if(note) note.innerHTML = (correct ? '정답이에요! 🎉 · ' : '오답이에요. · ') + q.explain;
+
+  setTimeout(()=>{
+    current++;
+    if(current >= questions.length) renderResult();
+    else renderQuiz();
+  }, 1400);
+}
+
+function renderResult(){
+  const total = questions.length;
+  const wrongCount = total - score;
+  const pct = Math.round(score/total*100);
+  const elapsedSec = Math.max(0, Math.round((Date.now()-startTime)/1000));
+  const finalScore = score*10 - wrongCount*10 - elapsedSec;
+  let emoji, msg;
+  if(pct>=90){emoji='🏆'; msg='완벽해요! 평행선과 닮음 비율 마스터!';}
+  else if(pct>=70){emoji='🌟'; msg='아주 잘했어요! 비례식이 확실히 잡혔네요.';}
+  else if(pct>=50){emoji='😊'; msg='꽤 잘했어요! 조금만 더 연습해봐요.';}
+  else {emoji='🌱'; msg='이제 시작이에요! 세 가지 성질을 다시 살펴볼까요?';}
+
+  const dots = userAnswers.map((a,i)=>`<div class="dot ${a.correct?'right':'wrong'}"><span>${i+1}</span></div>`).join('');
+
+  document.getElementById('cardRoot').innerHTML = `
+    <div class="result-emoji">${emoji}</div>
+    <p class="result-score">${finalScore}점</p>
+    <div class="result-sub">정답 ${score}개 · 오답 ${wrongCount}개</div>
+    <div class="result-msg">${msg}</div>
+    <div class="review-grid">${dots}</div>
+    <button class="btn btn-primary" id="retryBtn">다시 도전하기 ↻</button>
+  `;
+  document.getElementById('retryBtn').onclick = startGame;
+}
+
+renderStart();
+</script>
+</body>
+</html>
