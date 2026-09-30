@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
+<title>2026학년도 2학기 학교생활기록부 안내</title>
+<style>
+  :root{
+    --paper:#EAE1C8;
+    --paper-deep:#DCCEA6;
+    --panel:#F3ECD9;
+    --ink:#241D12;
+    --ink-soft:#4A4230;
+    --seal:#A6342A;
+    --pen-blue:#2F5DA8;
+    --pen-green:#3F7355;
+    --pen-purple:#6B4C8A;
+    --pen-gold:#B5842B;
+    --line:#C9B98D;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(42,35,23,0.05) 1px, transparent 0);
+    background-size:22px 22px;
+    color:var(--ink);
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;
+    font-weight:500;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  button, input, textarea, select{font-family:inherit;font-weight:inherit;}
+  #app{max-width:960px;margin:0 auto;padding:14px 16px 40px;}
+  @media (max-width:480px){
+    #app{padding:10px 12px 32px;}
+  }
+
+  /* ---------- Header / approval strip ---------- */
+  .masthead{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    gap:16px;margin-bottom:14px;flex-wrap:wrap;
+  }
+  .masthead .title-block{flex:1;min-width:220px;}
+  .eyebrow{
+    font-size:12px;letter-spacing:0.02em;color:var(--ink-soft);
+    margin:0 0 4px;
+  }
+  h1.doc-title{
+    font-size:clamp(19px,3vw,26px);
+    line-height:1.25;margin:0;font-weight:800;color:var(--ink);
+  }
+  .doc-title .sub{display:block;font-size:0.56em;font-weight:600;color:var(--ink-soft);margin-top:3px;}
+  .rule{
+    height:3px;background:
+      linear-gradient(to right, var(--ink) 0 40px, transparent 40px);
+    margin:10px 0 0;
+  }
+
+  .approval-line{
+    display:grid;grid-template-columns:repeat(4,44px);
+    border:1.5px solid var(--ink);flex-shrink:0;
+  }
+  .approval-line div{
+    border-left:1px solid var(--ink);
+    display:flex;flex-direction:column;
+  }
+  .approval-line div:first-child{border-left:none;}
+  .approval-line span{
+    font-size:10px;text-align:center;padding:3px 0;
+    border-bottom:1px solid var(--ink);color:var(--ink-soft);
+    background:var(--panel);
+  }
+  .approval-line em{height:38px;font-style:normal;background:#fff;}
+
+  /* ---------- Nav / back ---------- */
+  .back-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    background:none;border:none;cursor:pointer;
+    font-size:14px;color:var(--ink-soft);padding:6px 0;margin-bottom:14px;
+    font-weight:600;
+  }
+  .back-btn:hover{color:var(--ink);}
+  .back-btn svg{width:16px;height:16px;}
+
+  .view-title{font-size:22px;font-weight:800;margin:0 0 4px;}
+  .view-desc{font-size:13.5px;color:var(--ink-soft);margin:0 0 14px;}
+
+  /* ---------- Home tiles ---------- */
+  .home-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px;
+  }
+  @media (max-width:720px){.home-grid{grid-template-columns:1fr 1fr;}}
+  @media (max-width:560px){.home-grid{grid-template-columns:1fr 1fr;gap:8px;}}
+
+  .tile{
+    position:relative;background:var(--panel);
+    border:1.5px solid var(--ink);
+    padding:12px 10px 10px;cursor:pointer;
+    box-shadow:3px 3px 0 rgba(42,35,23,0.18);
+    transition:transform .15s ease, box-shadow .15s ease;
+    text-align:left;
+  }
+  .tile:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 rgba(42,35,23,0.2);}
+  .tile:active{transform:translate(0,0);box-shadow:1px 1px 0 rgba(42,35,23,0.2);}
+  .tile .tab{
+    position:absolute;top:-8px;left:10px;background:var(--seal);
+    color:#fff;font-size:9px;font-weight:700;padding:1px 7px;letter-spacing:.02em;
+  }
+  .tile.g2 .tab{background:var(--pen-blue);}
+  .tile.g3 .tab{background:var(--pen-green);}
+  .tile.g4 .tab{background:var(--pen-gold);}
+  .tile svg.icon{width:18px;height:18px;color:var(--ink);margin-bottom:6px;}
+  .tile h2{margin:0 0 5px;font-size:13px;font-weight:800;line-height:1.3;}
+  .tile .go{font-size:10px;font-weight:700;color:var(--ink);}
+
+  /* ---------- Calendar ---------- */
+  .cal-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:700px){.cal-wrap{grid-template-columns:1fr;}}
+  .month{
+    background:var(--panel);border:1.5px solid var(--ink);
+    box-shadow:6px 6px 0 rgba(42,35,23,0.14);
+    padding:16px;
+  }
+  .month h3{margin:0 0 12px;font-size:16px;font-weight:800;text-align:center;}
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
+  .dow span{font-size:11px;text-align:center;color:var(--ink-soft);font-weight:700;padding-bottom:6px;}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .day{
+    position:relative;aspect-ratio:1/1;border:1px solid transparent;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+    padding-top:4px;font-size:12.5px;color:var(--ink);cursor:default;
+    background:transparent;
+  }
+  .day.blank{visibility:hidden;}
+  .day.has-event{cursor:pointer;border:1px solid var(--line);background:#fff;}
+  .day.has-event:hover{border-color:var(--ink);}
+  .day.selected{outline:2px solid var(--ink);outline-offset:-2px;}
+  .dots{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap;justify-content:center;}
+  .dot{width:6px;height:6px;border-radius:50%;}
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:18px;padding:14px 16px;
+    background:var(--panel);border:1px solid var(--line);font-size:12.5px;
+  }
+  .legend .item{display:flex;align-items:center;gap:6px;color:var(--ink-soft);}
+  .legend .dot{width:9px;height:9px;}
+
+  .day-panel{
+    margin-top:0;background:#fff;border:1.5px solid var(--ink);
+    box-shadow:6px 6px 0 rgba(42,35,23,0.16);padding:22px;
+  }
+  .day-panel h3{margin:0 0 4px;font-size:19px;font-weight:800;}
+  .day-panel .date-sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;}
+  .event-card{border-top:1px solid var(--line);padding:14px 0;}
+  .event-card:first-of-type{border-top:none;padding-top:0;}
+  .event-card .tag-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+  .badge{
+    display:inline-block;font-size:11px;font-weight:700;color:#fff;
+    padding:2px 9px;
+  }
+  .owner{font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .event-card h4{margin:0 0 8px;font-size:15px;font-weight:800;}
+  .event-card ul{margin:0;padding-left:0;list-style:none;}
+  .event-card li{
+    position:relative;padding-left:16px;margin-bottom:7px;font-size:13.5px;
+    line-height:1.6;color:var(--ink);
+  }
+  .event-card li::before{
+    content:'';position:absolute;left:0;top:8px;width:6px;height:6px;background:var(--ink-soft);
+  }
+  .empty-hint{font-size:13px;color:var(--ink-soft);padding:30px 10px;text-align:center;}
+
+  .sheet-link-btn{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--ink);color:#fff;
+    font-size:13.5px;font-weight:700;
+    padding:9px 16px;margin-bottom:16px;
+    text-decoration:none;border:1.5px solid var(--ink);
+    box-shadow:3px 3px 0 rgba(42,35,23,0.2);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .sheet-link-btn:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 rgba(42,35,23,0.22);}
+  .sheet-link-btn:active{transform:translate(0,0);box-shadow:1px 1px 0 rgba(42,35,23,0.22);}
+
+  .note-box{
+    margin-top:22px;background:var(--panel);border:1px dashed var(--ink-soft);
+    padding:16px 18px;
+  }
+  .note-box h4{margin:0 0 8px;font-size:14px;font-weight:800;}
+  .note-box ul{margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft);line-height:1.65;}
+
+  /* ---------- Guide grid ---------- */
+  .guide-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  @media (max-width:380px){.guide-grid{grid-template-columns:repeat(2,1fr);}}
+  .g-tile{
+    background:#fff;border:1.5px solid var(--ink);
+    padding:8px 5px;cursor:pointer;text-align:center;
+    box-shadow:2px 2px 0 rgba(42,35,23,0.14);
+    transition:transform .12s ease, box-shadow .12s ease;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:auto;
+  }
+  .g-tile:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 rgba(42,35,23,0.18);}
+  .g-tile:active{transform:translate(0,0);box-shadow:1px 1px 0 rgba(42,35,23,0.18);}
+  .g-tile .swatch{width:12px;height:3px;}
+  .g-tile svg.icon{width:15px;height:15px;color:var(--ink);}
+  .g-tile h3{margin:0;font-size:10.5px;font-weight:800;line-height:1.25;}
+  @media (max-width:480px){
+    .g-tile{padding:6px 4px;gap:3px;}
+    .g-tile svg.icon{width:13px;height:13px;}
+    .g-tile h3{font-size:9.5px;}
+  }
+
+  .topic-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  @media (max-width:360px){.topic-grid{grid-template-columns:1fr;}}
+  .topic-tile{
+    background:#fff;border:1.5px solid var(--ink);
+    padding:16px 16px;cursor:pointer;text-align:left;
+    box-shadow:5px 5px 0 rgba(42,35,23,0.12);
+    transition:transform .12s ease, box-shadow .12s ease;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .topic-tile:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 rgba(42,35,23,0.16);}
+  .topic-tile:active{transform:translate(0,0);box-shadow:3px 3px 0 rgba(42,35,23,0.16);}
+  .topic-tile h3{margin:0;font-size:15px;font-weight:800;line-height:1.4;}
+
+  /* 1줄 1개 아코디언 목록 (연수 세부항목) */
+  .topic-list{display:flex;flex-direction:column;gap:10px;}
+  .topic-item{
+    background:#fff;border:1.5px solid var(--ink);
+    box-shadow:4px 4px 0 rgba(42,35,23,0.12);
+  }
+  .topic-tile.wide{
+    border:none;box-shadow:none;width:100%;
+    display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .topic-tile.wide:hover, .topic-tile.wide:active{transform:none;box-shadow:none;}
+  .topic-item.open .topic-tile.wide{border-bottom:1px solid var(--line);}
+  .chev{font-size:12px;color:var(--ink-soft);flex-shrink:0;}
+  .item-detail{padding:14px 16px;}
+  .item-detail ul{margin:0;padding:0;list-style:none;}
+  .item-detail li{
+    position:relative;padding-left:16px;margin-bottom:8px;font-size:13.5px;line-height:1.6;color:var(--ink);
+  }
+  .item-detail li::before{content:'';position:absolute;left:0;top:8px;width:6px;height:6px;background:var(--ink-soft);}
+  .item-detail li:last-child{margin-bottom:0;}
+
+  /* 1줄 1개, 옆에 펼치기 (공유시트 탭) */
+  .sheet-list{display:flex;flex-direction:column;gap:10px;}
+  .sheet-row{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;}
+  .topic-tile.sheet-tile{
+    flex:0 0 auto;min-width:150px;
+    display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;
+  }
+  .topic-tile.sheet-tile.open{background:var(--panel);}
+  .sheet-detail{
+    flex:1 1 240px;background:#fff;border:1.5px solid var(--ink);
+    box-shadow:4px 4px 0 rgba(42,35,23,0.12);
+    padding:12px 14px;display:flex;align-items:center;
+  }
+
+  .section li strong, .event-card li strong, .chip strong{
+    font-weight:800;color:var(--ink);
+  }
+  .chip strong{font-weight:800;}
+
+  .subblock{margin-bottom:18px;}
+  .subblock:last-child{margin-bottom:0;}
+  .subblock h5{
+    margin:0 0 8px;font-size:12.5px;font-weight:800;color:var(--ink-soft);
+    letter-spacing:.01em;
+  }
+
+  /* ---------- Guide detail ---------- */
+  .detail-head{
+    border-left:6px solid var(--ink);padding-left:16px;margin-bottom:22px;
+  }
+  .detail-head h2{margin:0 0 4px;font-size:21px;font-weight:800;}
+  .detail-head p{margin:0;font-size:13.5px;color:var(--ink-soft);}
+  .section{margin-bottom:26px;}
+  .section h4{
+    font-size:14.5px;font-weight:800;margin:0 0 10px;
+    padding-bottom:6px;border-bottom:1px solid var(--line);
+  }
+  .section ul{margin:0;padding:0;list-style:none;}
+  .section li{
+    position:relative;padding-left:18px;margin-bottom:9px;font-size:13.8px;
+    line-height:1.65;color:var(--ink);
+  }
+  .section li::before{
+    content:'';position:absolute;left:2px;top:8px;width:6px;height:6px;background:var(--ink-soft);
+  }
+  .section li.sub{margin-left:14px;font-size:13px;color:var(--ink-soft);}
+  .section li.sub::before{background:var(--line);}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{
+    font-size:12.5px;padding:5px 11px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink);
+  }
+  .chip.ok{border-color:var(--pen-green);color:var(--pen-green);background:#F1F7F2;}
+  .chip.no{border-color:var(--seal);color:var(--seal);background:#FBF1EF;}
+
+  table.gtable{width:100%;border-collapse:collapse;font-size:13px;}
+  table.gtable th,table.gtable td{
+    border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;
+  }
+  table.gtable th{background:var(--panel);font-weight:700;}
+  .table-scroll{overflow-x:auto;}
+
+  .callout{
+    background:#fff;border-left:4px solid var(--pen-gold);
+    padding:10px 14px;font-size:13px;color:var(--ink-soft);margin-top:8px;
+  }
+
+  @media (max-width:480px){
+    .view-title{font-size:18px;}
+    .view-desc{font-size:12px;}
+    .month{padding:10px;}
+    .month h3{font-size:14px;}
+    .day{font-size:10.5px;}
+    .dow span{font-size:9.5px;}
+    .legend{font-size:11px;padding:10px 12px;gap:6px 10px;}
+    .day-panel{padding:14px;}
+    .event-card h4{font-size:14px;}
+    .event-card li{font-size:12.5px;}
+    .detail-head{padding-left:12px;border-left-width:5px;}
+    .detail-head h2{font-size:17px;}
+    .detail-head p{font-size:12.5px;}
+    .section li{font-size:13px;}
+    .section h4{font-size:13px;}
+    table.gtable{font-size:11.5px;}
+    table.gtable th,table.gtable td{padding:6px 7px;}
+    .chip{font-size:11.5px;padding:4px 9px;}
+    .topic-tile{padding:12px;}
+    .topic-tile h3{font-size:13.5px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============== DATA ============== */
+
+const EVENTS = [
+  { id:1, start:'2026-12-14', end:'2026-12-14', owner:'학급담임', tag:'출결마감', color:'var(--seal)',
+    title:'1차 출결 마감',
+    details:[
+      '<strong>필수 선행 작업</strong> : 일출결마감 / 월출결마감 (12.14 기준 수업일수 <strong>174일</strong>)',
+      '매일 일출결 마감을 해야 이수시간에 문제가 없음',
+      '<strong>출결특기사항</strong> 작성 – 기재요령 [출결상황] 참고',
+      '인정결석을 제외하고 64일 이상 결석한 학생이 있는지 확인'
+    ]},
+
+  { id:2, start:'2026-12-15', end:'2026-12-18', owner:'학급담임', tag:'입력', color:'var(--pen-blue)',
+    title:'창의적 체험활동 입력',
+    details:[
+      '구글 시트를 참고하여 <strong>특기사항</strong> 입력 (1·2학년은 3/25 누가기록 포함)',
+      '<strong>봉사활동 실적관리</strong> : 1·2학기 교내봉사 입력, 나눔포털 확인 후 기재요령에 맞게 입력',
+      '<strong>진로활동</strong> – 구글 시트 참고하여 <strong>특기사항</strong> 입력 및 <strong>진로희망분야</strong> 입력'
+    ]},
+  { id:3, start:'2026-12-15', end:'2026-12-18', owner:'학급담임', tag:'입력', color:'var(--pen-blue)',
+    title:'행동특성 및 종합의견',
+    details:[
+      '누가기록은 필수는 아니지만, 부정적인 내용을 기재할 경우 객관적 증빙자료로 쓰이므로 <strong>여러 번, 구체적으로 적고 교사의 조치를 함께 적어둘 것</strong>'
+    ]},
+  { id:4, start:'2026-12-15', end:'2026-12-18', owner:'학급담임', tag:'입력', color:'var(--pen-blue)',
+    title:'위탁생',
+    details:['위탁기관 자료를 확인하여 입력']},
+  { id:5, start:'2026-12-15', end:'2026-12-18', owner:'학급담임', tag:'입력', color:'var(--pen-blue)',
+    title:'학교폭력',
+    details:['생활교육부 안내에 따라 [학교폭력조치사항관리]에 조치 사항 입력']},
+  { id:6, start:'2026-12-15', end:'2026-12-18', owner:'학급담임', tag:'입력', color:'var(--pen-blue)',
+    title:'독서',
+    details:['<strong>ISBN 확인</strong> 후 입력']},
+  { id:7, start:'2026-12-15', end:'2026-12-18', owner:'교과담임', tag:'입력', color:'var(--pen-blue)',
+    title:'교과 세특',
+    details:[
+      '1학년 1학기 자유학기 : <strong>모든 학생</strong> 대상 작성',
+      '1학년 2학기 및 2~3학년 : <strong>학기당 수강생의 1/3 이상</strong> 작성 (1·2학기 합쳐서 500자)'
+    ]},
+  { id:8, start:'2026-12-15', end:'2026-12-18', owner:'교과담임', tag:'입력', color:'var(--pen-blue)',
+    title:'영재·발명',
+    details:['자연과학부 안내에 따라 입력']},
+  { id:9, start:'2026-12-15', end:'2026-12-18', owner:'동아리(스클) 담임', tag:'입력', color:'var(--pen-blue)',
+    title:'창체 동아리',
+    details:['특기사항 입력']},
+  { id:10, start:'2026-12-15', end:'2026-12-18', owner:'동아리(스클) 담임', tag:'입력', color:'var(--pen-blue)',
+    title:'자율동아리',
+    details:['2학기 말에 창의체험부 안내에 따라 입력']},
+  { id:11, start:'2026-12-15', end:'2026-12-18', owner:'자유학기 담임', tag:'입력', color:'var(--pen-blue)',
+    title:'자유학기',
+    details:[
+      '<strong>진로탐색 / 주제선택 특기사항 입력 및 이수시간 기준일 현재일로 설정 후 이수시간 반영</strong>',
+      '(1학기 때 이미 진행했으므로 간단히 확인만)'
+    ]},
+
+  { id:12, start:'2026-12-21', end:'2026-12-22', owner:'학급담임', tag:'1차점검', color:'var(--pen-blue)',
+    title:'1차 검증 · 1차 점검',
+    details:[
+      '담당 선생님들이 기재요령에 맞게 작성하였는지 항목별로 읽고 확인',
+      '[학생부]-[학교생활기록부] : 학생부반영 조회 후 전체반영',
+      '[학생부]-[학교생활기록부] : 자료검증 및 반마감 조회 후 전체검증 클릭 → 확인여부에 빨간색 "확인필요" 클릭 → 검증내역 확인 후 수정이 필요한 것은 수정',
+      '<strong>점검표는 양면인쇄·모아찍기·클립·스테이플러 모두 사용하지 않고, 학생부 항목별 출력물은 양면인쇄·2쪽 모아찍기로 출력</strong>',
+      '1차 점검 및 수정 요청 : 수정이 필요한 부분을 <strong>파란색 펜</strong>으로 표시하여 해당 교사에게 수정을 요청하고, 뒷 반 담임에게 전달 (1반→2반, 2반→3반 … 10반→11반, 12반→1반)'
+    ]},
+  { id:13, start:'2026-12-23', end:'2026-12-24', owner:'뒷반 담임', tag:'2차점검', color:'var(--pen-green)',
+    title:'2차 점검',
+    details:[
+      '표시된 부분 이외에 수정이 필요한 부분을 <strong>초록색 펜</strong>으로 표시한 후, 점검 대상의 앞 반 담임에게 전달 (1반→12반, 2반→1반 … 11반→10반, 12반→11반)'
+    ]},
+  { id:14, start:'2026-12-28', end:'2026-12-29', owner:'앞반 담임', tag:'3차점검', color:'var(--pen-purple)',
+    title:'3차 점검',
+    details:[
+      '표시된 부분 이외에 수정이 필요한 부분을 <strong>보라색 펜</strong>으로 표시한 후 학급 담임에게 반환'
+    ]},
+
+  { id:15, start:'2026-12-30', end:'2027-01-05', owner:'학급담임', tag:'수정확인', color:'var(--pen-gold)',
+    title:'수정요청 · 수정확인 · 정정신청',
+    details:[
+      '2·3차 점검 시 표시된 수정 사항들을 해당 교사에게 요청하고 수정 완료 여부 확인',
+      '파란색·초록색·보라색으로 표시된 부분이 수정되었는지 나이스에서 확인 후, <strong>완료된 것은 빨간색 펜으로 O 표시</strong>하고 여전히 미완료된 것은 재요청 (생기부 수정 구글시트 적극 활용)',
+      '이전 학년도 정정 내용은 나이스 담당자에게 요청하면 정정대장 관련 안내를 받음',
+      '<strong>점검표</strong> 및 1~3차 점검이 표시된 <strong>학생부 항목별 출력물</strong>을 나이스계에 퇴청 전 제출 (최종 수정본 출력은 필요 없음)',
+      '<strong>출결·학폭·영재·발명·학생회·위탁·자유학기 등 생기부 작성 관련 업무 담당자는 학생부를 조회하여 정확히 입력했는지 확인</strong>'
+    ]},
+  { id:16, start:'2026-12-30', end:'2027-01-05', owner:'담당 교사', tag:'수정확인', color:'var(--pen-gold)',
+    title:'수정 완료',
+    details:['수정 요청을 받은 각 영역 담당 교사는 가급적 즉시 수정하고, <strong>다른 학급의 이상 여부도 함께 확인·수정</strong>']},
+
+  { id:17, start:'2027-01-07', end:'2027-01-07', owner:'학급담임', tag:'최종마감', color:'var(--seal)',
+    title:'최종 출결 마감',
+    details:['일출결마감 / 월출결마감을 09:30 이전에 완료! (1.7 기준 2학기 총 수업일수 190일)']},
+  { id:18, start:'2027-01-07', end:'2027-01-07', owner:'학급담임', tag:'최종마감', color:'var(--seal)',
+    title:'검증 및 최종 확인',
+    details:[
+      '[학생부]-[학교생활기록부] : <strong>학생부반영 조회 후 전체반영</strong>',
+      '[학생부]-[학교생활기록부] : 자료검증 및 반마감 조회 후 전체검증 → 예외처리사유를 작성한 것 외에 확인 필요 항목이 뜨는지 확인 후 문제 없으면 반 마감',
+      '[학생부]-[학교생활기록부] : 학생부 조회 및 출력에서 1번 학생을 조회하여 수업일수, 창체(자율·동아리·진로), 자유학기활동(1학년), 1·2학기 성적 등이 제대로 반영되었는지 최종 확인'
+    ]},
+  { id:19, start:'2027-01-07', end:'2027-01-07', owner:'출결담당', tag:'최종마감', color:'var(--seal)',
+    title:'출결 최종 확인',
+    details:[
+      '[학적]-[출결관리]-[출결관리] : 월출결마감현황 조회, 각 반의 월출결마감 및 학생별 수업일수 이상 여부 확인',
+      '3월~1월 자료 승인요청'
+    ]},
+];
+
+const LEGEND = [
+  {tag:'입력', color:'var(--pen-blue)'},
+  {tag:'1차점검', color:'var(--pen-blue)'},
+  {tag:'2차점검', color:'var(--pen-green)'},
+  {tag:'3차점검', color:'var(--pen-purple)'},
+  {tag:'수정확인', color:'var(--pen-gold)'},
+  {tag:'출결마감 / 최종마감', color:'var(--seal)'},
+];
+
+function icon(name){
+  const icons = {
+    calendar:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="10" width="36" height="32" rx="1"/><line x1="6" y1="19" x2="42" y2="19"/><line x1="15" y1="5" x2="15" y2="14"/><line x1="33" y1="5" x2="33" y2="14"/><path d="M15 27l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    folder:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 14h12l4 5h20v21H6z"/><line x1="6" y1="24" x2="42" y2="24"/></svg>`,
+    doc:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="6" width="28" height="36" rx="1"/><line x1="16" y1="16" x2="32" y2="16"/><line x1="16" y1="23" x2="32" y2="23"/><line x1="16" y1="30" x2="26" y2="30"/></svg>`,
+    id:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="11" width="36" height="26" rx="1"/><circle cx="17" cy="22" r="4"/><path d="M10 32c1-4 5-6 7-6s6 2 7 6"/><line x1="28" y1="19" x2="36" y2="19"/><line x1="28" y1="25" x2="36" y2="25"/></svg>`,
+    check:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="10" width="36" height="32" rx="1"/><line x1="6" y1="19" x2="42" y2="19"/><path d="M14 29l4 4 8-9" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    ribbon:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><circle cx="24" cy="17" r="10"/><path d="M18 25l-5 17 11-6 11 6-5-17"/></svg>`,
+    shield:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 5l16 6v11c0 11-7 18-16 21-9-3-16-10-16-21V11z"/><path d="M17 24l5 5 9-10" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    book:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 12c-4-3-11-4-16-3v27c5-1 12 0 16 3 4-3 11-4 16-3V9c-5-1-12 0-16 3z"/><line x1="24" y1="12" x2="24" y2="39"/></svg>`,
+    speech:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 10h36v22H18l-8 8v-8H6z"/><path d="M24 20c-2-3-7-3-8 1-1 4 4 6 8 9 4-3 9-5 8-9-1-4-6-4-8-1z"/></svg>`,
+    compass:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><circle cx="24" cy="24" r="17"/><path d="M31 17l-5 10-10 5 5-10z"/></svg>`,
+    pencil:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 39l2-9 20-20 7 7-20 20-9 2z"/><line x1="27" y1="14" x2="34" y2="21"/><rect x="6" y="7" width="26" height="18" rx="1" opacity="0" /></svg>`,
+    training:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16L24 8l20 8-20 8z"/><path d="M12 21v9c0 3 5 6 12 6s12-3 12-6v-9"/><line x1="40" y1="17" x2="40" y2="30"/></svg>`,
+    sheet:`<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="6" width="34" height="36" rx="1"/><line x1="7" y1="17" x2="41" y2="17"/><line x1="7" y1="27" x2="41" y2="27"/><line x1="19" y1="6" x2="19" y2="42"/><line x1="30" y1="6" x2="30" y2="42"/></svg>`,
+  };
+  return icons[name] || '';
+}
+
+const GUIDE_TAB_COLORS = ['var(--seal)','var(--pen-blue)','var(--pen-green)','var(--pen-gold)','var(--pen-purple)','var(--seal)','var(--pen-blue)','var(--pen-green)','var(--pen-gold)'];
+
+const GUIDES = [
+{
+  id:'basic', title:'기본 유의사항', summary:'모든 항목에 공통 적용되는 작성 원칙과 글자 수 기준',
+  iconName:'doc',
+  sections:[
+    { heading:'작성 원칙', type:'bullets', items:[
+      '활동 내용에 따른 <strong>개별적 특성</strong>이 드러나는 사항을 중심으로 작성',
+      '<strong>사교육 유발요인</strong>이 큰 사항은 작성 금지'
+    ]},
+    { heading:'작성 금지 항목 (사교육 유발요인)', type:'chips', style:'no', items:[
+      '공인어학시험','교내외 대회','교외 상','교내외 인증시험','<strong>논문 관련</strong>','도서 출간',
+      '지식재산권','해외 활동실적(어학연수·봉사활동)','<strong>부모 및 친인척의 사회·경제적 지위 암시</strong>',
+      '장학생·장학금','<strong>구체적인 대학명·기관명(UN, 유네스코 등)·상호명·강사명</strong>',
+      '자격증','<strong>"대회"</strong> 용어(수상경력 제외 입력 불가)'
+    ]},
+    { heading:'서술형 항목(특기사항) 유의사항', type:'bullets', items:[
+      '교사가 평소 학생을 직접 관찰·평가한 내용으로 작성',
+      '관련 없는 내용 기재, 과장 기재, 허위 기재 금지',
+      '학생에게 작성하여 제출하도록 하는 행위 금지',
+      'AI를 활용하여 생성한 자료를 그대로 입력 금지',
+      '학생이 직접 작성한 자료 중 동료평가서·자기평가서·수업산출물·소감문·독후감만 활용 가능',
+      '특수문자, 문단구분 기호(번호) 사용하지 않음',
+      '첫 칸 들여쓰기 하지 않음',
+      '명사형 어미로 종결하며, 문단(내용) 단위로 줄 바꿈 가능',
+      '지역명은 일반화 권장 (예: 양재천 → 지역하천)',
+      '드라마·영화·노래 제목, 작품 및 캐릭터명은 가능하면 일반화 (예: 디벗 → 교육용 태블릿)',
+      '<strong>과거형 지양</strong>',
+      '<strong>가능형 지양 (성취기준을 그대로 적는 것과 혼동될 수 있음)</strong>'
+    ]},
+    { heading:'표현 및 활동명 표기 예시', type:'group', blocks:[
+      { subheading:'입력 가능한 표현 예시', type:'chips', style:'ok', items:[
+        '작성함','기록함','발표함','제출함','완성함','수행함','표현함','참여함','만듦','제안함',
+        '설명함','소개함','토론함','활동을 진행함','적극적으로 임함','반박함','비교함',
+        '대안을 제시함','결론을 도출함','의견을 조율함','분석함','의견을 공유함'
+      ]},
+      { subheading:'입력 불가능한 표현 예시', type:'chips', style:'no', items:[
+        '<strong>~하는 모습이 관찰됨</strong>','~하는 능력·모습·자세·태도를 보임','태도가 형성됨',
+        '완성도를 높이는데 이바지함','공감을 이끌어 냄','포부를 밝힘','의지를 보임',
+        '~하여 급우들에게 좋은 반응을 얻음','~하는 모습이 우수함','~에 두각을 보임',
+        '~한 모습이 돋보임·인상적임','~에 대한 비판적인 시각을 가짐','~하는 능력이 뛰어남',
+        '~능력을 발휘함','~을 이해하는 수준이 높음','~하는 능력이 향상됨',
+        '책임감 있게 완수함','높은 참여도를 보임','~라고 느낌·생각함','~을 생각해 봄',
+        '~라고 다짐함','~을 배움·알게 됨·<strong>이해함</strong>·깨달음·<strong>파악함</strong>·추론함','~하였음','<strong>~할 수 있음</strong>'
+      ]},
+      { subheading:'활동명 표기 예시', type:'bullets', items:[
+        '가능 : <strong>자신의</strong> 개념 노트 만들기 활동 / \u2018나의 미래 직업\u2019 활동 / \u2018나의 개념 노트 만들기\u2019 활동 (작은따옴표 활용)',
+        '불가 : <strong>나의</strong> 개념 노트 만들기 활동으로 ~ / <strong>나의</strong> 꿈 발표 활동에서 ~ (따옴표 없이 임의의 활동명을 고유명사처럼 사용)'
+      ]}
+    ]},
+    { heading:'문자 · 숫자 표기 규칙', type:'bullets', items:[
+      '문자는 한글로 작성 (부득이한 경우에만 영문 사용), 숫자는 아라비아 숫자로 입력',
+      '영문은 원칙적으로 입력 불가 – 단, <strong>CEO, PD, UCC, IT, POP, CF, TV, PAPS, SNS, PPT, AI를 제외한 영문은 입력 X</strong>',
+      '그 외 영문 작성을 희망할 경우 성관위 절차를 거쳐야 함'
+    ]},
+    { heading:'항목별 입력 주체 및 연간 최대 글자 수', type:'table',
+      headers:['항목','입력 주체','연간 최대 글자 수(한글 기준)'],
+      rows:[
+        ['출결상황 특기사항','학급담임교사','500자'],
+        ['학교폭력 조치상황 관리','학급담임교사','공문대로 입력'],
+        ['창체 – 자율·자치활동','학급담임교사','500자'],
+        ['창체 – 동아리활동','해당 동아리 담당교사','창체동아리와 스포츠클럽 합쳐 500자'],
+        ['창체 – 진로활동','학급담임교사','<strong>500자</strong>'],
+        ['교과학습발달상황 – 과목별 세특','교과담당교사','과목별 500자'],
+        ['교과학습발달상황 – 개인별 세특','학급담임교사','500자'],
+        ['자유학기 – 진로탐색활동','해당 활동 담당교사','각 활동 합쳐 1,000자'],
+        ['자유학기 – 주제선택활동','해당 활동 담당교사','각 활동 합쳐 1,000자'],
+        ['독서활동상황 – 공통','학급담임교사','500자'],
+        ['독서활동상황 – 과목별','교과담당교사','과목별 250자'],
+        ['행동특성 및 종합의견','학급담임교사','<strong>300자</strong>'],
+      ],
+      note:[
+        '<strong>1학기와 2학기를 합친 글자 수</strong>이므로 적절히 분배해서 작성',
+        '<strong>2인 이상의 교사</strong>가 한 항목을 입력하는 경우에도 글자 수를 분배해서 작성'
+      ]}
+  ]
+},
+{
+  id:'personal', title:'인적사항', summary:'주소·학적 변동, 사진 등록 확인 (학급담임)',
+  iconName:'id',
+  sections:[
+    { heading:'확인 사항', type:'bullets', items:[
+      '<strong>같은 주소가 연속</strong>으로 등록되어 있는지 확인 – [학급담임]-[학적]-[기본학적관리]-[기본신상관리]-[누가주소등록]에서 수정 가능',
+      '전출일과 전입일 사이에 공백 기간이 없는지 확인 (공백이 있는 경우 원격지 여부 확인)',
+      '입학년도에 사진 등록, 졸업년도에 사진 교체'
+    ]}
+  ]
+},
+{
+  id:'attendance', title:'출결상황', summary:'수업일수 기준, 특기사항 작성 규칙 (학급담임)',
+  iconName:'check',
+  sections:[
+    { heading:'수업일수 기준', type:'bullets', items:[
+      '1학기 수업일수 : 7월 22일 기준 95일 (위탁생, 학적변동이 있는 경우 다를 수 있음)',
+      '2학기 수업일수 : <strong>2027년 1월 7일 기준 190일</strong>',
+      '인정결석을 제외하고 64일 이상 결석하면 유급'
+    ]},
+    { heading:'출결 특기사항 작성', type:'bullets', items:[
+      '경로 : [학급담임]-[학적]-[출결관리]-[출결관리]-[출결특기사항등록]',
+      '<strong>기타결석은 1일이더라도 사유를 반드시 작성</strong>',
+      '<strong>출석인정결석은 사유를 입력하지 않음</strong>',
+      '<strong>학교폭력 관련 특이사항이 있으면 즉시 입력</strong>',
+      '<strong>동일한 종류의 연속된 10일 이상 질병·미인정 결석은 사유 입력 (개인정보 보호 우려 시 심의를 거쳐 삭제 가능)</strong>',
+      '위탁학생의 경우 해당 학년 수업일수와 다를 수 있음',
+      '(2학기) 해당 학년 동안 결석·지각·조퇴·결과가 1회도 없는 경우, 수업일수와 관계없이 특기사항에 "개근" 입력'
+    ]},
+    { heading:'마감 절차', type:'bullets', items:[
+      '월출결을 모두 마감한 후 자료반영을 해야 학생부에 반영됨',
+      '8월~1월 모두 월 마감을 해야 함'
+    ]}
+  ]
+},
+{
+  id:'award', title:'수상경력', summary:'입력 가능 범위 (학급담임)',
+  iconName:'ribbon',
+  sections:[
+    { heading:'입력 기준', type:'bullets', items:[
+      '학기 초 <strong>학교교육계획</strong>에 따라 실시한 교내 상만 정확히 기재',
+      '<strong>학년·학급 단위</strong>의 단체 수상, 임명장, 당선증, 인증서는 <strong>입력하지 않음</strong>'
+    ]}
+  ]
+},
+{
+  id:'violence', title:'학교폭력 조치상황관리', summary:'입력·삭제 절차 (학급담임)',
+  iconName:'shield',
+  sections:[
+    { heading:'처리 절차', type:'bullets', items:[
+      '학기 말 생활교육부 안내에 따라 입력·삭제',
+      '학폭 사항을 삭제할 경우 성관위 심의가 먼저 이루어져야 함'
+    ]}
+  ]
+},
+{
+  id:'reading', title:'독서활동상황', summary:'입력 방법, 마감일 (학급담임 · 교과담임)',
+  iconName:'book',
+  sections:[
+    { heading:'입력 대상 및 방법', type:'bullets', items:[
+      '2026년 <strong>글사랑 독서록</strong>에 정해진 조건을 만족하여 작성한 것, <strong>ISBN</strong>에 등재된 도서만 입력 가능',
+      '해당 <strong>교과 관련</strong> : 교과담당교사가 [교과담임]-[성적]-[성적처리]-[과목별독서활동]에서 입력',
+      '특정 <strong>교과 관련 없는 경우</strong> : 학급담임교사가 [학급담임]-[학생생활]-[독서활동상황]-[독서활동상황기록]에서 공통으로 입력',
+      '<strong>학생이 독서록에 적은 책과 저자를 그대로 적는 것이 아니라, ISBN에 해당 도서를 검색하여 책 제목과 저자명만 입력</strong>'
+    ]},
+    { heading:'중복 작성 · 표기 규칙', type:'bullets', items:[
+      '26학년도부터 동일하지 않은 증빙자료를 제출한 경우 <strong>도서 중복 작성이 가능</strong>. 단, 이전 학년도의 중복은 소급 적용하지 않음 (예 : 25년도와 26년도에 동일한 책 입력 가능, 24년도와 25년도에 동일한 책 입력 불가)',
+      '<strong>도서명(저자)</strong>의 형식으로 작성. 저자가 여러 명인 경우 "대표저자명 외" 형식으로 입력 가능 (예 : 꿈꾸는 다락방(이지성), 세잔의 차(그레그 모텐슨 외))',
+      '도서 전체를 읽은 것이 아니라 그 속에 포함된 단편 소설만 읽은 경우 기재 불가'
+    ]},
+    { heading:'입력 마감일', type:'bullets', items:[
+      '1학기 : 8월 17일까지 쓴 것만 포함, 개학일 포함 5일(~8월 24일) 이내 제출한 것까지 입력',
+      '2학기 : <strong>학기 종료일 3일 전(~2027년 1월 4일) 이내에 제출</strong>한 것까지 2학기에 입력'
+    ]}
+  ]
+},
+{
+  id:'behavior', title:'행동특성 및 종합의견', summary:'누가기록, 부정적 의견 작성 유의사항 (학급담임)',
+  iconName:'speech',
+  sections:[
+    { heading:'작성 유의사항', type:'bullets', items:[
+      '26학년도부터 학기당 1회 필수였던 <strong>누가기록 작성 의무</strong>는 삭제됨',
+      '<strong>부정적 의견을 적을 때는 관련 교사의 조치와 발전 가능성을 함께 적을 것</strong>',
+      '<strong>부정적 의견의 근거는 누가기록에 구체적으로 여러 번 작성하여 증빙자료로 활용 가능하도록 할 것</strong>',
+      '자율동아리, 개인봉사활동은 입력 불가',
+      '학기 중간에 면제·유예·장기결석으로 정원외학적관리 대상이 되는 경우, 행동특성 및 종합의견에 사유 입력 필수 (예 : 장기결석으로 관찰 내용이 없음)'
+    ]}
+  ]
+},
+{
+  id:'activity', title:'창의적체험활동', summary:'자율·동아리·봉사·진로활동 입력 방법 (학급담임)',
+  iconName:'compass',
+  sections:[
+    { heading:'공통 사항', type:'bullets', items:[
+      '<strong>실제 참여한 날의 활동만 기록</strong> – 학생 출결(각 탭의 출결관리)과 비교하여 확인',
+      '모든 학생에게 <strong>똑같은 내용 입력하지 않기</strong>',
+      '진로활동을 제외하고, <strong>영역별로 한 번도 참여하지 못한 학생</strong>에게는 사유 입력 (예 : 순회교육 / 장기결석 / 위탁학생으로 활동 내용이 없음)',
+      '창체 담당 교사가 배포한 <strong>구글공유시트 참고</strong>하여 입력',
+      '1인 1역할은 창체가 아닌 행동특성 및 종합의견에 기재'
+    ]},
+    { heading:'자율 · 자치활동', type:'group', blocks:[
+      { subheading:'자율 · 자치활동 안내', type:'bullets', items:[
+        '경로 : [학급담임]-[학생생활]-[창의적체험활동]-[자율자치활동(자율활동)관리]',
+        '<strong>누가기록 : 1·2학년은 3/25만 입력, 3학년은 입력하지 않음</strong>',
+        '<strong>이수시간 X, 특기사항 O</strong>',
+        '<strong>활동 날짜는 임원재임기간에만 작성</strong>하고 그 외에는 작성하지 않음',
+        '임원 관련 기재는 다른 내용보다 앞서 맨 처음에 입력 (<strong>① 전교 임원·전교 학생회 → ② 학급 임원 → ③ 자율활동 순</strong>)'
+      ]},
+      { subheading:'임원 재임기간', type:'table',
+        headers:['구분','1 · 2학년','3학년'],
+        rows:[
+          ['1학기','2026.03.01 ~ 2026.08.17','2026.03.01 ~ 2026.08.17'],
+          ['2학기','2026.08.18 ~ 2027.02.28','2026.08.17 ~ 2027.01.07'],
+        ]}
+    ]},
+    { heading:'동아리활동 (창체동아리 · 스포츠클럽)', type:'bullets', items:[
+      '경로 : [동아리담임]-[학생생활]-[창의적체험활동]-[동아리활동관리]',
+      '<strong>누가기록 X, 이수시간 X, 이수기간 기준 등록 O, 특기사항 O</strong>',
+      '자율동아리는 2학기 창의체험부 안내에 따라 작성하며 학년당 1개만 입력 가능',
+      '자율동아리 소개는 필요 시 30자 이내로 작성 (예 : (위드유:자율동아리) 소외 계층을 위한 봉사동아리)'
+    ]},
+    { heading:'봉사활동', type:'group', blocks:[
+      { subheading:'봉사활동 안내', type:'bullets', items:[
+        '경로 : [학급담임]-[학생생활]-[창의적체험활동]-[봉사활동실적관리]',
+        '<strong>누가기록 O, 특기사항 X</strong>',
+        '시작일과 종료일이 동일하면 시작 일자만 입력',
+        '교내 봉사 시간 <strong>결석자</strong>는 나이스 출결과 자동 연계되지 않으므로 <strong>수동으로 제외</strong>',
+        '분리수거 등 <strong>교육과정 이외의 교내 봉사활동</strong>은 창의체험부 안내에 따라 입력',
+        '<strong>당일 수업 교시와 합쳐서 1일 8시간 이내만 인정</strong> (수업이 7교시까지만, 당일 봉사는 1시간까지만 인정), 헌혈은 위의 규칙을 적용받지 않고 4시간으로 3회까지 인정',
+        '<strong>실적 연계사이트(1365)등을 통한 봉사활동 신청 반영 시 "봉사활동내용"에 기관명과 지역명, 영어, 특수문자 등이 들어가지 않도록 확인 후 기재요령에 맞게 수정할 것</strong>',
+        '활동에 대한 정성평가는 기재하지 않음'
+      ]},
+      { subheading:'학년 공통 교내봉사활동 시간', type:'table',
+        headers:['학년','시간','비고'],
+        rows:[
+          ['1 · 2학년','1시간','3/25 (<strong>자율자치연계</strong>) → 창체 누가기록 입력 시 자동 연계'],
+          ['3학년','5시간','3/25(1시간), 7/9(2시간), 7/10(2시간)'],
+        ],
+        note:['2학기에는 학년 공통 교내봉사활동 시간이 별도로 없음']}
+    ]},
+    { heading:'진로활동', type:'bullets', items:[
+      '경로 : [학급담임]-[학생생활]-[창의적체험활동]-[진로활동관리]',
+      '<strong>누가기록 X, 이수시간 X, 특기사항 O, 희망분야 O</strong>',
+      '희망분야는 커리어넷(www.career.go.kr)의 직업 정보를 참고하여 작성',
+      '<strong>진로 희망을 정하지 못한 경우에는 "진로탐색 중임."으로 작성</strong>',
+      '진로탐색 수업을 듣지 않았더라도 학생관찰, 상담내역 등으로 특이사항 작성'
+    ]},
+    { heading:'진로탐색 · 주제선택 이수시간', type:'group', blocks:[
+      { subheading:'진로탐색 이수시간', type:'bullets', items:[
+        '진로체험활동 : 전 반 17시간 (6/1 6시간, 6/2 4시간, 6/3 4시간, 7/3 3시간)',
+        '진로탐색 수업 : 대부분 17시간이며, 4·8·11반은 18시간',
+        '진로탐색 총시수 : 대부분 34시간이며, 4·8·11반은 35시간',
+        '학사 일정이 변동되면 진로탐색 수업 이수시간에 따라 총시수도 변할 수 있음'
+      ]},
+      { subheading:'주제선택 이수시간 (기수별)', type:'table',
+        headers:['1기','2기','3기','4기','5기','총 이수시간'],
+        rows:[['4','16','16','16','18','70']]}
+    ]}
+  ]
+},
+{
+  id:'academic', title:'교과학습발달상황', summary:'세부능력 및 특기사항, 자유학기 처리 (교과담임)',
+  iconName:'pencil',
+  sections:[
+    { heading:'세부능력 및 특기사항', type:'bullets', items:[
+      '경로 : [교과담임]-[성적]-[성적처리]-[과목별세부능력및특기사항]',
+      '문장으로 입력',
+      '교사가 수업 및 평가 과정에서 기록한 내용을 중심으로 구체적, 종합적으로 <strong>교사 입장에서</strong> 기술',
+      '단순 나열이나 지식의 단순 서술은 지양',
+      '자유학기 과목은 모든 학생을 대상으로 작성, <strong>자유학기 아닌 경우는 수강생의 1/3 이상</strong> 작성',
+      '영역별로 한 번도 참여하지 못한 학생에게는 사유 입력 (예 : 순회교육 / 장기결석 / 위탁학생으로 활동 내용이 없음)'
+    ]},
+    { heading:'입력 불가 항목', type:'chips', style:'no', items:[
+      '교내외 대회 성적 · 실적','K-MOOC · MOOC · KOCW 관련','방과후학교 활동','<strong>연구보고서(소논문) 작성 관련</strong>'
+    ]},
+    { heading:'영재교육 기록사항', type:'bullets', items:[
+      '경로 : [교과담임]-[성적]-[성적처리]-[과목별세부능력및특기사항] – 영재 미표시 체크 해제',
+      '자연과학부 안내에 따라 작성'
+    ]},
+    { heading:'자유학기(1학년 1학기) 교과 담당', type:'bullets', items:[
+      '1학년 1학기 자유학기의 경우 [성적]-[성적처리]-[교양교과이수관리/자유학기성적관리]에서 <strong>이수처리</strong>를 해야 함',
+      '[성적]-[자유학기학교생활통지표관리]-과목별 서술평가 관리에서 과목별 세부능력 및 <strong>특기사항 가져온 후 저장</strong>해야 통지표에 반영됨'
+    ]},
+    { heading:'자유학기활동상황 (진로탐색 · 주제선택활동 담임)', type:'bullets', items:[
+      '경로 : [자유학기담임]-[학생생활]-[자유학기]-[자유학기활동관리]',
+      '이수시간·특기사항은 입력, 누가기록은 입력하지 않음 (출석인정결석한 날은 이수시간에 포함하지 않음)',
+      '1학기 마지막 활동 후 이수시간 기준일을 학기종료일로 설정한 후 이수시간 반영',
+      '이수시간이 0시간인 학생에게는 사유 입력 (예 : 순회교육 / 장기결석 / 위탁학생으로 활동 내용이 없음)',
+      '이수시간이 맞지 않는 경우, 출결이 정확히 입력·마감되었는지, 이수시간 기준이 정확히 등록되었는지 확인',
+      '[성적]-[자유학기학교생활통지표관리]-자유학기 활동영역별 특기사항에서 자유학기 학생생활 특기사항을 가져온 후 저장'
+    ]}
+  ]
+},
+];
+
+/* ============== 2학기 생기부 연수 ============== */
+const TRAINING_TOPICS = [
+  {
+    id:'jeongjeong', title:'올해 정정대장 작성한 내용', color:'var(--seal)',
+    summary:'올해 정정대장에 오른 수정 사례들 – 같은 실수가 반복되지 않도록 확인해 주세요.',
+    items:[
+      { title:'봉사활동실적 입력 누락', detail:[
+        '방학식 날까지 나눔포털과 연계하여 봉사 실적이 있는지 확인해야 함'
+      ]},
+      { title:'공문으로 온 창체 생활기록부 작성 누락', detail:[
+        '공람된 공문을 확인하여 창체 관련 작성 사항이 누락되지 않았는지 점검'
+      ]},
+      { title:'자율동아리에 학생 특기사항 입력', detail:[
+        '자율동아리는 학생 개인의 특기사항을 입력할 수 없음',
+        '동아리에 관한 간략한 설명만 입력 가능'
+      ]},
+      { title:'개근 누락', detail:[
+        '방학식 날 결석·지각·조퇴·결과 여부를 확인한 후 개근 반영'
+      ]},
+      { title:'특정 기관/업체명 입력', detail:[
+        '구체적인 기관명·업체명은 입력할 수 없음'
+      ]},
+      { title:'영문표기 사용', detail:[
+        '허용된 영문표기(CEO, PD, UCC, IT, POP, CF, TV, PAPS, SNS, PPT, AI) 외에는 사용 불가'
+      ]},
+      { title:'같은 문장 중복 입력', detail:[
+        '같은 문장을 여러 항목이나 여러 번에 걸쳐 중복해서 입력하지 않도록 주의'
+      ]},
+      { title:'특기사항 문장 비문', detail:[
+        '문장이 어색하거나 비문이 되지 않도록 작성 후 다시 한번 검토'
+      ]},
+    ]
+  },
+  {
+    id:'neis', title:'나이스 변경사항', color:'var(--pen-blue)',
+    summary:'이번 학기부터 달라진 나이스 기능들입니다.',
+    items:[
+      { title:'이수시간 불일치 오류 삭제', detail:[
+        '학생부 점검 시 창의적체험활동 이수시간이 불일치로 나오는 오류가 더 이상 나오지 않음'
+      ]},
+      { title:'학생부에서 이수시간 삭제', detail:[
+        '중학교 학생부 서식에서 창의적체험활동 이수시간이 나오지 않음',
+        '학급담임 / 동아리 탭에서 이수시간 항목 자체는 그대로 존재하며, 학생부 화면에만 보이지 않는 것'
+      ]},
+      { title:'엑셀 내려받기 기능 추가', detail:[
+        '창의적체험활동 자율자치활동 · 동아리활동 · 진로활동관리 및 행동특성 및 종합의견에도 엑셀 내려받기(다운로드) 기능이 추가됨'
+      ]},
+      { title:'동아리 일괄 배정 가능', detail:[
+        '동아리(창체동아리, 스포츠클럽) 배정 시 엑셀로 일괄 업로드가 가능해짐',
+        '내년 학기 초 동아리 배정 시 활용하면 좋음'
+      ]},
+      { title:'봉사활동 실적 입력 개선', detail:[
+        '봉사활동 실적 입력 시 창의적체험활동의 영역별로 입력되도록 개선됨'
+      ]},
+      { title:'개근 자동 반영', detail:[
+        '학생부 반영 시 자동으로 출결 특기사항에 "개근"이 입력됨'
+      ]},
+    ]
+  },
+  {
+    id:'semester', title:'1학기와 달리 2학기 때 해야 하는 것', color:'var(--pen-purple)',
+    summary:'2학기에만 추가로 챙겨야 하는 업무들입니다.',
+    items:[
+      { title:'독서록 마감 기한', detail:[
+        '2027년 1월 4일 이내까지 제출한 것까지 2학기 독서활동으로 입력'
+      ]},
+      { title:'인정오류에 대한 예외처리사유 입력', detail:[
+        '자료검증에서 인정오류로 뜨는 항목은 아래 예시를 참고하여 예외처리사유를 입력'
+      ], table:{
+        headers:['자료검증 인정오류','예외처리사유 예시'],
+        rows:[
+          ['주민번호가 존재하지 않거나 잘못됨','외국 국적으로 인한 주민번호 인정 오류'],
+          ['전입생 수업일수 오류','20XX.XX.XX. 전입으로 인한 인정 오류'],
+          ['교과학습발달자료 없음','20XX.XX.XX. 편입학으로 인한 인정 오류 / 20XX.XX.XX. 재취학으로 인한 인정 오류'],
+          ['자율동아리 이수시간 오류','교육과정에 편제되지 않음'],
+        ]
+      }},
+      { title:'개근 입력', detail:[
+        '방학식 날 기준으로 결석·지각·조퇴·결과 여부를 확인한 후 개근 입력'
+      ]},
+      { title:'자율동아리 입력', detail:[
+        '학년 당 1개만 입력 가능',
+        '필요 시 동아리 소개만 30자 이내로 입력 가능 – 학생 활동 등 특기사항 기재는 불가'
+      ]},
+      { title:'반별 학생부 마감', detail:[
+        '반별로 학생부 마감을 진행'
+      ]},
+      { title:'행동특성 및 종합의견 작성', detail:[
+        '행동특성 및 종합의견을 작성'
+      ]},
+      { title:'출결 자료 승인요청 (업무담당자)', detail:[
+        '출결 업무담당자가 출결 자료 승인요청을 진행'
+      ]},
+    ]
+  },
+];
+
+/* ============== 생기부 수정 공유시트 ============== */
+const SHEET_INFO = {
+  intro:[
+    '자신의 이름을 찾기 어렵다는 의견이 있어, 학급담임 / 교과담임 / 동아리담임 / 자유학기 담임, 나이스 탭 기준으로 탭을 분류했습니다.',
+  ],
+  workflow:[
+    { title:'수정 완료 체크', description:'요청을 받은 담당 교사가 나이스에서 수정을 완료하면 \u2018수정 완료\u2019 체크박스에 체크합니다.' },
+    { title:'수정완료확인 체크', description:'수정을 요청했던 교사가 나이스에서 수정이 완료된 것을 확인하면 \u2018수정완료확인\u2019 체크박스에 체크합니다.' },
+    { title:'탭 삭제', description:'관리자가 두 체크를 확인한 후 해당 줄(탭)을 삭제합니다.' },
+  ],
+  tabs:[
+    { id:'homeroom', title:'학급담임', color:'var(--seal)', items:[
+      '독서활동','봉사활동','수상경력','인적 및 학적사항','자율자치활동','진로활동','출결관리','학교폭력조치상황관리','학년반이력','행동특성및종합의견'
+    ]},
+    { id:'subject', title:'교과담임', color:'var(--pen-blue)', items:[
+      '교과','과목별 독서활동'
+    ]},
+    { id:'club', title:'동아리담임', color:'var(--pen-green)', items:[
+      '창체동아리','스포츠클럽','자율동아리'
+    ]},
+    { id:'freesem', title:'자유학기담임', color:'var(--pen-gold)', items:[
+      '주제선택활동','진로탐색활동'
+    ]},
+  ]
+};
+
+/* ============== STATE & RENDER ============== */
+let state = { view:'home', selectedDate:null, selectedGuide:null, trainingExpanded:null, sheetExpanded:new Set() };
+const app = document.getElementById('app');
+
+const HOLIDAYS = new Set(['2026-12-25','2027-01-01']); // 성탄절, 신정
+
+function fmtDate(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function eventsByDate(){
+  const map = {};
+  EVENTS.forEach(ev=>{
+    let d = new Date(ev.start+'T00:00:00');
+    const end = new Date(ev.end+'T00:00:00');
+    while(d<=end){
+      const key = fmtDate(d);
+      const dow = d.getDay(); // 0: 일요일, 6: 토요일
+      const isWeekend = dow===0 || dow===6;
+      const isHoliday = HOLIDAYS.has(key);
+      if(!isWeekend && !isHoliday){
+        (map[key] = map[key]||[]).push(ev);
+      }
+      d.setDate(d.getDate()+1);
+    }
+  });
+  return map;
+}
+const EV_MAP = eventsByDate();
+
+function backBtn(){
+  return `<button class="back-btn" onclick="goHome()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    처음으로
+  </button>`;
+}
+
+function masthead(){
+  return `
+  <div class="masthead">
+    <div class="title-block">
+      <p class="eyebrow">학교생활기록부 기재요령 요약 안내</p>
+      <h1 class="doc-title">2026학년도 2학기<span class="sub">주요일정 · 항목별 기재요령</span></h1>
+      <div class="rule"></div>
+    </div>
+  </div>`;
+}
+
+function renderHome(){
+  app.innerHTML = `
+    ${masthead()}
+    <div class="home-grid">
+      <button class="tile" onclick="goCalendar()">
+        <span class="tab">CALENDAR</span>
+        ${icon('calendar')}
+        <h2>주요일정</h2>
+        <div class="go">날짜별 일정 보기 →</div>
+      </button>
+      <button class="tile g2" onclick="goGuideGrid()">
+        <span class="tab">GUIDE</span>
+        ${icon('folder')}
+        <h2>기재요령</h2>
+        <div class="go">항목별 요령 보기 →</div>
+      </button>
+      <button class="tile g3" onclick="goTraining()">
+        <span class="tab">TRAINING</span>
+        ${icon('training')}
+        <h2>2학기 생기부 연수</h2>
+        <div class="go">연수 내용 보기 →</div>
+      </button>
+      <button class="tile g4" onclick="goSheet()">
+        <span class="tab">SHEET</span>
+        ${icon('sheet')}
+        <h2>생기부 수정 공유시트</h2>
+        <div class="go">공유시트 안내 보기 →</div>
+      </button>
+    </div>
+  `;
+}
+
+function monthHTML(year, month /*0-index*/){
+  const first = new Date(year, month, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const monthLabel = `${year}년 ${month+1}월`;
+  let cells = '';
+  for(let i=0;i<startDow;i++) cells += `<div class="day blank"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const evs = EV_MAP[key];
+    const hasEvent = !!evs;
+    const sel = state.selectedDate===key ? 'selected' : '';
+    let dots = '';
+    if(hasEvent){
+      const uniqueColors = [...new Set(evs.map(e=>e.color))];
+      dots = `<div class="dots">${uniqueColors.map(c=>`<span class="dot" style="background:${c}"></span>`).join('')}</div>`;
+    }
+    cells += `<div class="day ${hasEvent?'has-event':''} ${sel}" ${hasEvent?`onclick="goDayDetail('${key}')"`:''}>${d}${dots}</div>`;
+  }
+  return `<div class="month">
+    <h3>${monthLabel}</h3>
+    <div class="dow"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+    <div class="days">${cells}</div>
+  </div>`;
+}
+
+function renderCalendar(){
+  app.innerHTML = `
+    ${backBtn()}
+    <div class="view-title">주요일정</div>
+    <p class="view-desc">날짜를 클릭하면 해당 일에 처리해야 할 업무의 자세한 내용을 볼 수 있습니다.</p>
+    <div class="cal-wrap">
+      ${monthHTML(2026,11)}
+      ${monthHTML(2027,0)}
+    </div>
+    <div class="legend">
+      ${LEGEND.map(l=>`<span class="item"><span class="dot" style="background:${l.color}"></span>${l.tag}</span>`).join('')}
+    </div>
+  `;
+}
+
+function renderDayDetail(key){
+  const evs = EV_MAP[key] || [];
+  const [y,m,d] = key.split('-');
+  const dateObj = new Date(key+'T00:00:00');
+  const dowNames = ['일','월','화','수','목','금','토'];
+  const label = `${y}년 ${parseInt(m)}월 ${parseInt(d)}일 (${dowNames[dateObj.getDay()]})`;
+
+  app.innerHTML = `
+    <button class="back-btn" onclick="goCalendar()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      달력으로
+    </button>
+    <div class="view-title">${label}</div>
+    <p class="view-desc">해당 일자에 처리할 업무 ${evs.length}건</p>
+    <div class="day-panel">
+      ${evs.length ? evs.map(ev=>`
+        <div class="event-card">
+          <div class="tag-row">
+            <span class="badge" style="background:${ev.color}">${ev.tag}</span>
+            <span class="owner">${ev.owner}</span>
+          </div>
+          <h4>${ev.title}</h4>
+          <ul>${ev.details.map(x=>`<li>${x}</li>`).join('')}</ul>
+        </div>
+      `).join('') : `<div class="empty-hint">해당 일자에는 예정된 업무가 없습니다.</div>`}
+    </div>
+  `;
+}
+
+function renderGuideGrid(){
+  app.innerHTML = `
+    ${backBtn()}
+    <div class="view-title">기재요령</div>
+    <p class="view-desc">항목을 클릭하면 작성 원칙과 유의사항을 자세히 볼 수 있습니다.</p>
+    <div class="guide-grid">
+      ${GUIDES.map((g,i)=>`
+        <button class="g-tile" onclick="goGuideTopics('${g.id}')">
+          <span class="swatch" style="background:${GUIDE_TAB_COLORS[i]}"></span>
+          ${icon(g.iconName)}
+          <h3>${g.title}</h3>
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function blockBody(b){
+  if(b.type==='bullets'){
+    return `<ul>${b.items.map(it=>`<li>${it}</li>`).join('')}</ul>`;
+  } else if(b.type==='chips'){
+    return `<div class="chips">${b.items.map(it=>`<span class="chip ${b.style||''}">${it}</span>`).join('')}</div>`;
+  } else if(b.type==='table'){
+    return `<div class="table-scroll"><table class="gtable">
+      <thead><tr>${b.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${b.rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>
+    ${b.note ? `<div class="callout">${b.note.join('<br>')}</div>` : ''}`;
+  }
+  return '';
+}
+
+function sectionHTML(sec, hideHeading){
+  const body = sec.type==='group'
+    ? sec.blocks.map(b=>`<div class="subblock"><h5>${b.subheading}</h5>${blockBody(b)}</div>`).join('')
+    : blockBody(sec);
+  return `<div class="section">${hideHeading?'':`<h4>${sec.heading}</h4>`}${body}</div>`;
+}
+
+function renderGuideTopics(id){
+  const g = GUIDES.find(x=>x.id===id);
+  app.innerHTML = `
+    <button class="back-btn" onclick="goGuideGrid()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      기재요령 목록
+    </button>
+    <div class="detail-head">
+      <h2>${g.title}</h2>
+      <p>${g.summary}</p>
+    </div>
+    <p class="view-desc">주제를 클릭하면 자세한 내용을 볼 수 있습니다.</p>
+    <div class="topic-grid">
+      ${g.sections.map((sec,i)=>`
+        <button class="topic-tile" onclick="goGuideSection('${g.id}', ${i})">
+          <h3>${sec.heading}</h3>
+        </button>
+      `).join('')}
+    </div>
+  `;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderGuideSection(id, idx){
+  const g = GUIDES.find(x=>x.id===id);
+  const sec = g.sections[idx];
+  app.innerHTML = `
+    <button class="back-btn" onclick="goGuideTopics('${id}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ${g.title} 주제 목록
+    </button>
+    <div class="detail-head">
+      <h2>${sec.heading}</h2>
+      <p>${g.title}</p>
+    </div>
+    ${sectionHTML(sec, true)}
+  `;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function goHome(){ state.view='home'; state.selectedDate=null; renderHome(); window.scrollTo({top:0}); }
+function goCalendar(){ state.view='calendar'; renderCalendar(); window.scrollTo({top:0}); }
+function goDayDetail(key){ state.view='dayDetail'; state.selectedDate=key; renderDayDetail(key); window.scrollTo({top:0}); }
+function goGuideGrid(){ state.view='guideGrid'; renderGuideGrid(); window.scrollTo({top:0}); }
+function goGuideTopics(id){ state.view='guideTopics'; state.selectedGuide=id; renderGuideTopics(id); }
+function goGuideSection(id, idx){ state.view='guideSection'; renderGuideSection(id, idx); }
+
+/* ---------- 2학기 생기부 연수 ---------- */
+function renderTraining(){
+  app.innerHTML = `
+    ${backBtn()}
+    <div class="view-title">2학기 생기부 연수</div>
+    <p class="view-desc">주제를 클릭하면 세부 항목을 볼 수 있습니다.</p>
+    <div class="topic-grid">
+      ${TRAINING_TOPICS.map(t=>`
+        <button class="topic-tile" onclick="goTrainingTopic('${t.id}')" style="border-left:5px solid ${t.color}">
+          <h3>${t.title}</h3>
+        </button>
+      `).join('')}
+    </div>
+  `;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function trainingItemDetailHTML(it){
+  const tableHTML = it.table ? `<div class="table-scroll"><table class="gtable">
+      <thead><tr>${it.table.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${it.table.rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>` : '';
+  return `<div class="item-detail"><ul>${it.detail.map(d=>`<li>${d}</li>`).join('')}</ul>${tableHTML}</div>`;
+}
+
+function renderTrainingTopic(id){
+  const t = TRAINING_TOPICS.find(x=>x.id===id);
+  app.innerHTML = `
+    <button class="back-btn" onclick="goTraining()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      2학기 생기부 연수
+    </button>
+    <div class="detail-head" style="border-left-color:${t.color}">
+      <h2>${t.title}</h2>
+      <p>${t.summary}</p>
+    </div>
+    <div class="topic-list">
+      ${t.items.map((it,i)=>{
+        const isOpen = state.trainingExpanded===i;
+        return `
+        <div class="topic-item ${isOpen?'open':''}">
+          <button class="topic-tile wide" onclick="toggleTrainingItem('${t.id}', ${i})">
+            <h3>${it.title}</h3>
+            <span class="chev">${isOpen?'▲':'▼'}</span>
+          </button>
+          ${isOpen ? trainingItemDetailHTML(it) : ''}
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function goTraining(){ state.view='training'; renderTraining(); window.scrollTo({top:0}); }
+function goTrainingTopic(id){ state.view='trainingTopic'; state.trainingExpanded=null; renderTrainingTopic(id); }
+function toggleTrainingItem(id, idx){
+  state.trainingExpanded = (state.trainingExpanded===idx) ? null : idx;
+  renderTrainingTopic(id);
+}
+
+/* ---------- 생기부 수정 공유시트 ---------- */
+function renderSheet(){
+  app.innerHTML = `
+    ${backBtn()}
+    <div class="view-title">생기부 수정 공유시트</div>
+    <p class="view-desc">${SHEET_INFO.intro.join(' ')} 탭을 클릭하면 옆에 해당 항목이 나옵니다.</p>
+    <a class="sheet-link-btn" href="https://docs.google.com/spreadsheets/d/1S0ZdeZejtE_hrxlaUS_L8VpG_LxkTkkCJQQr0490R7c/edit?gid=69961191#gid=69961191" target="_blank" rel="noopener noreferrer">
+      공유시트 바로가기 ↗
+    </a>
+    <div class="sheet-list">
+      ${SHEET_INFO.tabs.map((tab,i)=>{
+        const isOpen = state.sheetExpanded.has(i);
+        return `
+        <div class="sheet-row">
+          <button class="topic-tile sheet-tile ${isOpen?'open':''}" onclick="toggleSheetTab(${i})" style="border-left:5px solid ${tab.color}">
+            <h3>${tab.title}</h3>
+            <span class="chev">${isOpen?'◀':'▶'}</span>
+          </button>
+          ${isOpen ? `<div class="sheet-detail"><div class="chips">${tab.items.map(it=>`<span class="chip">${it}</span>`).join('')}</div></div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="note-box">
+      <h4>수정 요청 처리 절차</h4>
+      <ul>
+        ${SHEET_INFO.workflow.map((w,i)=>`<li><strong>${i+1}. ${w.title}</strong> – ${w.description}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function goSheet(){ state.view='sheet'; state.sheetExpanded=new Set(); renderSheet(); window.scrollTo({top:0}); }
+function toggleSheetTab(i){
+  if(state.sheetExpanded.has(i)) state.sheetExpanded.delete(i);
+  else state.sheetExpanded.add(i);
+  renderSheet();
+}
+
+renderHome();
+</script>
+</body>
+</html>
