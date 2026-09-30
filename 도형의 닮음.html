@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>도형의 닮음 퀴즈</title>
+<style>
+:root{--ink:#1e293b;--sub:#64748b;--ac:#4338ca;--good:#16a34a;--bad:#dc2626;--card:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e2e8f0;--sub:#cbd5e1;--ac:#c7d2fe;--card:#1e293b}}
+:root[data-theme="dark"]{--ink:#e2e8f0;--sub:#cbd5e1;--ac:#c7d2fe;--card:#1e293b}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;color:#fff}
+body{background:#6366f1;background:linear-gradient(150deg,#6366f1 0%,#8b5cf6 55%,#ec4899 100%) fixed}
+.deco{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.deco>div{position:absolute;opacity:.18;animation:float 7s ease-in-out infinite}
+.deco svg{width:100%;display:block}
+.d1{width:130px;left:-24px;top:6%}.d2{width:90px;right:8%;top:10%;animation-delay:-2s}
+.d3{width:160px;right:-30px;bottom:8%;animation-delay:-4s}.d4{width:70px;left:10%;bottom:12%;animation-delay:-1s}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-16px) rotate(6deg)}}
+#app{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100vh;padding:16px 16px 28px;display:flex;flex-direction:column}
+.screen{display:none}.screen.active{display:flex;flex-direction:column;flex:1}
+#startScreen,#endScreen{align-items:center;justify-content:center;text-align:center;gap:24px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:22px}
+.hero-icon{width:150px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.25))}
+.hero h2{margin:0;font-size:2.3rem;line-height:1.25;font-weight:900;letter-spacing:-.02em;text-shadow:0 4px 14px rgba(0,0,0,.25)}
+button.primary{background:#fff;color:#4338ca;border:none;font-family:inherit;font-size:1.25rem;font-weight:800;padding:15px 44px;border-radius:999px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+button.primary:active{transform:scale(.95)}
+#startBtn{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* 퀴즈 화면 */
+.qhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+#progress{background:rgba(255,255,255,.22);backdrop-filter:blur(4px);padding:6px 16px;border-radius:999px;font-weight:800;font-size:.95rem}
+.logo{width:34px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25))}
+.bar{height:10px;border-radius:999px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:18px}
+#barFill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#fde68a,#fbbf24);transition:width .4s ease}
+#question{position:relative;background:var(--card);color:var(--ink);border-radius:26px;padding:34px 18px 26px;margin:14px 0 18px;font-weight:800;font-size:1.25rem;line-height:1.55;text-align:center;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+#question::before{content:'Q';position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#78350f;font-weight:900;font-size:1.1rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+#question small{display:block;font-weight:600;color:var(--sub);font-size:.85rem;margin-top:6px}
+#cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{background:var(--card);color:var(--ac);border:none;border-radius:18px;padding:12px 4px;min-height:62px;font-size:1.1rem;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:transform .1s ease}
+.card:active{transform:scale(.95)}
+.card:disabled{cursor:default}
+.card.correct{background:#22c55e;color:#fff}
+.card.wrong{background:#ef4444;color:#fff}
+#feedback{text-align:center;min-height:44px;margin-top:16px}
+#feedback span{display:inline-block;background:#fff;padding:8px 20px;border-radius:999px;font-weight:800;font-size:.95rem;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.good{color:var(--good)}.bad{color:var(--bad)}
+
+/* 결과 화면 */
+.trophy{font-size:4.2rem;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))}
+#endScreen h2{margin:0;font-size:2rem;font-weight:900;text-shadow:0 4px 14px rgba(0,0,0,.25)}
+.panel{background:var(--card);color:var(--ink);border-radius:26px;padding:22px 20px;width:100%;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+#result p{font-size:1.05rem;margin:8px 0;font-weight:600}
+#result .final{font-size:1.9rem;color:var(--ac);font-weight:900;margin-top:14px}
+@media (prefers-reduced-motion:reduce){.deco>div,#startBtn{animation:none}}
+</style>
+</head>
+<body>
+<div class="deco"><div class="d1"><svg viewBox="0 0 100 100"><polygon points="50,8 94,90 6,90" fill="#fff"/></svg></div><div class="d2"><svg viewBox="0 0 100 100"><rect x="14" y="14" width="72" height="72" rx="8" fill="#fff"/></svg></div><div class="d3"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#fff"/></svg></div><div class="d4"><svg viewBox="0 0 100 100"><polygon points="50,8 94,90 6,90" fill="#fff"/></svg></div></div>
+<div id="app">
+<div id="startScreen" class="screen active"><div class="hero">
+<svg class="hero-icon" viewBox="0 0 160 130"><polygon points="10,120 110,120 60,22" fill="#fff" opacity=".95"/><polygon points="55,120 150,120 102,50" fill="#fde68a" opacity=".95"/><polygon points="10,120 60,120 35,71" fill="#c7d2fe"/></svg>
+<h2>도형의 닮음<br>퀴즈</h2>
+<button class="primary" id="startBtn">시작하기</button>
+</div></div>
+
+<div id="quizScreen" class="screen">
+<div class="qhead"><div id="progress"></div>
+<svg class="logo" viewBox="0 0 160 130"><polygon points="10,120 110,120 60,22" fill="#fff"/><polygon points="55,120 150,120 102,50" fill="#fde68a"/></svg></div>
+<div class="bar"><div id="barFill"></div></div>
+<div id="question"></div>
+<div id="cards"></div>
+<div id="feedback"></div>
+</div>
+
+<div id="endScreen" class="screen"><div class="trophy">🏆</div>
+<h2>퀴즈 종료!</h2>
+<div class="panel"><div id="result"></div></div>
+<button class="primary" id="restartBtn">다시 도전하기</button></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const eq=(x,y)=>x[0]*y[1]===x[1]*y[0];
+const txt=r=>r[0]+' : '+r[1];
+
+/* ---------- 유형 2: 삼각형의 닮음 조건 ---------- */
+const CARDS2=['SSS 닮음','SAS 닮음','ASA 닮음','AAA 닮음','AA 닮음','없음'];
+const T2=[
+ ['대응하는 세 변의 길이의 비가 일정하다.','SSS 닮음'],
+ ['대응하는 두 변의 길이의 비가 일정하고 그 끼인각의 크기가 서로 같다.','SAS 닮음'],
+ ['대응하는 두 변의 길이의 비가 일정하고 하나의 각의 크기가 서로 같다.','없음'],
+ ['대응하는 두 변의 길이의 비가 일정하다.','없음'],
+ ['대응하는 한 변의 길이의 비가 일정하다.','없음'],
+ ['대응하는 두 각의 크기가 서로 같다.','AA 닮음']
+];
+const EXP2={'SSS 닮음':'세 변의 길이의 비가 같으면 SSS 닮음이에요.','SAS 닮음':'두 변의 비가 같고 끼인각이 같으면 SAS 닮음이에요.','AA 닮음':'두 각이 각각 같으면 AA 닮음이에요.','없음':'이 조건만으로는 닮음이라고 할 수 없어요.'};
+
+function makeType2(t){
+ return {kind:2,text:'다음 설명에 해당하는 삼각형의 닮음 조건은?',sub:t[0],options:CARDS2.slice(),answer:t[1]};
+}
+
+/* ---------- 유형 1: 닮은 도형의 비 ---------- */
+const PAIRS=[];
+for(let i=1;i<=9;i++)for(let j=i+1;j<=9;j++)if(gcd(i,j)===1)PAIRS.push([i,j]);
+const KINDS=[['닮음','넓이'],['넓이','닮음'],['닮음','부피'],['부피','닮음'],['길이','넓이'],['넓이','길이'],['길이','부피'],['부피','길이'],['부피','넓이']];
+const MUST=['넓이','부피'];
+function makeType1(k){
+ let [a,b]=pick(PAIRS); if(Math.random()<.5)[a,b]=[b,a];
+ const [given,ask]=k, sq=x=>x*x, cu=x=>x*x*x;
+ const L=[a,b], A=[sq(a),sq(b)], V=[cu(a),cu(b)];
+ const R={'닮음':L,'길이':L,'넓이':A,'부피':V};
+ const gR=R[given], ans=R[ask];
+ const pool=[L,A,V,[sq(a),cu(b)],[cu(a),sq(b)],[a,sq(b)],[sq(a),b],[a,cu(b)],[cu(a),b],
+   [a+1,b+1],[a,b+1],[a+1,b],[a+2,b],[a,b+2],[sq(a)+1,sq(b)+1],[cu(a)+1,cu(b)+1]];
+ const opts=[ans];
+ for(const c of shuffle(pool)){
+  if(opts.length>=6)break;
+  if(c[0]>0&&c[1]>0&&gcd(c[0],c[1])===1&&!opts.some(o=>eq(o,c))) opts.push(c);
+ }
+ const sub=given==='길이'?'(대응하는 길이의 비)':'';
+ return {kind:1,text:`${given}비가 ${txt(gR)}인 두 닮은 도형의 ${ask}비는?`,sub,
+  options:shuffle(opts).map(txt),answer:txt(ans)};
+}
+
+/* ---------- 진행 ---------- */
+let qs=[],idx=0,ok=0,ng=0,t0=0,locked=false,cur=null;
+function build(){
+ return shuffle(T2.map(makeType2).concat(shuffle(KINDS.filter(k=>!(k[0]===MUST[0]&&k[1]===MUST[1]))).slice(0,5).concat([MUST]).map(makeType1)));
+}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function start(){qs=build();idx=0;ok=0;ng=0;t0=Date.now();show('quizScreen');load();}
+function load(){
+ locked=false;cur=qs[idx];
+ $('progress').textContent=`문제 ${idx+1} / ${qs.length}`;
+ $('barFill').style.width=(idx/qs.length*100)+'%';
+  $('question').innerHTML=cur.text+(cur.sub?`<small>${cur.sub}</small>`:'');
+ $('feedback').innerHTML='';
+ const g=$('cards');g.innerHTML='';
+ cur.options.forEach(o=>{
+  const b=document.createElement('button');b.className='card';b.textContent=o;
+  b.addEventListener('click',()=>answer(o,b));g.appendChild(b);
+ });
+}
+function answer(o,btn){
+ if(locked)return;locked=true;
+ document.querySelectorAll('#cards .card').forEach(el=>{el.disabled=true;if(el.textContent===cur.answer)el.classList.add('correct');});
+ const fb=$('feedback');
+ if(o===cur.answer){ok++;fb.innerHTML=`<span class="good">정답입니다! 🎉</span>`;}
+ else{ng++;btn.classList.add('wrong');fb.innerHTML=`<span class="bad">아쉬워요! 😢</span>`;}
+ setTimeout(()=>{idx++;idx>=qs.length?finish():load();},800);
+}
+function finish(){
+ $('barFill').style.width='100%';
+ const sec=Math.round((Date.now()-t0)/1000),score=ok*10-ng*20-sec;
+ $('result').innerHTML=`<p>정답: ${ok}개 / 오답: ${ng}개</p><p>걸린 시간: ${sec}초</p><p class="final">최종 점수: ${score}점</p>`;
+ show('endScreen');
+}
+$('startBtn').addEventListener('click',start);
+$('restartBtn').addEventListener('click',start);
+})();
+</script>
+</body>
+</html>
