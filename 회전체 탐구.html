@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회전체 탐구생활</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f9ff;--ink:#223049;--sub:#5d6b82;--card:#fff;--line:#e3ebf7;--blue:#4f8cff;--blue2:#2f6fed;--orange:#ff9f43;--orange2:#e8590c;--green:#2fbf8f;--red:#ff5d6c;--shadow:0 8px 24px rgba(60,100,170,.12)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;color:var(--ink);background:linear-gradient(160deg,#eef6ff 0%,#fffaf1 100%) fixed;min-height:100vh;line-height:1.65}
+h1,h2,h3{font-family:'Jua','Noto Sans KR',sans-serif;margin:.2em 0 .4em;font-weight:400}
+h2{font-size:1.45rem}h3{font-size:1.25rem}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:10px 16px;background:#ffffffd9;backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topbar .brand{font-family:'Jua',sans-serif;font-size:1.2rem;color:var(--blue2)}
+.wrap{max-width:1120px;margin:0 auto;padding:12px 14px}
+.screen{display:none}.screen.active{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border-radius:24px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:16px;scroll-margin-top:64px}
+.lead{color:var(--sub);margin:.2em 0 .9em}.lead.small{font-size:.95rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}h2{font-size:1.4rem}}
+.btn{border:0;border-radius:16px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;box-shadow:0 4px 0 #2f6fed66;transition:transform .08s,box-shadow .08s,filter .15s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #2f6fed66}
+.btn:hover{filter:brightness(1.05)}
+.btn.orange{background:var(--orange);box-shadow:0 4px 0 #e8801f66}
+.btn.green{background:var(--green);box-shadow:0 4px 0 #1f9a7066}
+.btn.ghost{background:#fff;color:var(--blue2);border:2px solid #cfe0ff;box-shadow:none}
+.btn.big{font-size:1.1rem;padding:14px 24px}
+.btn.small{padding:7px 12px;font-size:.9rem}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.row.center{justify-content:center}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chip2{border:2px solid #d6e4ff;background:#fff;color:var(--blue2);border-radius:99px;padding:5px 14px;font:inherit;font-weight:700;cursor:pointer}
+.chip2:hover{background:#eef4ff}
+/* home */
+.hero{text-align:center;padding:26px 8px 8px}
+.hero h1{font-size:clamp(2.1rem,7vw,3.4rem);background:linear-gradient(90deg,#4f8cff,#ff9f43);-webkit-background-clip:text;background-clip:text;color:transparent;margin:0}
+.hero p{color:var(--sub);margin:.2em 0 0}
+.hero-svg{width:min(420px,90%);height:auto;margin:10px auto 0;display:block}
+.fl{animation:float 3.2s ease-in-out infinite}.fl.b{animation-delay:-1s}.fl.c{animation-delay:-2s}
+@keyframes float{50%{transform:translateY(-7px)}}
+.menu{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+@media(max-width:640px){.menu{grid-template-columns:1fr}}
+.bigbtn{border:0;border-radius:26px;padding:24px 20px;text-align:left;cursor:pointer;font:inherit;color:#fff;box-shadow:var(--shadow);transition:transform .15s}
+.bigbtn:hover{transform:translateY(-3px)}
+.bigbtn .ic{font-size:2.4rem}.bigbtn b{display:block;font-family:'Jua',sans-serif;font-weight:400;font-size:1.6rem}
+.bigbtn span.d{opacity:.92;font-size:.95rem}
+.bigbtn.b1{background:linear-gradient(135deg,#6aa6ff,#4f8cff)}.bigbtn.b2{background:linear-gradient(135deg,#ffb454,#ff8a3d)}
+/* viewer */
+.viewer{position:relative;width:100%;height:min(56vh,460px);min-height:300px;border-radius:20px;overflow:hidden;background:radial-gradient(circle at 50% 30%,#fff,#e6f0ff);border:1px solid var(--line)}
+.viewer canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.vtools{position:absolute;right:10px;top:10px;display:flex;gap:6px;z-index:2}
+.vtools button{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:#ffffffe6;font-size:19px;font-weight:700;cursor:pointer;color:var(--blue2)}
+.vhint{position:absolute;left:10px;bottom:8px;font-size:12px;color:var(--sub);background:#ffffffcc;padding:2px 10px;border-radius:99px;pointer-events:none;z-index:2}
+.vs{position:absolute;left:10px;top:10px;bottom:36px;width:66px;z-index:3;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:#ffffffe6;border:1px solid var(--line);border-radius:18px;box-shadow:0 4px 14px rgba(60,100,170,.12)}
+.vs-t{font-size:11px;font-weight:700;color:var(--sub);text-align:center;line-height:1.2}
+.vs .val{font-size:13px;color:var(--orange2)}
+.vs-box{position:relative;flex:1;width:100%;min-height:70px}
+.vs-box input{position:absolute;left:50%;top:50%;margin:0;height:32px;transform:translate(-50%,-50%) rotate(-90deg);accent-color:var(--orange);touch-action:none}
+.vs-auto{border:0;border-radius:50%;width:34px;height:34px;background:var(--orange);color:#fff;font-weight:700;cursor:pointer}
+.def{font-size:1.2rem;line-height:1.95;background:#fff8e8;border:2px dashed #ffcf8a;border-radius:18px;padding:16px 18px;margin:0}
+b.key{color:var(--orange2);font-weight:900;background:linear-gradient(transparent 60%,#ffe08a 60%)}
+.pagehead{margin:2px 2px 12px}.pagehead h2{margin:0}.pagehead .lead{margin:.1em 0 0}
+.toolrow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+.toolrow .chips{margin:0}
+@media(min-width:761px){
+  .cutgrid{grid-template-columns:1.35fr 1fr;align-items:start}
+  .cutgrid .viewer{height:clamp(320px,calc(100vh - 360px),560px)}
+  .bgrid{align-items:start}
+  .bgrid .viewer{height:clamp(280px,calc(100vh - 420px),480px)}
+  .bgrid canvas.sk{height:clamp(260px,calc(100vh - 400px),440px)}
+  #v-what{height:clamp(300px,calc(100vh - 430px),520px)}
+}
+/* sketcher */
+canvas.sk{display:block;width:100%;height:clamp(280px,64vw,440px);border-radius:18px;border:2px solid #cfe0ff;background:#fff;touch-action:pinch-zoom;cursor:crosshair}
+.seg{display:flex;gap:6px;margin-bottom:8px}
+.seg-btn{flex:1;border:2px solid #d6e4ff;background:#fff;border-radius:12px;padding:7px;font:inherit;font-weight:700;color:var(--sub);cursor:pointer}
+.seg-btn.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.msg{min-height:1.5em;font-weight:700;color:var(--orange2);margin-top:6px}
+/* cut panel */
+.modebar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.modebar .btn{flex:1;min-width:210px;background:#fff;color:var(--blue2);border:2px solid #cfe0ff;box-shadow:none}
+.modebar .btn.on{background:var(--orange);border-color:var(--orange);color:#fff}
+.ctl{background:#f5f9ff;border-radius:16px;padding:10px 14px;margin:8px 0}
+.ctl label{display:flex;justify-content:space-between;font-weight:700}
+.ctl input[type=range]{width:100%;height:34px;accent-color:var(--orange)}
+.note{color:var(--sub);margin:6px 0}
+.secs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px}
+.sec{border:1px solid var(--line);border-radius:16px;padding:8px;text-align:center;background:#fbfdff}
+.sec svg{width:100%;height:120px;display:block}
+.secname{font-weight:900;color:var(--blue2)}
+.cap{font-size:.88rem;color:var(--sub)}.cap b{color:var(--orange2)}
+.qbox{background:#f0fbf6;border:2px solid #bfeedb;border-radius:18px;padding:14px;margin-top:12px}
+.choices{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.choice{border:2px solid #cfe9dd;background:#fff;border-radius:12px;padding:7px 14px;font:inherit;font-weight:700;cursor:pointer}
+.choice.sel{background:var(--green);border-color:var(--green);color:#fff}
+.qbox select{font:inherit;padding:6px 8px;border-radius:10px;border:2px solid #cfe9dd;background:#fff}
+.qrow{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0}
+.fb{margin-top:8px;font-weight:700;min-height:1.4em}.fb.ok{color:#12805c}.fb.bad{color:#d6336c}
+.tick{margin-left:4px}
+/* props */
+.prop{font-size:1.15rem;line-height:2.4;margin:.4em 0}
+.blank{display:inline-block;min-width:78px;padding:0 10px;border:0;border-bottom:3px solid var(--blue);background:#eef4ff;border-radius:8px;font:inherit;font-weight:800;color:var(--blue2);cursor:pointer;text-align:center}
+.blank.active{outline:3px solid #ffd27a}.blank.ok{background:#e4f8ef;color:#12805c;border-color:var(--green)}.blank.bad{background:#ffe8ee;color:#d6336c;border-color:var(--red)}
+.bank{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;padding:10px;background:#f5f9ff;border-radius:16px}
+.chip{border:2px solid #cfe0ff;background:#fff;border-radius:99px;padding:5px 16px;font:inherit;font-weight:700;color:var(--blue2);cursor:pointer}
+.chip.used{opacity:.25;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="topbar"><button class="btn ghost small" id="home-btn" data-go="home" hidden>🏠 처음으로</button><span class="brand">🔄 회전체 탐구생활</span></div>
+
+<!-- HOME -->
+<section class="screen active" id="s-home"><div class="wrap">
+  <div class="hero">
+    <h1>회전체 탐구생활</h1>
+    <p>중학교 1학년 · 입체도형 · 직접 돌리고, 직접 잘라 보자!</p>
+    <svg class="hero-svg" viewBox="0 0 360 150" aria-hidden="true">
+      <defs><radialGradient id="sg" cx="35%" cy="30%"><stop offset="0" stop-color="#d4f5e8"/><stop offset="1" stop-color="#2fbf8f"/></radialGradient></defs>
+      <g class="fl"><ellipse cx="62" cy="48" rx="34" ry="10" fill="#b6d3ff"/><rect x="28" y="48" width="68" height="64" fill="#7fb0ff"/><ellipse cx="62" cy="112" rx="34" ry="10" fill="#7fb0ff"/><ellipse cx="62" cy="48" rx="34" ry="10" fill="#b6d3ff"/></g>
+      <g class="fl b"><path d="M180 28 L216 112 A36 10 0 0 1 144 112 Z" fill="#ffb454"/><ellipse cx="180" cy="112" rx="36" ry="10" fill="#ff9f43"/></g>
+      <g class="fl c"><circle cx="298" cy="76" r="42" fill="url(#sg)"/><ellipse cx="298" cy="76" rx="42" ry="10" fill="none" stroke="#fff" stroke-opacity=".6" stroke-dasharray="4 4"/></g>
+      <line x1="62" y1="14" x2="62" y2="138" stroke="#ff5d6c" stroke-width="2.5" stroke-dasharray="6 5"/>
+      <line x1="180" y1="14" x2="180" y2="138" stroke="#ff5d6c" stroke-width="2.5" stroke-dasharray="6 5"/>
+      <line x1="298" y1="22" x2="298" y2="138" stroke="#ff5d6c" stroke-width="2.5" stroke-dasharray="6 5"/>
+    </svg>
+  </div>
+  <div class="menu">
+    <button class="bigbtn b1" data-go="what"><span class="ic">🔄</span><b>회전체란?</b><span class="d">평면도형을 돌려 입체도형을 만들어 봐요</span></button>
+    <button class="bigbtn b2" data-go="cut"><span class="ic">✂️</span><b>회전체 자르기</b><span class="d">회전체를 잘라 단면의 비밀을 찾아봐요</span></button>
+  </div>
+</div></section>
+
+<!-- WHAT -->
+<section class="screen" id="s-what"><div class="wrap">
+  <div class="card">
+    <h2>🔄 회전체란?</h2>
+    <p class="lead">붉은 직선(회전축)에 직사각형, 직각삼각형, 반원이 붙어 있어요. <b>‘회전하기’</b>를 눌러 직선을 축으로 한 바퀴 돌려 보세요!</p>
+    <div class="viewer" id="v-what"></div>
+    <div class="toolrow"><div class="chips" id="chips-what"></div><button class="btn big" id="btn-spin">🔄 회전하기</button></div>
+  </div>
+  <div class="card" id="def-card" hidden>
+    <p class="def">평면도형을 한 직선을 축으로 하여 1회전 시킬 때 생기는 입체도형을 <b class="key">회전체</b>라 하고, 그 직선을 <b class="key">회전축</b>이라고 한다.</p>
+    <div class="row center"><button class="btn orange big" data-go="make1">🎨 회전체 직접 만들어보기</button></div>
+  </div>
+</div></section>
+
+<!-- MAKE1 -->
+<section class="screen" id="s-make1"><div class="wrap">
+  <div class="pagehead"><h2>🎨 회전체 직접 만들어보기</h2><p class="lead">내가 그린 평면도형을 회전축을 중심으로 1회전 시키면 어떤 회전체가 될까요?</p></div>
+  <div id="b-make1"></div>
+</div></section>
+
+<!-- CUT -->
+<section class="screen" id="s-cut"><div class="wrap">
+  <div class="grid2 cutgrid">
+    <div class="card">
+      <h2>✂️ 회전체 자르기</h2>
+      <p class="lead">원기둥, 원뿔, 구는 모두 회전체예요. 붉은 선이 회전축이에요. 두 가지 방법으로 잘라서 <b>단면</b>을 관찰해 보세요. 입체도형은 그대로 있고, 속에 그려진 <b>주황색 점선</b>이 단면이에요.</p>
+      <div class="viewer" id="v-cut"></div>
+      <div class="chips" id="chips-cut"></div>
+      <div id="cut-panel"></div>
+    </div>
+    <div>
+      <div class="card" id="qcard">
+        <h3>🧐 확인 문제</h3>
+        <p class="lead" id="q-hint">왼쪽에서 ①, ② 버튼을 눌러 자르기 활동을 해 보세요. 문제가 여기에 나타나요.</p>
+        <div class="qbox" id="q-perp" hidden>
+      <h3>🧐 문제 ①</h3>
+      <p>회전축에 수직인 평면으로 자른 단면은 세 입체도형 모두 어떤 모양인가요?</p>
+      <div class="choices" data-answer="원"><button class="choice">원</button><button class="choice">삼각형</button><button class="choice">직사각형</button><button class="choice">타원</button></div>
+      <button class="btn green check">정답 확인</button><div class="fb"></div>
+    </div>
+    <div class="qbox" id="q-axis" hidden>
+      <h3>🧐 문제 ②</h3>
+      <p>회전축을 포함한 평면으로 자른 단면의 모양을 골라 보세요.</p>
+      <div class="qrow">
+        <span>원기둥 <select data-a="직사각형"><option value="">선택</option><option>직사각형</option><option>이등변삼각형</option><option>원</option><option>반원</option><option>사다리꼴</option></select></span>
+        <span>원뿔 <select data-a="이등변삼각형"><option value="">선택</option><option>직사각형</option><option>이등변삼각형</option><option>원</option><option>반원</option><option>사다리꼴</option></select></span>
+        <span>구 <select data-a="원"><option value="">선택</option><option>직사각형</option><option>이등변삼각형</option><option>원</option><option>반원</option><option>사다리꼴</option></select></span>
+      </div>
+      <p>평면의 방향을 바꾸어도 단면의 모양과 크기는 어떻게 되나요?</p>
+      <div class="choices" data-answer="모두 합동이다"><button class="choice">방향에 따라 달라진다</button><button class="choice">모두 합동이다</button><button class="choice">닮음이지만 크기가 다르다</button></div>
+      <button class="btn green check">정답 확인</button><div class="fb"></div>
+    </div>
+
+      </div>
+      <div class="card" id="prop-card" hidden>
+    <h2>📝 회전체의 성질</h2>
+    <p class="lead">빈칸을 눌러 선택한 뒤, 아래 낱말 상자에서 알맞은 말을 골라 채워 보세요.</p>
+    <p class="prop">1. 회전체를 회전축에 수직인 평면으로 자른 단면의 모양은 <button class="blank" data-i="0">＿＿</button>이다.</p>
+    <p class="prop">2. 회전체를 회전축을 포함하는 평면으로 자른 단면은 모두 <button class="blank" data-i="1">＿＿</button>이고, 각 단면은 회전축을 <button class="blank" data-i="2">＿＿</button>으로 하는 <button class="blank" data-i="3">＿＿</button>이다.</p>
+    <div class="bank">
+      <button class="chip" data-w="선대칭도형">선대칭도형</button><button class="chip" data-w="타원">타원</button><button class="chip" data-w="합동">합동</button><button class="chip" data-w="회전축">회전축</button>
+      <button class="chip" data-w="원">원</button><button class="chip" data-w="닮음">닮음</button><button class="chip" data-w="점대칭도형">점대칭도형</button><button class="chip" data-w="대칭축">대칭축</button>
+    </div>
+    <div class="row"><button class="btn green" id="prop-check">정답 확인</button></div>
+    <div class="fb" id="fb-prop"></div>
+    <div class="row center" id="next-row" hidden><button class="btn orange big" data-go="custom">🧪 나만의 회전체 직접 잘라보기</button></div>
+  </div>
+
+    </div>
+  </div>
+</div></section>
+
+<!-- CUSTOM -->
+<section class="screen" id="s-custom"><div class="wrap">
+  <div class="pagehead"><h2>🧪 나만의 회전체 직접 잘라보기</h2><p class="lead">평면도형을 그려 회전체를 만든 다음, 두 가지 방법으로 잘라 단면을 확인해 보세요.</p></div>
+  <div id="b-custom"></div>
+</div></section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+'use strict';
+if(!window.THREE||!THREE.OrbitControls){
+  document.getElementById('app').innerHTML='<div class="wrap"><div class="card"><h2>3D 라이브러리를 불러오지 못했어요</h2><p>인터넷 연결을 확인한 뒤 새로고침해 주세요.</p></div></div>';
+  return;
+}
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const TAU=Math.PI*2, PHI0=Math.PI*1.5;
+
+/* ---------- geometry helpers ---------- */
+function dedupe(p){const o=[];for(const q of p){const l=o[o.length-1];if(!l||Math.hypot(l.r-q.r,l.y-q.y)>1e-4)o.push({r:q.r,y:q.y});}return o;}
+function closed(p){p=dedupe(p);const a=p[0],b=p[p.length-1];if(Math.hypot(a.r-b.r,a.y-b.y)>1e-4)p.push({r:a.r,y:a.y});return p;}
+const PROF={
+  rect:(w,h)=>[{r:0,y:-h/2},{r:w,y:-h/2},{r:w,y:h/2},{r:0,y:h/2}],
+  tri:(w,h)=>[{r:0,y:-h/2},{r:w,y:-h/2},{r:0,y:h/2}],
+  semi:R=>{const a=[];for(let i=0;i<=48;i++){const t=-Math.PI/2+Math.PI*i/48,c=Math.cos(t);a.push({r:Math.abs(c)<1e-9?0:R*c,y:R*Math.sin(t)});}return a;}
+};
+function bounds(prof){let ymin=1e9,ymax=-1e9,rmax=0;prof.forEach(p=>{ymin=Math.min(ymin,p.y);ymax=Math.max(ymax,p.y);rmax=Math.max(rmax,p.r);});return{ymin,ymax,rmax};}
+
+function latheGroup(prof,mat,phiStart,phiLen,segs){
+  const g=new THREE.Group(), pts=closed(prof);
+  const n=Math.max(2,Math.round(segs*Math.min(phiLen,TAU)/TAU));
+  let strip=[pts[0]];
+  const flush=()=>{
+    if(strip.length>=2){
+      const geo=new THREE.LatheGeometry(strip.map(p=>new THREE.Vector2(p.r,p.y)),n,phiStart,phiLen);
+      g.add(new THREE.Mesh(geo,mat));
+    }
+  };
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1],b=pts[i];
+    if(a.r<1e-6&&b.r<1e-6){flush();strip=[b];continue;}
+    if(strip.length>=2){
+      const p=strip[strip.length-2],ux=a.r-p.r,uy=a.y-p.y,vx=b.r-a.r,vy=b.y-a.y;
+      const c=(ux*vx+uy*vy)/(Math.hypot(ux,uy)*Math.hypot(vx,vy)+1e-12);
+      if(c<0.82){flush();strip=[a];}
+    }
+    strip.push(b);
+  }
+  flush();
+  return g;
+}
+function axisMesh(y0,y1){
+  const g=new THREE.Group(),m=new THREE.MeshBasicMaterial({color:0xe5484d});
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,y1-y0,10),m);c.position.y=(y0+y1)/2;g.add(c);
+  const t=new THREE.Mesh(new THREE.ConeGeometry(.11,.28,12),m);t.position.y=y1+.1;g.add(t);
+  const b=t.clone();b.position.y=y0-.1;b.rotation.x=Math.PI;g.add(b);
+  return g;
+}
+function label(text,o={}){
+  const size=o.size||1,color=o.color||'#2a3b5c';
+  const c=document.createElement('canvas'),x=c.getContext('2d'),fs=64,font=`700 ${fs}px 'Noto Sans KR',sans-serif`;
+  x.font=font;const w=Math.ceil(x.measureText(text).width)+48,h=fs+36;c.width=w;c.height=h;
+  x.font=font;x.fillStyle='rgba(255,255,255,.88)';
+  const r=22;x.beginPath();x.moveTo(r,0);x.arcTo(w,0,w,h,r);x.arcTo(w,h,0,h,r);x.arcTo(0,h,0,0,r);x.arcTo(0,0,w,0,r);x.fill();
+  x.fillStyle=color;x.textAlign='center';x.textBaseline='middle';x.fillText(text,w/2,h/2+3);
+  const tex=new THREE.CanvasTexture(c);tex.minFilter=THREE.LinearFilter;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+  const k=.0105*size;s.scale.set(w*k,h*k,1);s.renderOrder=10;return s;
+}
+function disposeObj(o){o.traverse(n=>{if(n.geometry)n.geometry.dispose();if(n.material){(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});}
+function crossings(prof,h){
+  const xs=[];
+  for(let i=0;i<prof.length-1;i++){const a=prof[i],b=prof[i+1];if((a.y<=h)!==(b.y<=h))xs.push(a.r+(h-a.y)*(b.r-a.r)/(b.y-a.y));}
+  xs.sort((p,q)=>p-q);const out=[];
+  for(let i=0;i+1<xs.length;i+=2){if(xs[i+1]-xs[i]>1e-3)out.push([Math.max(0,xs[i]),xs[i+1]]);}
+  return out;
+}
+function ringPts(r,y){const a=[];for(let i=0;i<72;i++){const t=i/72*TAU;a.push(new THREE.Vector3(r*Math.cos(t),y,r*Math.sin(t)));}return a;}
+const _Y=new THREE.Vector3(0,1,0),_M=new THREE.Matrix4(),_Q=new THREE.Quaternion(),_S=new THREE.Vector3(),_P=new THREE.Vector3();
+function dashedPath(pts,isClosed,color,skip,dash=.14,gap=.1,rad=.032){
+  const n=pts.length,E=isClosed?n:n-1,segs=[];let t=0;
+  for(let i=0;i<E;i++){
+    const A=pts[i],B=pts[(i+1)%n];
+    if(skip&&skip(A,B)){t=0;continue;}
+    const L=A.distanceTo(B);if(L<1e-9)continue;
+    const u=B.clone().sub(A).divideScalar(L);let q=0;
+    while(q<L-1e-9){
+      if(t<dash){const len=Math.min(dash-t,L-q);segs.push([A.clone().addScaledVector(u,q),A.clone().addScaledVector(u,q+len),u]);q+=len;t+=len;}
+      else{const len=Math.min(dash+gap-t,L-q);q+=len;t+=len;if(t>=dash+gap-1e-9)t=0;}
+    }
+  }
+  const g=new THREE.Group();if(!segs.length)return g;
+  const im=new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1,1,6,1),new THREE.MeshBasicMaterial({color}),segs.length);
+  segs.forEach(([a,b,u],i)=>{_P.copy(a).add(b).multiplyScalar(.5);_Q.setFromUnitVectors(_Y,u);_S.set(rad,a.distanceTo(b),rad);_M.compose(_P,_Q,_S);im.setMatrixAt(i,_M);});
+  im.instanceMatrix.needsUpdate=true;im.frustumCulled=false;g.add(im);return g;
+}
+
+/* ---------- Viewer ---------- */
+const viewers=[];
+class Viewer{
+  constructor(el,home){
+    this.el=el;this.home=home||{w:10,h:6,cx:0,cy:0};this.touched=false;this.ticks=[];this.fly=null;
+    const r=this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+    r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));r.localClippingEnabled=true;
+    el.prepend(r.domElement);
+    this.scene=new THREE.Scene();
+    this.camera=new THREE.PerspectiveCamera(40,1,.1,300);
+    this.scene.add(new THREE.HemisphereLight(0xffffff,0xb9cfff,.95));
+    const d1=new THREE.DirectionalLight(0xffffff,.65);d1.position.set(4,8,6);this.scene.add(d1);
+    const d2=new THREE.DirectionalLight(0xffffff,.3);d2.position.set(-5,2,-4);this.scene.add(d2);
+    this.content=new THREE.Group();this.scene.add(this.content);
+    const c=this.controls=new THREE.OrbitControls(this.camera,r.domElement);
+    c.enableDamping=true;c.dampingFactor=.09;c.minDistance=2;c.maxDistance=60;c.screenSpacePanning=true;
+    c.addEventListener('start',()=>{this.touched=true;this.fly=null;});
+    const tools=document.createElement('div');tools.className='vtools';
+    [['＋','확대',()=>this.zoom(.8)],['－','축소',()=>this.zoom(1.25)],['⟲','처음 시점',()=>{this.touched=false;this.fit(this.home,true);}]].forEach(([t,ti,fn])=>{
+      const b=document.createElement('button');b.textContent=t;b.title=ti;b.setAttribute('aria-label',ti);b.addEventListener('click',fn);tools.appendChild(b);});
+    el.appendChild(tools);
+    const h=document.createElement('div');h.className='vhint';h.textContent='드래그: 회전 · 핀치/휠: 확대·축소 · 두 손가락 이동: 위치';el.appendChild(h);
+    new ResizeObserver(()=>this.resize()).observe(el);
+    viewers.push(this);this.resize();
+  }
+  clear(){this.content.children.slice().forEach(c=>{this.content.remove(c);disposeObj(c);});this.ticks=[];}
+  resize(){
+    const w=this.el.clientWidth,h=this.el.clientHeight;if(!w||!h)return;
+    this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();
+    if(!this.touched)this.fit(this.home,false);
+  }
+  fit(b,anim){
+    b=b||this.home;const cam=this.camera,t=Math.tan(cam.fov*Math.PI/360),asp=cam.aspect||1;
+    const dist=Math.max((b.h/2)/t,(b.w/2)/(t*asp))*1.18+2;
+    const tgt=new THREE.Vector3(b.cx||0,b.cy||0,0);
+    const pos=tgt.clone().addScaledVector(new THREE.Vector3(.32,.5,1).normalize(),dist);
+    if(!anim){this.controls.target.copy(tgt);cam.position.copy(pos);cam.lookAt(tgt);this.controls.update();this.fly=null;return;}
+    this.fly={t:0,fp:cam.position.clone(),ft:this.controls.target.clone(),tp:pos,tt:tgt};
+  }
+  zoom(f){
+    const v=this.camera.position.clone().sub(this.controls.target);
+    const len=Math.min(this.controls.maxDistance,Math.max(this.controls.minDistance,v.length()*f));
+    v.setLength(len);this.camera.position.copy(this.controls.target).add(v);this.touched=true;
+  }
+  step(dt){
+    this.ticks.forEach(f=>f(dt));
+    if(this.fly){const f=this.fly;f.t+=dt/.6;const k=Math.min(1,f.t),e=k*k*(3-2*k);
+      this.camera.position.lerpVectors(f.fp,f.tp,e);this.controls.target.lerpVectors(f.ft,f.tt,e);if(k>=1)this.fly=null;}
+    this.controls.update();this.renderer.render(this.scene,this.camera);
+  }
+}
+let last=performance.now();
+(function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;
+  for(const v of viewers){if(v.el.offsetParent)v.step(dt);}})(last);
+
+function chipsFor(el,v,list){
+  el.innerHTML='';
+  list.forEach(([t,box],i)=>{const b=document.createElement('button');b.className='chip2';b.textContent=t;
+    b.onclick=()=>{if(i===0){v.touched=false;v.fit(v.home,true);}else{v.touched=true;v.fit(box,true);}};el.appendChild(b);});
+}
+
+/* ---------- RevolveDemo ---------- */
+class RevolveDemo{
+  constructor(v,items,o={}){
+    this.v=v;v.clear();this.items=[];this.playing=false;
+    for(const it of items){
+      const g=new THREE.Group();g.position.x=it.x||0;v.content.add(g);
+      const prof=closed(it.profile),b=bounds(prof);
+      g.add(axisMesh(b.ymin-.6,b.ymax+.6));
+      const flat=new THREE.Group();g.add(flat);
+      const pp=prof.slice(0,-1);
+      try{flat.add(new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(pp.map(p=>new THREE.Vector2(-p.r,p.y)))),new THREE.MeshBasicMaterial({color:it.color,side:THREE.DoubleSide,transparent:true,opacity:.92})));}catch(e){}
+      flat.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pp.map(p=>new THREE.Vector3(-p.r,p.y,.002))),new THREE.LineBasicMaterial({color:0x2b3f6b})));
+      const solid=new THREE.Group();g.add(solid);
+      const mat=new THREE.MeshStandardMaterial({color:it.color,roughness:.5,metalness:.05,side:THREE.DoubleSide,transparent:true,opacity:.55,depthWrite:false});
+      if(it.label){const s=label(it.label,{size:.7});s.position.set(0,b.ymin-.95,0);g.add(s);}
+      if(o.axisLabel){const s=label('회전축',{size:.5,color:'#d6336c'});s.position.set(0,b.ymax+1.05,0);g.add(s);}
+      this.items.push({g,flat,solid,prof,mat,ymin:b.ymin});
+    }
+    this.t=0;this.dur=3500;this.done=null;
+    v.ticks.push(dt=>{
+      if(!this.playing)return;this.t+=dt*1000;const k=Math.min(1,this.t/this.dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      this.setTheta(e*TAU);if(k>=1){this.playing=false;const d=this.done;this.done=null;d&&d();}
+    });
+  }
+  setTheta(th){
+    for(const it of this.items){
+      it.flat.rotation.y=th;
+      it.solid.children.slice().forEach(c=>{it.solid.remove(c);c.traverse(n=>n.geometry&&n.geometry.dispose());});
+      if(th>.02)it.solid.add(latheGroup(it.prof,it.mat,PHI0,Math.min(th,TAU),64));
+    }
+  }
+  addNames(names){this.items.forEach((it,i)=>{if(!names[i])return;const s=label(names[i],{size:.95,color:'#e8590c'});s.position.set(0,it.ymin-1.9,0);it.g.add(s);});}
+  play(ms,done){this.t=0;this.dur=ms;this.done=done;this.playing=true;this.setTheta(0);}
+}
+
+/* ---------- CutScene ---------- */
+class CutScene{
+  constructor(v,defs){
+    this.v=v;v.clear();this.items=[];this.mode=null;this.h=.3;this.ang=0;this.auto=false;this.onAng=null;
+    let y0=1e9,y1=-1e9;
+    for(const d of defs){
+      const prof=closed(d.profile),b=bounds(prof);y0=Math.min(y0,b.ymin);y1=Math.max(y1,b.ymax);
+      const g=new THREE.Group();g.position.x=d.x||0;v.content.add(g);
+      const mat=new THREE.MeshStandardMaterial({color:d.color,roughness:.45,metalness:.05,side:THREE.DoubleSide,transparent:true,opacity:.34,depthWrite:false});
+      g.add(latheGroup(prof,mat,0,TAU,72));
+      g.add(axisMesh(b.ymin-.6,b.ymax+.6));
+      if(d.name){const s=label(d.name,{size:.7});s.position.set(0,b.ymin-.95,0);g.add(s);}
+      const s2=label('회전축',{size:.5,color:'#d6336c'});s2.position.set(0,b.ymax+1.05,0);g.add(s2);
+      const perpSec=new THREE.Group();g.add(perpSec);
+      const axP=new THREE.Group();axP.visible=false;g.add(axP);
+      const P=prof.slice(0,-1),fill=new THREE.MeshBasicMaterial({color:0xffb454,transparent:true,opacity:.2,side:THREE.DoubleSide,depthWrite:false});
+      [1,-1].forEach(sg=>{
+        try{axP.add(new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(P.map(p=>new THREE.Vector2(sg*p.r,p.y)))),fill));}catch(e){}
+        axP.add(dashedPath(P.map(p=>new THREE.Vector3(sg*p.r,p.y,0)),true,0xe8590c,(p,q)=>Math.abs(p.x)<1e-6&&Math.abs(q.x)<1e-6));
+      });
+      this.items.push({x:d.x||0,name:d.name||'내가 만든 회전체',shape:d.shape,prof,...b,g,perpSec,axP});
+    }
+    this.yRange=[y0,y1];
+    this.update();
+    v.ticks.push(dt=>{
+      if(this.auto&&this.mode==='axis'){this.ang=(this.ang+dt*.5)%Math.PI;this.update();this.onAng&&this.onAng();}
+    });
+  }
+  setMode(m){this.mode=m;this.update();}
+  update(){
+    for(const it of this.items){
+      it.perpSec.children.slice().forEach(c=>{it.perpSec.remove(c);disposeObj(c);});
+      it.axP.visible=this.mode==='axis';
+      if(this.mode==='axis')it.axP.rotation.y=this.ang;
+      if(this.mode==='perp'){
+        const fill=new THREE.MeshBasicMaterial({color:0xffb454,transparent:true,opacity:.2,side:THREE.DoubleSide,depthWrite:false});
+        for(const [a,b] of crossings(it.prof,this.h)){
+          const geo=a<1e-3?new THREE.CircleGeometry(b,72):new THREE.RingGeometry(a,b,72,1);
+          const m=new THREE.Mesh(geo,fill);m.rotation.x=-Math.PI/2;m.position.y=this.h;it.perpSec.add(m);
+          it.perpSec.add(dashedPath(ringPts(b,this.h),true,0xe8590c));
+          if(a>=1e-3)it.perpSec.add(dashedPath(ringPts(a,this.h),true,0xe8590c));
+        }
+      }
+    }
+  }
+}
+
+/* ---------- CutCtl ---------- */
+function cutPanel(){return `
+<div class="modebar">
+  <button class="btn mode-perp" data-mode="perp">① 회전축과 수직인 평면으로 자르기<span class="tick"></span></button>
+  <button class="btn mode-axis" data-mode="axis">② 회전축을 포함한 평면으로 자르기<span class="tick"></span></button>
+</div>
+<p class="note">위 버튼을 눌러 회전체를 잘라 보세요.</p>`;}
+const VS_HTML=`
+<div class="vs vs-perp" hidden><span class="vs-t">평면 위치</span><b class="val"></b><div class="vs-box"><input type="range" class="pos" step="0.01" aria-label="평면의 위치"></div></div>
+<div class="vs vs-axis" hidden><span class="vs-t">평면 방향</span><b class="val"></b><div class="vs-box"><input type="range" class="ang" min="0" max="180" step="1" value="0" aria-label="평면의 방향"></div><button class="vs-auto auto" title="자동으로 돌리기">▶</button></div>`;
+class CutCtl{
+  constructor(root,vEl){
+    this.root=root;this.scene=null;this.mode=null;this.touched={perp:false,axis:false};this.onMode=null;
+    vEl.insertAdjacentHTML('beforeend',VS_HTML);
+    this.vp=$('.vs-perp',vEl);this.va=$('.vs-axis',vEl);
+    this.pos=$('.pos',vEl);this.ang=$('.ang',vEl);this.autoBtn=$('.auto',vEl);this.note=$('.note',root);
+    [this.vp,this.va].forEach(vs=>{const box=$('.vs-box',vs),inp=$('input',vs);new ResizeObserver(()=>{inp.style.width=box.clientHeight+'px';}).observe(box);});
+    $$('[data-mode]',root).forEach(b=>b.addEventListener('click',()=>this.setMode(b.dataset.mode)));
+    this.pos.addEventListener('input',()=>{if(!this.scene)return;this.scene.h=+this.pos.value;this.touched.perp=true;this.refresh();});
+    this.ang.addEventListener('input',()=>{if(!this.scene)return;this.scene.ang=+this.ang.value*Math.PI/180;this.touched.axis=true;this.refresh();});
+    this.autoBtn.addEventListener('click',()=>this.toggleAuto());
+  }
+  toggleAuto(on){
+    if(!this.scene)return;this.scene.auto=on===undefined?!this.scene.auto:on;
+    this.autoBtn.textContent=this.scene.auto?'⏸':'▶';if(this.scene.auto)this.touched.axis=true;
+  }
+  setScene(s){
+    this.scene=s;this.touched={perp:false,axis:false};
+    const [a,b]=s.yRange;this.pos.min=a.toFixed(2);this.pos.max=b.toFixed(2);s.h=a+(b-a)*.65;this.pos.value=s.h;
+    this.ang.value=0;s.ang=0;
+    s.onAng=()=>{this.ang.value=Math.round(s.ang*180/Math.PI);this.val();this.touched.axis=true;};
+    this.toggleAuto(false);this.setMode(null);
+  }
+  reset(){
+    if(this.scene)this.scene.auto=false;this.scene=null;this.mode=null;this.vp.hidden=true;this.va.hidden=true;
+    $$('[data-mode]',this.root).forEach(b=>b.classList.remove('on'));this.note.textContent='위 버튼을 눌러 회전체를 잘라 보세요.';
+  }
+  val(){
+    const s=this.scene;if(!s)return;
+    $('.val',this.vp).textContent=(+s.h).toFixed(2);$('.val',this.va).textContent=Math.round(s.ang*180/Math.PI)+'°';
+  }
+  setMode(m){
+    this.mode=m;if(!this.scene)return;this.scene.setMode(m);this.toggleAuto(false);
+    $$('[data-mode]',this.root).forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+    this.vp.hidden=m!=='perp';this.va.hidden=m!=='axis';
+    this.note.textContent=m==='perp'?'왼쪽 세로 슬라이더로 평면의 위치를 움직여 보세요. 입체도형 속 주황색 점선이 단면이에요.':m==='axis'?'왼쪽 세로 슬라이더로 평면의 방향을 바꿔 보세요. 평면은 언제나 회전축을 지나요. 입체도형 속 점선이 단면이에요.':'위 버튼을 눌러 회전체를 잘라 보세요.';
+    this.val();this.onMode&&this.onMode(m);
+  }
+  refresh(){this.scene.update();this.val();}
+  tick(m){const b=$(`[data-mode="${m}"] .tick`,this.root);if(b)b.textContent=' ✔';}
+}
+
+/* ---------- Sketcher ---------- */
+function rdp(p,e){
+  if(p.length<3)return p;
+  const a=p[0],b=p[p.length-1];let dm=0,idx=0;
+  const dx=b.r-a.r,dy=b.y-a.y,L=dx*dx+dy*dy;
+  for(let i=1;i<p.length-1;i++){
+    let t=L?((p[i].r-a.r)*dx+(p[i].y-a.y)*dy)/L:0;t=Math.max(0,Math.min(1,t));
+    const d=Math.hypot(p[i].r-(a.r+t*dx),p[i].y-(a.y+t*dy));if(d>dm){dm=d;idx=i;}
+  }
+  if(dm>e){const l=rdp(p.slice(0,idx+1),e),r=rdp(p.slice(idx),e);return l.slice(0,-1).concat(r);}
+  return [a,b];
+}
+class Sketcher{
+  constructor(cv){
+    this.cv=cv;this.ctx=cv.getContext('2d');this.pts=[];this.mode='free';this.on=false;this.W=0;this.H=0;
+    new ResizeObserver(()=>this.layout()).observe(cv);
+    cv.addEventListener('pointerdown',e=>this.down(e));
+    cv.addEventListener('pointermove',e=>this.move(e));
+    cv.addEventListener('pointerup',e=>this.up(e));
+    cv.addEventListener('pointercancel',()=>{if(this.on){this.on=false;this.pts=[];this.draw();}});
+  }
+  layout(){
+    const dpr=Math.min(window.devicePixelRatio||1,2),w=this.cv.clientWidth,h=this.cv.clientHeight;if(!w||!h)return;
+    this.cv.width=Math.round(w*dpr);this.cv.height=Math.round(h*dpr);this.ctx.setTransform(dpr,0,0,dpr,0,0);
+    this.W=w;this.H=h;this.s=h/6;this.ax=w*.7;this.draw();
+  }
+  world(e){const r=this.cv.getBoundingClientRect();return{r:(this.ax-(e.clientX-r.left))/this.s,y:(this.H/2-(e.clientY-r.top))/this.s};}
+  fix(p,grid){
+    p.r=Math.max(0,Math.min(this.ax/this.s-.1,p.r));p.y=Math.max(-2.9,Math.min(2.9,p.y));
+    if(grid){p.r=Math.round(p.r*4)/4;p.y=Math.round(p.y*4)/4;}
+    if(p.r<.2)p.r=0;return p;
+  }
+  down(e){
+    if(e.button>0)return;
+    if(this.mode==='vertex'){
+      const p=this.fix(this.world(e),true),l=this.pts[this.pts.length-1];
+      if(!l||l.r!==p.r||l.y!==p.y)this.pts.push(p);this.draw();this.changed();return;
+    }
+    this.pts=[this.fix(this.world(e))];this.on=true;this.cv.setPointerCapture(e.pointerId);this.draw();
+  }
+  move(e){
+    if(!this.on)return;const p=this.fix(this.world(e)),l=this.pts[this.pts.length-1];
+    if(Math.hypot(p.r-l.r,p.y-l.y)>.05){this.pts.push(p);this.draw();}
+  }
+  up(){if(!this.on)return;this.on=false;this.pts=rdp(this.pts,.08);this.draw();this.changed();}
+  changed(){this.onchange&&this.onchange();}
+  undo(){if(this.mode==='vertex')this.pts.pop();else this.pts=[];this.draw();}
+  clear(){this.pts=[];this.draw();}
+  setMode(m){this.mode=m;this.clear();}
+  profile(){
+    if(this.pts.length<3)return null;let A=0;
+    for(let i=0;i<this.pts.length;i++){const a=this.pts[i],b=this.pts[(i+1)%this.pts.length];A+=a.r*b.y-b.r*a.y;}
+    if(Math.abs(A)/2<.2)return null;return this.pts.map(p=>({r:p.r,y:p.y}));
+  }
+  draw(){
+    const c=this.ctx,W=this.W,H=this.H,s=this.s,ax=this.ax;if(!W)return;
+    const X=r=>ax-r*s,Y=y=>H/2-y*s;
+    c.clearRect(0,0,W,H);c.fillStyle='#fff';c.fillRect(0,0,W,H);
+    c.fillStyle='rgba(120,140,180,.07)';c.fillRect(ax,0,W-ax,H);
+    c.strokeStyle='#e8eef9';c.lineWidth=1;c.beginPath();
+    for(let r=0;X(r)>=0;r+=1){c.moveTo(X(r),0);c.lineTo(X(r),H);}
+    for(let y=-3;y<=3;y+=1){c.moveTo(0,Y(y));c.lineTo(W,Y(y));}c.stroke();
+    c.strokeStyle='#e5484d';c.lineWidth=4;c.beginPath();c.moveTo(ax,6);c.lineTo(ax,H-6);c.stroke();
+    c.fillStyle='#e5484d';c.font="700 13px 'Noto Sans KR',sans-serif";c.textAlign='left';c.fillText('회전축',ax+8,22);
+    if(!this.pts.length){c.fillStyle='#9aa8c4';c.textAlign='center';c.font="700 15px 'Noto Sans KR',sans-serif";
+      c.fillText(this.mode==='free'?'← 여기에 손가락/마우스로 그려요':'← 여기를 눌러 꼭짓점을 찍어요',ax/2,H/2);}
+    if(this.pts.length){
+      c.beginPath();this.pts.forEach((p,i)=>i?c.lineTo(X(p.r),Y(p.y)):c.moveTo(X(p.r),Y(p.y)));
+      if(this.pts.length>=3){c.closePath();c.fillStyle='rgba(79,140,255,.28)';c.fill();}
+      c.strokeStyle='#2f6fed';c.lineWidth=3;c.lineJoin='round';c.lineCap='round';c.stroke();
+      if(this.mode==='vertex'){c.fillStyle='#ff9f43';this.pts.forEach(p=>{c.beginPath();c.arc(X(p.r),Y(p.y),5,0,TAU);c.fill();});}
+    }
+  }
+}
+
+/* ---------- builder (screens 3 & 5) ---------- */
+function builderHTML(withCut){return `
+<div class="grid2 bgrid">
+  <div class="card">
+    <h3>✏️ 평면도형 그리기</h3>
+    <p class="lead small">붉은 직선(회전축)의 <b>왼쪽</b>에 평면도형을 그려 보세요. 축 가까이에 그리면 축에 딱 붙어요.</p>
+    <div class="seg"><button class="seg-btn on" data-m="free">✏️ 자유롭게 그리기</button><button class="seg-btn" data-m="vertex">📐 꼭짓점 찍기</button></div>
+    <canvas class="sk"></canvas>
+    <div class="row"><button class="btn ghost undo">↩ 되돌리기</button><button class="btn ghost clear">🗑 지우기</button></div>
+    <button class="btn big build" style="width:100%">🔄 회전체 만들기</button>
+    <div class="msg"></div>
+  </div>
+  <div><div class="card"><h3>🧊 만들어진 회전체</h3><div class="viewer vv"></div></div>
+  ${withCut?`<div class="card cutwrap" hidden><h3>✂️ 내가 만든 회전체 잘라 보기</h3>${cutPanel()}</div>`:''}</div>
+</div>`;}
+
+function initBuilder(host,withCut){
+  host.innerHTML=builderHTML(withCut);
+  const sk=new Sketcher($('.sk',host));
+  const v=new Viewer($('.vv',host),{w:9.5,h:7.5,cx:0,cy:0});
+  const msg=t=>{$('.msg',host).textContent=t;};
+  const empty=()=>{v.clear();v.content.add(axisMesh(-3,3));const s=label('회전축',{size:.55,color:'#d6336c'});s.position.set(0,3.8,0);v.content.add(s);};
+  empty();
+  let ctl=null;if(withCut)ctl=new CutCtl($('.cutwrap',host),v.el);
+  $$('.seg-btn',host).forEach(b=>b.onclick=()=>{$$('.seg-btn',host).forEach(x=>x.classList.toggle('on',x===b));sk.setMode(b.dataset.m);msg('');});
+  $('.undo',host).onclick=()=>sk.undo();$('.clear',host).onclick=()=>{sk.clear();msg('');};
+  const btn=$('.build',host);
+  btn.onclick=()=>{
+    const prof=sk.profile();
+    if(!prof){msg('먼저 축의 왼쪽에 평면도형을 그려 주세요! (너무 작은 도형은 안 돼요)');return;}
+    msg('');btn.disabled=true;if(withCut){ctl.reset();$('.cutwrap',host).hidden=true;}
+    const b=bounds(prof);
+    const demo=new RevolveDemo(v,[{profile:prof,x:0,color:0x4f8cff}]);
+    v.home={w:2*b.rmax+1.8+(withCut?2:0),h:Math.max(b.ymax-b.ymin+1.8,3),cx:withCut?-.9:0,cy:(b.ymin+b.ymax)/2};v.touched=false;v.fit(v.home,true);
+    demo.play(3500,()=>{
+      btn.disabled=false;btn.textContent='🔁 다시 회전체 만들기';
+      if(withCut){
+        const sc=new CutScene(v,[{profile:prof,x:0,color:0x6aa6ff,name:'내가 만든 회전체'}]);
+        ctl.setScene(sc);$('.cutwrap',host).hidden=false;
+        msg('🎉 회전체가 완성됐어요! 아래 버튼으로 잘라 볼까요?');
+        setTimeout(()=>v.el.parentElement.scrollIntoView({behavior:'smooth',block:'start'}),400);
+      }else msg('🎉 내가 그린 평면도형을 1회전 시켜 회전체를 만들었어요!');
+    });
+  };
+}
+
+/* ---------- screens ---------- */
+const inited={};
+const inits={
+  what(){
+    const v=new Viewer($('#v-what'),{w:12.4,h:7.2,cx:0,cy:-.45});
+    const mk=()=>new RevolveDemo(v,[
+      {profile:PROF.rect(1.3,2.6),x:-4.6,color:0x5b9cff,label:'직사각형'},
+      {profile:PROF.tri(1.4,2.6),x:0,color:0xffa24a,label:'직각삼각형'},
+      {profile:PROF.semi(1.4),x:4.6,color:0x35c796,label:'반원'}],{axisLabel:true});
+    let demo=mk();
+    chipsFor($('#chips-what'),v,[['전체 보기'],['직사각형',{w:4.4,h:6.4,cx:-4.6,cy:-.5}],['직각삼각형',{w:4.4,h:6.4,cx:0,cy:-.5}],['반원',{w:4.4,h:6.4,cx:4.6,cy:-.5}]]);
+    const btn=$('#btn-spin');
+    btn.onclick=()=>{
+      btn.disabled=true;demo=mk();demo.play(4200,()=>{
+        demo.addNames(['원기둥','원뿔','구']);btn.disabled=false;btn.textContent='🔁 다시 회전하기';
+        const d=$('#def-card');if(d.hidden){d.hidden=false;setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'center'}),250);}
+      });
+    };
+  },
+  make1(){initBuilder($('#b-make1'),false);},
+  cut(){
+    const v=new Viewer($('#v-cut'),{w:12.6,h:6.2,cx:-.7,cy:0});
+    const sc=new CutScene(v,[
+      {profile:PROF.rect(1.2,3),x:-3.7,color:0x5b9cff,name:'원기둥',shape:'직사각형'},
+      {profile:PROF.tri(1.2,3),x:0,color:0xffa24a,name:'원뿔',shape:'이등변삼각형'},
+      {profile:PROF.semi(1.5),x:3.7,color:0x35c796,name:'구',shape:'원'}]);
+    chipsFor($('#chips-cut'),v,[['전체 보기'],['원기둥',{w:4.4,h:5,cx:-3.7,cy:0}],['원뿔',{w:4.4,h:5,cx:0,cy:0}],['구',{w:4.4,h:5,cx:3.7,cy:0}]]);
+    $('#cut-panel').innerHTML=cutPanel();
+    const ctl=new CutCtl($('#cut-panel'),$('#v-cut'));ctl.setScene(sc);
+    const done={perp:false,axis:false},qp=$('#q-perp'),qa=$('#q-axis');
+    ctl.onMode=m=>{qp.hidden=m!=='perp';qa.hidden=m!=='axis';$('#q-hint').hidden=!!m;};
+    $$('.choices').forEach(box=>box.addEventListener('click',e=>{const c=e.target.closest('.choice');if(!c)return;$$('.choice',box).forEach(x=>x.classList.toggle('sel',x===c));}));
+    const fin=(m,box)=>{
+      done[m]=true;ctl.tick(m);
+      $('.fb',box).className='fb ok';$('.fb',box).textContent='✔ 정답이에요! 잘 관찰했어요.';
+      if(done.perp&&done.axis){
+        const p=$('#prop-card');if(p.hidden){p.hidden=false;setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'start'}),500);}
+      }else $('.fb',box).textContent+=' 이제 '+(m==='perp'?'②번':'①번')+' 활동도 해 보세요.';
+    };
+    const bad=(box,t)=>{$('.fb',box).className='fb bad';$('.fb',box).textContent=t;};
+    $('.check',qp).onclick=()=>{
+      if(!ctl.touched.perp)return bad(qp,'먼저 슬라이더를 움직여 단면을 관찰해 보세요 🔍');
+      const sel=$('.choice.sel',qp);if(!sel)return bad(qp,'답을 골라 주세요.');
+      sel.textContent===$('.choices',qp).dataset.answer?fin('perp',qp):bad(qp,'다시 관찰해 볼까요? 평면을 위아래로 움직여도 단면의 모양은 그대로예요. 크기만 변하죠.');
+    };
+    $('.check',qa).onclick=()=>{
+      if(!ctl.touched.axis)return bad(qa,'먼저 슬라이더를 움직여 평면의 방향을 바꿔 보세요 🔍');
+      const sels=$$('select',qa),sel=$('.choice.sel',qa);
+      if(sels.some(s=>!s.value)||!sel)return bad(qa,'모든 항목에 답해 주세요.');
+      const ok=sels.every(s=>s.value===s.dataset.a)&&sel.textContent===$('.choices',qa).dataset.answer;
+      ok?fin('axis',qa):bad(qa,'다시 한번 관찰해 보세요. 힌트: 원기둥은 세로로 반 갈랐을 때를 떠올려 보고, 방향을 바꿔도 모양이 같은지 살펴봐요.');
+    };
+    // fill in blanks
+    const blanks=$$('#prop-card .blank'),chips=$$('#prop-card .chip'),ans=['원','합동','대칭축','선대칭도형'];let cur=0;
+    const mark=()=>blanks.forEach((b,i)=>b.classList.toggle('active',i===cur&&!b.dataset.v));
+    const clearB=b=>{if(!b.dataset.v)return;const c=chips.find(c=>c.dataset.w===b.dataset.v);if(c)c.classList.remove('used');b.dataset.v='';b.textContent='＿＿';b.classList.remove('ok','bad');};
+    blanks.forEach((b,i)=>b.onclick=()=>{clearB(b);cur=i;mark();});
+    chips.forEach(c=>c.onclick=()=>{
+      let i=blanks[cur]&&!blanks[cur].dataset.v?cur:blanks.findIndex(b=>!b.dataset.v);if(i<0)return;
+      const b=blanks[i];b.dataset.v=c.dataset.w;b.textContent=c.dataset.w;b.classList.remove('bad');c.classList.add('used');
+      const n=blanks.findIndex(x=>!x.dataset.v);cur=n<0?i:n;mark();
+    });
+    mark();
+    $('#prop-check').onclick=()=>{
+      const fb=$('#fb-prop');
+      if(blanks.some(b=>!b.dataset.v)){fb.className='fb bad';fb.textContent='빈칸을 모두 채워 주세요.';return;}
+      let all=true;blanks.forEach((b,i)=>{const ok=b.dataset.v===ans[i];b.classList.toggle('ok',ok);b.classList.toggle('bad',!ok);if(!ok)all=false;});
+      if(all){fb.className='fb ok';fb.textContent='🎉 모두 맞혔어요! 회전체의 성질을 완벽하게 이해했네요.';$('#next-row').hidden=false;$('#next-row').scrollIntoView({behavior:'smooth',block:'center'});}
+      else{fb.className='fb bad';fb.textContent='빨간 칸은 틀렸어요. 칸을 눌러 지우고 다시 골라 보세요.';}
+    };
+  },
+  custom(){initBuilder($('#b-custom'),true);}
+};
+function go(id){
+  $$('.screen').forEach(s=>s.classList.toggle('active',s.id==='s-'+id));
+  $('#home-btn').hidden=id==='home';window.scrollTo(0,0);
+  if(inits[id]&&!inited[id]){inited[id]=true;inits[id]();}
+  setTimeout(()=>window.dispatchEvent(new Event('resize')),40);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);});
+})();
+</script>
+</body>
+</html>
