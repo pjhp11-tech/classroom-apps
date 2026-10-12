@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>다면체와 정다면체 퀴즈</title>
+<style>
+/* 레이아웃: 그라데이션 무대 위에 한 칸짜리 퀴즈 화면(시작 → 15문제 → 결과), 선택지는 2열 카드 */
+:root{
+  --ink:#1e293b;--sub:#64748b;--ac:#4338ca;--good:#15803d;--bad:#dc2626;--card:#ffffff;
+  --ok-bg:#15803d;--ng-bg:#dc2626;
+  --stage1:#6366f1;--stage2:#8b5cf6;--stage3:#ec4899;
+  --on-stage:#ffffff;--btn-bg:#ffffff;--btn-fg:#4338ca;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#e2e8f0;--sub:#cbd5e1;--ac:#c7d2fe;--good:#4ade80;--bad:#f87171;--card:#1e293b;
+  --stage1:#3730a3;--stage2:#5b21b6;--stage3:#9d174d;--btn-bg:#e0e7ff;--btn-fg:#312e81;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ink:#e2e8f0;--sub:#cbd5e1;--ac:#c7d2fe;--good:#4ade80;--bad:#f87171;--card:#1e293b;
+  --stage1:#3730a3;--stage2:#5b21b6;--stage3:#9d174d;--btn-bg:#e0e7ff;--btn-fg:#312e81;color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  color:var(--on-stage);
+  background-color:var(--stage1);
+  background-image:linear-gradient(150deg,var(--stage1) 0%,var(--stage2) 55%,var(--stage3) 100%);
+  background-attachment:fixed;
+}
+.deco{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.deco>div{position:absolute;opacity:.2;animation:float 7s ease-in-out infinite}
+.deco svg{width:100%;display:block}
+.d1{width:130px;left:-24px;top:6%}.d2{width:90px;right:8%;top:10%;animation-delay:-2s}
+.d3{width:160px;right:-30px;bottom:8%;animation-delay:-4s}.d4{width:70px;left:10%;bottom:12%;animation-delay:-1s}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-16px) rotate(6deg)}}
+
+#app{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100%;padding:16px 16px 28px;display:flex;flex-direction:column}
+.screen{display:none}.screen.active{display:flex;flex-direction:column;flex:1}
+#startScreen,#endScreen{align-items:center;justify-content:center;text-align:center;gap:24px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:22px}
+.hero-icon{width:170px;height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.25))}
+.hero h2{margin:0;font-size:2.2rem;line-height:1.25;font-weight:900;letter-spacing:-.02em;text-wrap:balance;text-shadow:0 4px 14px rgba(0,0,0,.25)}
+.hero p{margin:0;font-weight:700;opacity:.92}
+button.primary{background:var(--btn-bg);color:var(--btn-fg);border:none;font-family:inherit;font-size:1.25rem;font-weight:800;padding:15px 44px;border-radius:999px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+button.primary:active{transform:scale(.95)}
+button:focus-visible{outline:3px solid #fde68a;outline-offset:3px}
+#startBtn{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* 퀴즈 화면 */
+.qhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+#progress{background:rgba(255,255,255,.22);backdrop-filter:blur(4px);padding:6px 16px;border-radius:999px;font-weight:800;font-size:.95rem;font-variant-numeric:tabular-nums}
+.logo{width:42px;height:auto;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25))}
+.bar{height:10px;border-radius:999px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:18px}
+#barFill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#fde68a,#fbbf24);transition:width .4s ease}
+#question{position:relative;background:var(--card);color:var(--ink);border-radius:26px;padding:34px 18px 26px;margin:14px 0 18px;font-weight:800;font-size:1.25rem;line-height:1.55;text-align:center;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+#question::before{content:'Q';position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#78350f;font-weight:900;font-size:1.1rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+#question small{display:block;font-weight:600;color:var(--sub);font-size:.85rem;margin-top:6px}
+#cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.card{background:var(--card);color:var(--ac);border:none;border-radius:18px;padding:12px 4px;min-height:62px;font-size:1.1rem;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:transform .1s ease;font-variant-numeric:tabular-nums}
+.card:active{transform:scale(.95)}
+.card:disabled{cursor:default}
+.card.correct{background:var(--ok-bg);color:#fff}
+.card.wrong{background:var(--ng-bg);color:#fff}
+#feedback{text-align:center;min-height:44px;margin-top:16px}
+#feedback span{display:inline-block;background:var(--card);padding:8px 20px;border-radius:999px;font-weight:800;font-size:.95rem;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+#feedback .why{margin:10px 0 0;background:var(--card);color:var(--ink);border-radius:16px;padding:10px 14px;font-weight:600;font-size:.92rem;line-height:1.55;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.good{color:var(--good)}.bad{color:var(--bad)}
+
+/* 결과 화면 */
+.trophy{font-size:4.2rem;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))}
+#endScreen h2{margin:0;font-size:2rem;font-weight:900;text-shadow:0 4px 14px rgba(0,0,0,.25)}
+.panel{background:var(--card);color:var(--ink);border-radius:26px;padding:22px 20px;width:100%;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+#result p{font-size:1.05rem;margin:8px 0;font-weight:600}
+#result .final{font-size:1.9rem;color:var(--ac);font-weight:900;margin-top:14px}
+@media (prefers-reduced-motion:reduce){.deco>div,#startBtn{animation:none}#barFill,.card{transition:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="polyIcon" viewBox="0 0 160 130">
+    <polygon points="55,14 100,36 55,58 10,36" fill="#fff"/>
+    <polygon points="10,36 55,58 55,112 10,90" fill="#c7d2fe"/>
+    <polygon points="100,36 55,58 55,112 100,90" fill="#a5b4fc"/>
+    <polygon points="122,40 88,112 125,124" fill="#fde68a"/>
+    <polygon points="122,40 125,124 156,106" fill="#fbbf24"/>
+  </symbol>
+</svg>
+
+<div class="deco" aria-hidden="true">
+  <div class="d1"><svg viewBox="0 0 100 100"><polygon points="50,8 90,30 50,52 10,30" fill="#fff"/><polygon points="10,30 50,52 50,94 10,72" fill="#fff" opacity=".6"/><polygon points="90,30 50,52 50,94 90,72" fill="#fff" opacity=".35"/></svg></div>
+  <div class="d2"><svg viewBox="0 0 100 100"><polygon points="50,8 8,78 52,92" fill="#fff"/><polygon points="50,8 52,92 92,70" fill="#fff" opacity=".5"/></svg></div>
+  <div class="d3"><svg viewBox="0 0 100 100"><polygon points="50,6 10,50 50,60" fill="#fff"/><polygon points="50,6 90,50 50,60" fill="#fff" opacity=".6"/><polygon points="10,50 50,94 50,60" fill="#fff" opacity=".45"/><polygon points="90,50 50,94 50,60" fill="#fff" opacity=".25"/></svg></div>
+  <div class="d4"><svg viewBox="0 0 100 100"><polygon points="50,8 90,30 50,52 10,30" fill="#fff"/><polygon points="10,30 50,52 50,94 10,72" fill="#fff" opacity=".6"/><polygon points="90,30 50,52 50,94 90,72" fill="#fff" opacity=".35"/></svg></div>
+</div>
+
+<div id="app">
+  <div id="startScreen" class="screen active"><div class="hero">
+    <svg class="hero-icon" viewBox="0 0 160 130" aria-hidden="true"><use href="#polyIcon" width="160" height="130"/></svg>
+    <h2>다면체와 정다면체<br>퀴즈</h2>
+    <p>모서리, 꼭짓점, 면의 개수를 맞혀 보세요! (15문제)</p>
+    <button class="primary" id="startBtn">시작하기</button>
+  </div></div>
+
+  <div id="quizScreen" class="screen">
+    <div class="qhead"><div id="progress"></div>
+      <svg class="logo" viewBox="0 0 160 130" aria-hidden="true"><use href="#polyIcon" width="160" height="130"/></svg></div>
+    <div class="bar"><div id="barFill"></div></div>
+    <div id="question"></div>
+    <div id="cards"></div>
+    <div id="feedback" aria-live="polite"></div>
+  </div>
+
+  <div id="endScreen" class="screen"><div class="trophy">🏆</div>
+    <h2>퀴즈 종료!</h2>
+    <div class="panel"><div id="result"></div></div>
+    <button class="primary" id="restartBtn">다시 도전하기</button></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ---------- 데이터 ---------- */
+const KO=['','일','이','삼','사','오','육','칠','팔','구','십'];
+const nameN=n=>n<=10?KO[n]:n<20?'십'+KO[n-10]:'이십';
+const BN={E:'모서리',V:'꼭짓점',F:'면'};
+
+const FAM={
+ prism:{word:'각기둥',V:n=>2*n,E:n=>3*n,F:n=>n+2,why:{
+  V:n=>`밑면이 2개이고 각 밑면에 꼭짓점이 ${n}개씩 있으니 2×${n} = ${2*n}개예요.`,
+  E:n=>`밑면의 모서리 ${n}개씩 2개와 옆 모서리 ${n}개를 합해 3×${n} = ${3*n}개예요.`,
+  F:n=>`옆면 ${n}개와 밑면 2개를 합해 ${n+2}개예요.`}},
+ pyramid:{word:'각뿔',V:n=>n+1,E:n=>2*n,F:n=>n+1,why:{
+  V:n=>`밑면의 꼭짓점 ${n}개에 꼭대기 꼭짓점 1개를 더해 ${n+1}개예요.`,
+  E:n=>`밑면의 모서리 ${n}개와 옆 모서리 ${n}개를 합해 2×${n} = ${2*n}개예요.`,
+  F:n=>`옆면 ${n}개와 밑면 1개를 합해 ${n+1}개예요.`}},
+ frustum:{word:'각뿔대',V:n=>2*n,E:n=>3*n,F:n=>n+2,why:{
+  V:n=>`위, 아래 밑면에 꼭짓점이 ${n}개씩 있으니 2×${n} = ${2*n}개예요.`,
+  E:n=>`위, 아래 밑면의 모서리 ${n}개씩 2개와 옆 모서리 ${n}개를 합해 3×${n} = ${3*n}개예요.`,
+  F:n=>`옆면 ${n}개와 밑면 2개를 합해 ${n+2}개예요.`}}
+};
+const REG=[
+ {name:'정사면체',V:4,E:6,F:4},
+ {name:'정육면체',V:8,E:12,F:6},
+ {name:'정팔면체',V:6,E:12,F:8},
+ {name:'정십이면체',V:20,E:30,F:12},
+ {name:'정이십면체',V:12,E:30,F:20}
+];
+const REG_VALUES=[4,6,8,12,20,30];
+const AS=['prism','pyramid','frustum'].concat(REG.map(r=>r.name));
+const BS=['E','V','F'];
+
+/* 15문제: 도형 8종을 한 번씩 포함하고, 모서리·꼭짓점·면이 모두 나오도록 고른다 */
+function chooseCombos(){
+ for(;;){
+  const first=AS.map(a=>[a,pick(BS)]);
+  const rest=[];
+  AS.forEach(a=>BS.forEach(b=>{if(!first.some(f=>f[0]===a&&f[1]===b))rest.push([a,b]);}));
+  const combos=first.concat(shuffle(rest).slice(0,7));
+  if(BS.every(b=>combos.some(c=>c[1]===b)))return combos;
+ }
+}
+
+function makeQ(a,b){
+ const fam=FAM[a];
+ if(fam){
+  const n=3+Math.floor(Math.random()*18); /* 3 ~ 20 */
+  const ans=fam[b](n);
+  const pool=shuffle([n,n+1,n+2,2*n,3*n]).concat(shuffle([n-1,n+3,2*n-1,2*n+1,2*n+2,3*n-1,3*n+1,3*n+2]));
+  const vals=[ans];
+  for(const v of pool){if(vals.length>=6)break;if(v>0&&!vals.includes(v))vals.push(v);}
+  vals.sort((x,y)=>x-y);
+  return {text:`${nameN(n)}${fam.word}의 ${BN[b]}의 개수는?`,sub:`(${n}${fam.word})`,
+   options:vals.map(v=>v+'개'),answer:ans+'개',why:fam.why[b](n)};
+ }
+ const r=REG.find(x=>x.name===a);
+ return {text:`${r.name}의 ${BN[b]}의 개수는?`,sub:'',
+  options:REG_VALUES.map(v=>v+'개'),answer:r[b]+'개',
+  why:`${r.name}은 꼭짓점 ${r.V}개, 모서리 ${r.E}개, 면 ${r.F}개예요.`};
+}
+
+/* ---------- 진행 ---------- */
+let qs=[],idx=0,ok=0,ng=0,t0=0,locked=false,cur=null;
+function build(){return shuffle(chooseCombos()).map(c=>makeQ(c[0],c[1]));}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function start(){qs=build();idx=0;ok=0;ng=0;t0=Date.now();show('quizScreen');load();}
+function load(){
+ locked=false;cur=qs[idx];
+ $('progress').textContent=`문제 ${idx+1} / ${qs.length}`;
+ $('barFill').style.width=(idx/qs.length*100)+'%';
+ $('question').innerHTML=cur.text+(cur.sub?`<small>${cur.sub}</small>`:'');
+ $('feedback').innerHTML='';
+ const g=$('cards');g.innerHTML='';
+ cur.options.forEach(o=>{
+  const b=document.createElement('button');b.className='card';b.textContent=o;
+  b.addEventListener('click',()=>answer(o,b));g.appendChild(b);
+ });
+}
+function answer(o,btn){
+ if(locked)return;locked=true;
+ document.querySelectorAll('#cards .card').forEach(el=>{el.disabled=true;if(el.textContent===cur.answer)el.classList.add('correct');});
+ const fb=$('feedback');
+ let wait=800;
+ if(o===cur.answer){ok++;fb.innerHTML=`<span class="good">정답입니다! 🎉</span>`;}
+ else{ng++;btn.classList.add('wrong');fb.innerHTML=`<span class="bad">아쉬워요! 😢</span><p class="why">${cur.why}</p>`;wait=2400;}
+ setTimeout(()=>{idx++;idx>=qs.length?finish():load();},wait);
+}
+function finish(){
+ $('barFill').style.width='100%';
+ const sec=Math.round((Date.now()-t0)/1000),score=ok*10-ng*20-sec;
+ $('result').innerHTML=`<p>정답: ${ok}개 / 오답: ${ng}개</p><p>걸린 시간: ${sec}초</p><p class="final">최종 점수: ${score}점</p>`;
+ show('endScreen');
+}
+$('startBtn').addEventListener('click',start);
+$('restartBtn').addEventListener('click',start);
+})();
+</script>
+</body>
+</html>
