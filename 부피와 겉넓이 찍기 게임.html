@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>뿔과 기둥</title>
+<style>
+:root{
+  --ink:#1e293b;--sub:#64748b;--ac:#4338ca;--good:#15803d;--bad:#dc2626;--card:#ffffff;
+  --ok-bg:#15803d;--ng-bg:#dc2626;
+  --stage1:#6366f1;--stage2:#8b5cf6;--stage3:#ec4899;
+  --on-stage:#ffffff;--btn-bg:#ffffff;--btn-fg:#4338ca;
+  --a:#2563eb;--b:#ea580c;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#e2e8f0;--sub:#cbd5e1;--ac:#c7d2fe;--good:#4ade80;--bad:#f87171;--card:#1e293b;
+  --stage1:#3730a3;--stage2:#5b21b6;--stage3:#9d174d;--btn-bg:#e0e7ff;--btn-fg:#312e81;
+  --a:#93c5fd;--b:#fdba74;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ink:#e2e8f0;--sub:#cbd5e1;--ac:#c7d2fe;--good:#4ade80;--bad:#f87171;--card:#1e293b;
+  --stage1:#3730a3;--stage2:#5b21b6;--stage3:#9d174d;--btn-bg:#e0e7ff;--btn-fg:#312e81;
+  --a:#93c5fd;--b:#fdba74;color-scheme:dark}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  color:var(--on-stage);
+  background-color:var(--stage1);
+  background-image:linear-gradient(150deg,var(--stage1) 0%,var(--stage2) 55%,var(--stage3) 100%);
+  background-attachment:fixed;
+}
+.deco{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.deco>div{position:absolute;opacity:.2;animation:float 7s ease-in-out infinite}
+.deco svg{width:100%;display:block}
+.d1{width:130px;left:-24px;top:6%}.d2{width:90px;right:8%;top:10%;animation-delay:-2s}
+.d3{width:160px;right:-30px;bottom:8%;animation-delay:-4s}.d4{width:70px;left:10%;bottom:12%;animation-delay:-1s}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-16px) rotate(6deg)}}
+
+#app{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100vh;padding:16px 16px 28px;display:flex;flex-direction:column}
+.screen{display:none}.screen.active{display:flex;flex-direction:column;flex:1}
+#startScreen,#endScreen{align-items:center;justify-content:center;text-align:center;gap:24px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:22px}
+.hero-icon{width:170px;height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.25))}
+.hero h2{margin:0;font-size:2.4rem;line-height:1.25;font-weight:900;letter-spacing:-.02em;text-wrap:balance;text-shadow:0 4px 14px rgba(0,0,0,.25)}
+button.primary{background:var(--btn-bg);color:var(--btn-fg);border:none;font-family:inherit;font-size:1.25rem;font-weight:800;padding:15px 44px;border-radius:999px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+button.primary:active{transform:scale(.95)}
+button:focus-visible{outline:3px solid #fde68a;outline-offset:3px}
+#startBtn{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+.qhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+#progress{background:rgba(255,255,255,.22);backdrop-filter:blur(4px);padding:6px 16px;border-radius:999px;font-weight:800;font-size:.95rem;font-variant-numeric:tabular-nums}
+.logo{width:42px;height:auto;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25))}
+.bar{height:10px;border-radius:999px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:16px}
+#barFill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#fde68a,#fbbf24);transition:width .4s ease}
+
+/* 도형 두 개 */
+.stage{background:var(--card);color:var(--ink);border-radius:26px;padding:12px 12px 10px;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+.shapes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shape{margin:0}
+.shape canvas{
+  width:100%;height:auto;aspect-ratio:320/300;display:block;border-radius:16px;
+  user-select:none;-webkit-user-select:none;
+}
+.shape.a canvas{background:#eef4ff}
+.shape.b canvas{background:#fff4ea}
+.shape figcaption{display:flex;justify-content:center;margin-top:8px}
+.tag{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:900;font-size:1.3rem;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+.shape.a .tag{background:#2563eb}.shape.b .tag{background:#ea580c}
+.hint{margin:8px 0 0;text-align:center;font-size:.78rem;color:var(--sub);font-weight:600}
+
+#question{position:relative;background:var(--card);color:var(--ink);border-radius:26px;padding:30px 18px 22px;margin:26px 0 18px;font-weight:800;font-size:1.3rem;line-height:1.55;text-align:center;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+#question::before{content:'Q';position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#fde68a,#f59e0b);color:#78350f;font-weight:900;font-size:1.1rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+#question .mw{color:var(--ac);font-size:1.5rem;font-weight:900}
+
+#cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.card{background:var(--card);border:none;border-radius:18px;padding:12px 6px;min-height:84px;font-size:2.2rem;font-weight:900;font-family:inherit;line-height:1.2;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:transform .1s ease}
+.card.a{color:var(--a)}.card.b{color:var(--b)}
+.card:active{transform:scale(.95)}
+.card:disabled{cursor:default}
+.card.correct{background:var(--ok-bg);color:#fff}
+.card.wrong{background:var(--ng-bg);color:#fff}
+#feedback{text-align:center;min-height:44px;margin-top:16px}
+#feedback span{display:inline-block;background:var(--card);padding:8px 20px;border-radius:999px;font-weight:800;font-size:.95rem;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.good{color:var(--good)}.bad{color:var(--bad)}
+
+.trophy{font-size:4.2rem;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))}
+#endScreen h2{margin:0;font-size:2rem;font-weight:900;text-shadow:0 4px 14px rgba(0,0,0,.25)}
+.panel{background:var(--card);color:var(--ink);border-radius:26px;padding:22px 20px;width:100%;box-shadow:0 12px 28px rgba(0,0,0,.22)}
+#result p{font-size:1.05rem;margin:8px 0;font-weight:600}
+#result .final{font-size:1.9rem;color:var(--ac);font-weight:900;margin-top:14px}
+@media (prefers-reduced-motion:reduce){.deco>div,#startBtn{animation:none}#barFill,.card{transition:none}}
+@media (max-width:380px){#question{font-size:1.15rem}.card{font-size:1.9rem;min-height:72px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="solidIcon" viewBox="0 0 160 130">
+    <!-- 원기둥 -->
+    <path d="M18,45 v58 a26,9 0 0 0 52,0 v-58 z" fill="#fff"/>
+    <path d="M44,54 a26,9 0 0 0 26,-9 v58 a26,9 0 0 1 -26,9 z" fill="#c7d2fe"/>
+    <ellipse cx="44" cy="45" rx="26" ry="9" fill="#e0e7ff"/>
+    <!-- 원뿔 -->
+    <path d="M81,105 L115,16 L149,105 a34,11 0 0 1 -68,0 z" fill="#fff"/>
+    <path d="M115,16 L149,105 a34,11 0 0 1 -34,11 z" fill="#fde68a"/>
+  </symbol>
+</svg>
+
+<div class="deco" aria-hidden="true">
+  <div class="d1"><svg viewBox="0 0 100 100"><path d="M10,35 v45 a30,10 0 0 0 60,0 v-45 z" fill="#fff"/><ellipse cx="40" cy="35" rx="30" ry="10" fill="#fff"/></svg></div>
+  <div class="d2"><svg viewBox="0 0 100 100"><path d="M10,82 L50,8 L90,82 a40,12 0 0 1 -80,0 z" fill="#fff"/></svg></div>
+  <div class="d3"><svg viewBox="0 0 100 100"><polygon points="8,70 40,20 92,34 92,86 40,92" fill="#fff" opacity=".7"/></svg></div>
+  <div class="d4"><svg viewBox="0 0 100 100"><path d="M10,85 L50,10 L90,85 z" fill="#fff"/></svg></div>
+</div>
+
+<div id="app">
+  <div id="startScreen" class="screen active"><div class="hero">
+    <svg class="hero-icon" viewBox="0 0 160 130" aria-hidden="true"><use href="#solidIcon" width="160" height="130"/></svg>
+    <h2>뿔과 기둥</h2>
+    <button class="primary" id="startBtn">게임시작</button>
+  </div></div>
+
+  <div id="quizScreen" class="screen">
+    <div class="qhead"><div id="progress"></div>
+      <svg class="logo" viewBox="0 0 160 130" aria-hidden="true"><use href="#solidIcon" width="160" height="130"/></svg></div>
+    <div class="bar"><div id="barFill"></div></div>
+    <div class="stage">
+      <div class="shapes">
+        <figure class="shape a">
+          <canvas id="cvA" aria-label="입체도형 A"></canvas>
+          <figcaption><span class="tag">A</span></figcaption>
+        </figure>
+        <figure class="shape b">
+          <canvas id="cvB" aria-label="입체도형 B"></canvas>
+          <figcaption><span class="tag">B</span></figcaption>
+        </figure>
+      </div>
+    </div>
+    <div id="question"></div>
+    <div id="cards"></div>
+    <div id="feedback" aria-live="polite"></div>
+  </div>
+
+  <div id="endScreen" class="screen"><div class="trophy">🏆</div>
+    <h2>퀴즈 종료!</h2>
+    <div class="panel"><div id="result"></div></div>
+    <button class="primary" id="restartBtn">다시 도전하기</button></div>
+</div>
+
+<script>
+/* 모든 입체도형은 볼록 다면체(원기둥·원뿔은 72각형으로 근사)이므로
+   뒷면 제거(backface culling)만으로 올바르게 그려진다. */
+const W = 320, H = 300, OX = 160, OY = 236;
+const PITCH = 24 * Math.PI / 180;
+const TOTAL = 16;
+const SEG = 72;
+const DPR = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
+const COL_A = { h: 214, s: 78 };
+const COL_B = { h: 26,  s: 92 };
+const LIGHT = (() => { const v = [-0.45, 0.75, 0.5]; const l = Math.hypot(v[0], v[1], v[2]); return v.map(x => x / l); })();
+
+/* ---------- 입체도형 종류 ---------- */
+const TYPES = {
+  triPrism:  { name: '삼각기둥', family: 'pillar',  shape: 'prism',   base: 'poly', n: 3 },
+  rectPrism: { name: '사각기둥', family: 'pillar',  shape: 'prism',   base: 'rect' },
+  pentPrism: { name: '오각기둥', family: 'pillar',  shape: 'prism',   base: 'poly', n: 5 },
+  hexPrism:  { name: '육각기둥', family: 'pillar',  shape: 'prism',   base: 'poly', n: 6 },
+  cylinder:  { name: '원기둥',   family: 'pillar',  shape: 'prism',   base: 'circle' },
+  triPyr:    { name: '삼각뿔',   family: 'pyramid', shape: 'pyramid', base: 'poly', n: 3 },
+  rectPyr:   { name: '사각뿔',   family: 'pyramid', shape: 'pyramid', base: 'rect' },
+  pentPyr:   { name: '오각뿔',   family: 'pyramid', shape: 'pyramid', base: 'poly', n: 5 },
+  hexPyr:    { name: '육각뿔',   family: 'pyramid', shape: 'pyramid', base: 'poly', n: 6 },
+  cone:      { name: '원뿔',     family: 'pyramid', shape: 'pyramid', base: 'circle' }
+};
+const PILLARS = Object.keys(TYPES).filter(k => TYPES[k].family === 'pillar');
+const PYRS    = Object.keys(TYPES).filter(k => TYPES[k].family === 'pyramid');
+
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ---------- 도형 치수 · 겉넓이 · 부피 ---------- */
+function randParams(key) {
+  const t = TYPES[key];
+  const pyr = t.shape === 'pyramid';
+  const p = { key, shape: t.shape, base: t.base, n: t.n || 0, off: Math.random() * Math.PI };
+  if (t.base === 'rect') {
+    p.w = pyr ? rnd(65, 120) : rnd(60, 115);
+    p.d = pyr ? rnd(55, 110) : rnd(50, 105);
+    p.H = pyr ? rnd(60, 160) : rnd(40, 125);
+  } else if (t.base === 'poly') {
+    p.R = pyr ? rnd(42, 68) : rnd(38, 62);
+    p.H = pyr ? rnd(60, 160) : rnd(40, 125);
+  } else {
+    p.R = pyr ? rnd(36, 62) : rnd(32, 56);
+    p.H = pyr ? rnd(60, 160) : rnd(40, 125);
+  }
+  return p;
+}
+function scaleP(p, s) {
+  const q = Object.assign({}, p);
+  ['R', 'w', 'd', 'H'].forEach(k => { if (q[k] !== undefined) q[k] *= s; });
+  return q;
+}
+function metrics(p) {
+  const h = p.H, pyr = p.shape === 'pyramid';
+  let baseA, per, lat;
+  if (p.base === 'circle') {
+    const r = p.R;
+    baseA = Math.PI * r * r; per = 2 * Math.PI * r;
+    lat = Math.PI * r * Math.sqrt(r * r + h * h);
+  } else if (p.base === 'poly') {
+    const n = p.n, R = p.R;
+    baseA = n / 2 * R * R * Math.sin(2 * Math.PI / n);
+    per = n * 2 * R * Math.sin(Math.PI / n);
+    const ap = R * Math.cos(Math.PI / n);
+    lat = per * Math.sqrt(h * h + ap * ap) / 2;
+  } else {
+    const w = p.w, d = p.d;
+    baseA = w * d; per = 2 * (w + d);
+    lat = w * Math.sqrt(h * h + d * d / 4) + d * Math.sqrt(h * h + w * w / 4);
+  }
+  if (pyr) return { V: baseA * h / 3, S: baseA + lat, baseA, H: h };
+  return { V: baseA * h, S: 2 * baseA + per * h, baseA, H: h };
+}
+
+/* ---------- 3D 모델 만들기 ---------- */
+function buildSolid(p) {
+  let pts;
+  if (p.base === 'rect') {
+    pts = [[-p.w / 2, -p.d / 2], [p.w / 2, -p.d / 2], [p.w / 2, p.d / 2], [-p.w / 2, p.d / 2]];
+  } else {
+    const n = p.base === 'circle' ? SEG : p.n;
+    pts = [];
+    for (let k = 0; k < n; k++) {
+      const a = p.off + 2 * Math.PI * k / n;
+      pts.push([p.R * Math.cos(a), p.R * Math.sin(a)]);
+    }
+  }
+  const n = pts.length;
+  const verts = pts.map(q => [q[0], 0, q[1]]);
+  const faces = [];
+  faces.push({ idx: pts.map((_, i) => i), kind: 'cap' });
+  if (p.shape === 'prism') {
+    pts.forEach(q => verts.push([q[0], p.H, q[1]]));
+    faces.push({ idx: pts.map((_, i) => n + i), kind: 'cap' });
+    for (let i = 0; i < n; i++) {
+      faces.push({ idx: [i, (i + 1) % n, n + (i + 1) % n, n + i], kind: 'side' });
+    }
+  } else {
+    verts.push([0, p.H, 0]);
+    for (let i = 0; i < n; i++) faces.push({ idx: [i, (i + 1) % n, n], kind: 'side' });
+  }
+  const c = [0, 0, 0];
+  verts.forEach(v => { c[0] += v[0]; c[1] += v[1]; c[2] += v[2]; });
+  c[0] /= verts.length; c[1] /= verts.length; c[2] /= verts.length;
+  faces.forEach(f => {
+    const a = verts[f.idx[0]], b = verts[f.idx[1]], d = verts[f.idx[2]];
+    const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const v = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
+    let nx = u[1] * v[2] - u[2] * v[1];
+    let ny = u[2] * v[0] - u[0] * v[2];
+    let nz = u[0] * v[1] - u[1] * v[0];
+    const l = Math.hypot(nx, ny, nz) || 1;
+    nx /= l; ny /= l; nz /= l;
+    const fc = [0, 0, 0];
+    f.idx.forEach(i => { fc[0] += verts[i][0]; fc[1] += verts[i][1]; fc[2] += verts[i][2]; });
+    fc[0] /= f.idx.length; fc[1] /= f.idx.length; fc[2] /= f.idx.length;
+    if (nx * (fc[0] - c[0]) + ny * (fc[1] - c[1]) + nz * (fc[2] - c[2]) < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    f.n = [nx, ny, nz];
+  });
+  const map = new Map();
+  faces.forEach((f, fi) => {
+    for (let k = 0; k < f.idx.length; k++) {
+      const a = f.idx[k], b = f.idx[(k + 1) % f.idx.length];
+      const key = a < b ? a + '_' + b : b + '_' + a;
+      if (!map.has(key)) map.set(key, { a, b, f: [] });
+      map.get(key).f.push(fi);
+    }
+  });
+  const edges = Array.from(map.values()).filter(e => e.f.length === 2);
+  let baseRadius = 0;
+  pts.forEach(q => { baseRadius = Math.max(baseRadius, Math.hypot(q[0], q[1])); });
+  return { verts, faces, edges, flat: p.base !== 'circle', baseRadius };
+}
+
+/* ---------- 그리기 ---------- */
+function rotFn(yaw) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(PITCH), sp = Math.sin(PITCH);
+  return v => {
+    const x1 = v[0] * cy + v[2] * sy;
+    const z1 = -v[0] * sy + v[2] * cy;
+    return [x1, v[1] * cp - z1 * sp, v[1] * sp + z1 * cp];
+  };
+}
+function prepCanvas(cv) { cv.width = W * DPR; cv.height = H * DPR; }
+
+function render(cv, solid, yaw, col) {
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const rot = rotFn(yaw);
+  const sp = Math.sin(PITCH);
+
+  const rr = solid.baseRadius * 1.12;
+  ctx.fillStyle = 'rgba(30,40,80,0.10)';
+  ctx.beginPath();
+  ctx.ellipse(OX, OY + 2, rr, rr * sp, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const P = solid.verts.map(rot);
+  const N = solid.faces.map(f => rot(f.n));
+  const vis = N.map(n => n[2] > 0.0005);
+
+  ctx.lineJoin = 'round';
+  solid.faces.forEach((f, i) => {
+    if (!vis[i]) return;
+    const d = Math.max(0, N[i][0] * LIGHT[0] + N[i][1] * LIGHT[1] + N[i][2] * LIGHT[2]);
+    const shade = 0.30 + 0.70 * d;
+    const color = 'hsl(' + col.h + ',' + col.s + '%,' + (36 + 40 * shade).toFixed(1) + '%)';
+    ctx.beginPath();
+    f.idx.forEach((vi, k) => {
+      const q = P[vi], x = OX + q[0], y = OY - q[1];
+      if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 1;
+    ctx.fill(); ctx.stroke();
+  });
+
+  ctx.strokeStyle = 'rgba(22,32,64,.88)';
+  ctx.lineWidth = 1.8;
+  ctx.lineCap = 'round';
+  solid.edges.forEach(e => {
+    const v0 = vis[e.f[0]], v1 = vis[e.f[1]];
+    const hard = solid.flat || solid.faces[e.f[0]].kind !== solid.faces[e.f[1]].kind;
+    if (v0 !== v1 || (v0 && v1 && hard)) {
+      ctx.beginPath();
+      ctx.moveTo(OX + P[e.a][0], OY - P[e.a][1]);
+      ctx.lineTo(OX + P[e.b][0], OY - P[e.b][1]);
+      ctx.stroke();
+    }
+  });
+}
+
+// 어느 방향으로 돌려도 캔버스 안에 들어오는지 확인
+function fitsSolid(solid) {
+  for (let deg = 0; deg < 360; deg += 30) {
+    const rot = rotFn(deg * Math.PI / 180);
+    for (const v of solid.verts) {
+      const p = rot(v), x = OX + p[0], y = OY - p[1];
+      if (x < 10 || x > W - 10 || y < 10 || y > H - 10) return false;
+    }
+  }
+  return true;
+}
+
+/* ---------- 문제 만들기 ----------
+   pairKind: 'pp' 기둥-기둥, 'yy' 뿔-뿔, 'py' 기둥-뿔
+   metric  : 'S' 겉넓이, 'V' 부피
+   larger  : 'A' 또는 'B' (더 큰 도형)
+   두 도형의 값 차이는 약 7~28% 로 애매하게 만들고,
+   같은 종류끼리는 "한쪽은 더 높고, 다른 쪽은 밑면이 더 넓은" 형태가 되도록 해서
+   한쪽이 모든 면에서 커 보이는 뻔한 문제를 피한다. */
+function makeQuestion(pairKind, metric, larger) {
+  const expo = metric === 'V' ? 3 : 2;
+  for (let att = 0; ; att++) {
+    const strict = att < 4000;
+    const loose = att >= 8000;
+    let ka, kb;
+    if (pairKind === 'pp') { ka = pick(PILLARS); kb = pick(PILLARS); }
+    else if (pairKind === 'yy') { ka = pick(PYRS); kb = pick(PYRS); }
+    else {
+      const x = pick(PILLARS), y = pick(PYRS);
+      if (Math.random() < 0.5) { ka = x; kb = y; } else { ka = y; kb = x; }
+    }
+    const pa = randParams(ka);
+    let pb = randParams(kb);
+    const ma = metrics(pa)[metric], mb = metrics(pb)[metric];
+    const ratio = rnd(1.07, 1.28);
+    const target = larger === 'A' ? ma / ratio : ma * ratio;
+    const s = Math.pow(target / mb, 1 / expo);
+    const lo = loose ? 0.45 : 0.6, hi = loose ? 2.2 : 1.7;
+    if (att < 20000 && (s < lo || s > hi)) continue;
+    pb = scaleP(pb, s);
+    const A = metrics(pa), B = metrics(pb);
+    if (strict && TYPES[ka].family === TYPES[kb].family) {
+      const dh = A.H - B.H, db = A.baseA - B.baseA;
+      if (dh * db >= 0) continue;
+      if (Math.abs(dh) / Math.max(A.H, B.H) < 0.08) continue;
+      if (Math.abs(db) / Math.max(A.baseA, B.baseA) < 0.08) continue;
+    }
+    const solidA = buildSolid(pa), solidB = buildSolid(pb);
+    if (att < 20000 && (!fitsSolid(solidA) || !fitsSolid(solidB))) continue;
+    const vA = A[metric], vB = B[metric];
+    return {
+      ka, kb, pa, pb, solidA, solidB, metric, larger,
+      ratio: Math.max(vA, vB) / Math.min(vA, vB),
+      yawA: rnd(20, 70) * Math.PI / 180,
+      yawB: -rnd(20, 70) * Math.PI / 180,
+      correct: null
+    };
+  }
+}
+
+/* ---------- 진행 ---------- */
+const $ = id => document.getElementById(id);
+let qs = [], idx = 0, ok = 0, locked = false, cur = null, timer = 0;
+
+function build() {
+  const kinds = shuffle([].concat(Array(5).fill('pp'), Array(5).fill('yy'), Array(6).fill('py')));
+  const mets = shuffle([].concat(Array(8).fill('S'), Array(8).fill('V')));
+  const lars = shuffle([].concat(Array(8).fill('A'), Array(8).fill('B')));
+  return kinds.map((k, i) => makeQuestion(k, mets[i], lars[i]));
+}
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function renderQ() {
+  render($('cvA'), cur.solidA, cur.yawA, COL_A);
+  render($('cvB'), cur.solidB, cur.yawB, COL_B);
+}
+function start() {
+  clearTimeout(timer);
+  qs = build(); idx = 0; ok = 0;
+  show('quizScreen'); load();
+}
+function load() {
+  locked = false; cur = qs[idx];
+  $('progress').textContent = '문제 ' + (idx + 1) + ' / ' + qs.length;
+  $('barFill').style.width = (idx / qs.length * 100) + '%';
+  $('question').innerHTML = '<span class="mw">' + (cur.metric === 'S' ? '겉넓이' : '부피') + '</span>가 큰 입체도형은?';
+  $('feedback').innerHTML = '';
+  const g = $('cards'); g.innerHTML = '';
+  ['A', 'B'].forEach(L => {
+    const b = document.createElement('button');
+    b.className = 'card ' + L.toLowerCase();
+    b.textContent = L; b.dataset.l = L;
+    b.setAttribute('aria-label', '도형 ' + L + ' 선택');
+    b.addEventListener('click', () => answer(L, b));
+    g.appendChild(b);
+  });
+  renderQ();
+}
+function answer(L, btn) {
+  if (locked) return; locked = true;
+  document.querySelectorAll('#cards .card').forEach(el => {
+    el.disabled = true;
+    if (el.dataset.l === cur.larger) el.classList.add('correct');
+  });
+  const fb = $('feedback');
+  let wait;
+  if (L === cur.larger) {
+    cur.correct = true; ok++; wait = 1300;
+    fb.innerHTML = '<span class="good">정답입니다! 🎉</span>';
+  } else {
+    cur.correct = false; btn.classList.add('wrong'); wait = 1900;
+    fb.innerHTML = '<span class="bad">아쉬워요! 😢</span>';
+  }
+  $('barFill').style.width = ((idx + 1) / qs.length * 100) + '%';
+  timer = setTimeout(() => { idx++; idx >= qs.length ? finish() : load(); }, wait);
+}
+function finish() {
+  $('barFill').style.width = '100%';
+  $('result').innerHTML = '<p>' + qs.length + '문제 중</p><p class="final">' + ok + '개 맞혔어요!</p>';
+  show('endScreen');
+}
+
+['cvA', 'cvB'].forEach(id => prepCanvas($(id)));
+$('startBtn').addEventListener('click', start);
+$('restartBtn').addEventListener('click', start);
+</script>
+</body>
+</html>
