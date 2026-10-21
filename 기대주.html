@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>기대주 – 주사위 베팅 보드게임</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6faf3;--card:#fff;--ink:#1d2b23;--mute:#5d6e64;--line:#d9e6dc;--felt:#1f7a4d;--felt-d:#145c38;--felt-l:#e4f3e9;--gold:#e9b63b;--gold-l:#fff4d1;--red:#d7373f;--r:14px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.65;font-size:16px}
+h1,h2,h3{font-family:"Black Han Sans","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-weight:400;margin:0;letter-spacing:.01em}
+button{font:inherit;cursor:pointer}
+button:focus-visible,.cell:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #3e8ef7;outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.hidden{display:none!important}
+
+/* hero */
+.hero{background:linear-gradient(180deg,#e4f3e9 0%,var(--bg) 100%);padding:48px 0 28px;border-bottom:1px solid var(--line)}
+.hero .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center}
+.title{font-size:clamp(64px,13vw,128px);line-height:1;color:var(--felt-d);text-shadow:4px 4px 0 var(--gold)}
+.sub{font-size:20px;margin:14px 0 6px}
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.meta span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 14px;font-size:14px}
+.dice-art{display:flex;gap:18px;justify-content:center}
+.die{width:84px;height:84px;border-radius:16px;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:11px;gap:2px;box-shadow:0 5px 0 rgba(0,0,0,.18),0 10px 18px rgba(0,0,0,.12)}
+.die.red{background:#e04047}.die.black{background:#2a2d30}
+.die i{width:15px;height:15px;border-radius:50%;background:#fff;place-self:center;opacity:0}
+.die i.on{opacity:1}
+.die.big{width:100px;height:100px;padding:13px}
+.die.big i{width:18px;height:18px}
+.dice-art .die:first-child{transform:rotate(-8deg)}
+.dice-art .die:last-child{transform:rotate(7deg) translateY(10px)}
+
+/* sections */
+section.block{padding:34px 0 6px}
+.block h2{font-size:28px;margin-bottom:6px;color:var(--felt-d)}
+.lead{font-size:18px;margin:0 0 18px;max-width:62ch}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.card h3{font-size:20px;margin-bottom:8px;color:var(--felt-d)}
+ol.steps{margin:0;padding-left:0;list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;position:relative;padding:8px 0 8px 44px;border-bottom:1px dashed var(--line)}
+ol.steps li:last-child{border:0}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:30px;height:30px;border-radius:50%;background:var(--felt);color:#fff;display:grid;place-items:center;font-family:"Black Han Sans",sans-serif;font-size:15px}
+table{border-collapse:collapse;width:100%}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{background:var(--felt-l);font-weight:400}
+.note{background:var(--gold-l);border:1px solid #f0d58a;border-radius:10px;padding:10px 14px;margin-top:12px;font-size:15px}
+ul.plain{margin:0;padding-left:20px}
+.setup{margin:30px 0 56px;background:var(--felt);color:#fff;border-radius:20px;padding:26px 28px;display:flex;gap:22px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.setup h2{color:#fff;font-size:26px}
+.setup p{margin:4px 0 0;opacity:.92}
+.setup .ctl{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.setup .grp{display:flex;gap:8px;align-items:center}
+select{font:inherit;padding:10px 14px;border-radius:10px;border:0;background:#fff;color:var(--ink)}
+.btn{border:0;border-radius:12px;padding:12px 24px;background:var(--gold);color:#3b2a00;font-family:"Black Han Sans",sans-serif;font-size:18px;box-shadow:0 4px 0 #b88a14;transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #b88a14}
+.btn:disabled{background:#e3e8e5;color:#8a968f;box-shadow:0 4px 0 #c5cdc8;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--felt-d);box-shadow:0 4px 0 var(--line);border:1px solid var(--line)}
+
+/* game */
+.topbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;padding-bottom:10px;flex-wrap:wrap}
+.topbar h2{font-size:24px;color:var(--felt-d)}
+.status{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{background:var(--felt-l);border-radius:999px;padding:3px 14px;font-size:15px}
+.pill b{color:var(--felt-d)}
+.pill.gold{background:var(--gold-l)}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:18px 0}
+.team{border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;text-align:left;display:flex;gap:10px;align-items:center;width:100%}
+.team.sel{border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent)}
+.team.out{opacity:.45}
+.chip{width:30px;height:30px;border-radius:8px;background:var(--c);flex:none;border:3px dashed rgba(255,255,255,.7);outline:2px solid var(--c)}
+.team .nm{font-weight:700}
+.team small{display:block;color:var(--mute);line-height:1.35}
+.boardbox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:18px}
+.zone{display:grid;grid-template-columns:62px 1fr;gap:12px;align-items:stretch;padding:10px 0;border-bottom:1px dashed var(--line)}
+.zone:last-child{border:0}
+.zsym{background:var(--felt);color:#fff;border-radius:12px;display:grid;place-items:center;text-align:center;font-family:"Black Han Sans",sans-serif;line-height:1.1}
+.zsym b{font-size:30px;font-weight:400;display:block}
+.zsym span{font-size:13px}
+.cells{display:flex;flex-wrap:wrap;gap:8px}
+.cell{position:relative;min-width:62px;padding:6px 10px 8px;border-radius:10px;background:var(--felt-l);border:2px solid #bfdcc9;text-align:center;color:var(--ink);transition:background .15s}
+.cell:hover{background:#cfead9}
+.cell .n{font-family:"Black Han Sans",sans-serif;font-size:19px;display:block;line-height:1.2}
+.cell .p{font-size:11.5px;color:var(--mute);display:block}
+.cell.par{background:var(--gold-l);border-color:#efd68f}
+.cell.par:hover{background:#ffeab0}
+.cell .dots{display:flex;gap:3px;justify-content:center;min-height:11px;margin-top:3px;flex-wrap:wrap}
+.cell .dots u{width:10px;height:10px;border-radius:50%;background:var(--c);border:1.5px solid #fff;outline:1px solid var(--c);display:block}
+.rowsbox{display:flex;flex-direction:column;gap:8px}
+.cell.full{opacity:.62}
+.cell .dots u.e{background:transparent;border:1.5px dashed #9fb3a7;outline:none}
+.cell.win{border-color:var(--red);background:#ffe3e4;box-shadow:0 0 0 3px rgba(215,55,63,.25)}
+.cell.win .n::after{content:" ✔";color:var(--red);font-size:14px}
+.stage{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 22px;margin-bottom:18px}
+.rolling{display:flex;gap:18px}
+.calc{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.calc .pill{font-size:16px}
+.msg{min-height:26px;color:var(--mute);margin:0 0 10px}
+.msg.err{color:var(--red)}
+.results{margin-bottom:24px}
+.pos{color:var(--felt-d);font-weight:700}
+.final{background:var(--gold-l);border:2px solid var(--gold);border-radius:18px;padding:22px;margin-bottom:24px}
+.final h3{font-size:26px;margin-bottom:8px}
+.tform{display:grid;gap:12px;margin:14px 0 20px}
+.trow{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:12px 16px;align-items:center}
+.trow .no{font-family:"Black Han Sans",sans-serif;font-size:20px;color:var(--felt-d)}
+.trow input{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:10px;width:100%;max-width:300px;background:#fff;color:var(--ink)}
+.sw{display:flex;gap:8px;flex-wrap:wrap;grid-column:1/-1}
+.sw button{width:38px;height:38px;border-radius:10px;border:3px solid #fff;background:var(--c);outline:2px solid var(--line);color:#fff;font-size:17px;line-height:1}
+.sw button[aria-pressed="true"]{outline:3px solid var(--ink)}
+.sw button[aria-pressed="true"]::after{content:"✔"}
+.sw button:disabled{opacity:.2;cursor:not-allowed}
+.orderbox{margin-bottom:6px}
+.orderlist{list-style:none;padding:0;margin:16px 0;display:flex;gap:10px;flex-wrap:wrap}
+.orderlist li{display:flex;align-items:center;gap:8px;background:var(--felt-l);border:2px solid #bfdcc9;border-radius:12px;padding:6px 14px 6px 8px;font-weight:700}
+.orderlist li b{background:var(--felt);color:#fff;border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:14px}
+.orderlist li.shuf{opacity:.6}
+.orderlist li.hint{background:none;border:0;font-weight:400;color:var(--mute);padding:0}
+.actions{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;margin:6px 0 56px}
+.modal{position:fixed;inset:0;background:rgba(20,45,32,.55);display:grid;place-items:center;padding:20px;z-index:20;animation:fade .2s}
+.mbox{background:#fff;border-radius:20px;padding:26px 28px;max-width:560px;width:100%;max-height:90vh;overflow:auto;border:3px solid var(--gold);box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.mbox h3{font-size:26px;color:var(--felt-d);margin-bottom:10px}
+.mact{margin:16px 0 0;text-align:center}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (max-width:760px){
+  .hero .wrap,.grid2,.stage{grid-template-columns:1fr}
+  .dice-art{justify-content:flex-start}
+  .zone{grid-template-columns:1fr}
+  .zsym{grid-auto-flow:column;gap:8px;padding:6px}
+  .zsym b{display:inline;font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ 메인 화면 ============ -->
+<main id="home">
+  <header class="hero">
+    <div class="wrap">
+      <div>
+        <h1 class="title">기대주</h1>
+        <p class="sub">주사위 두 개로 확률을 읽고, 통 코인을 가장 많이 모으는 베팅 게임</p>
+        <p style="margin:0;color:var(--mute)">수학사랑 수학 보드게임 ‘기대주’를 웹에서 즐길 수 있게 만든 버전이에요.</p>
+        <div class="meta"><span>2~4팀</span><span>컴퓨터와 1대1</span><span>약 20분</span><span>12세 이상</span><span>총 8라운드</span></div>
+      </div>
+      <div class="dice-art" aria-hidden="true">
+        <div class="die big red" data-face="4"></div>
+        <div class="die big black" data-face="1"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="block">
+      <h2>게임 소개</h2>
+      <p class="lead">주사위 두 개를 굴리면 두 눈의 홀짝, 합, 곱이 정해져요. 특정 숫자가 아니라 범위에 말을 걸어요. 어느 범위가 자주 나올지 따져서 베팅 말 5개를 놓고, 많이 맞힐수록 기대코인을 더 많이 가져가세요.</p>
+    </section>
+
+    <section class="block">
+      <h2>게임 방법</h2>
+      <div class="grid2">
+        <div class="card">
+          <ol class="steps">
+            <li><b>딜러와 팀 준비</b><br>이 앱이 딜러 역할을 해요. 딜러는 기대코인을 모으고 나누며 주사위를 굴립니다. 팀마다 정해진 색의 베팅 말 5개와 통 코인 18통을 받아요.</li>
+            <li><b>베팅하기</b><br>팀이 돌아가며 한 번에 말 1개씩, 팀마다 5개를 놓아요. 한 칸에는 모든 팀을 합쳐 말을 최대 2개까지만 놓을 수 있고, 같은 팀이 같은 칸에 두 번 놓을 수는 없어요.</li>
+            <li><b>딜러에게 3통 내기</b><br>팀마다 딜러에게 통 코인 3통을 내요. 딜러에게 모인 코인이 ‘기대코인’이에요.</li>
+            <li><b>주사위 굴리기</b><br>빨간 주사위와 검은 주사위를 동시에 굴려요. 두 눈의 홀짝, 합, 곱의 범위와 홀짝을 계산하면 다섯 줄에서 맞는 칸이 하나씩 정해져요.</li>
+            <li><b>맞힌 말 세기</b><br>예측이 맞은 말만 판에 남기고, 틀린 말은 각 팀에게 돌려줘요.</li>
+            <li><b>기대코인 나누기</b><br>맞힌 말의 개수에 따라 오른쪽 표대로 기대코인을 받아요.</li>
+            <li><b>8라운드 반복</b><br>2~6번 과정을 8번 되풀이하고, 통 코인을 가장 많이 모은 팀이 이겨요. 베팅하고 낼 통 코인 3통이 없는 팀은 탈락해요.</li>
+          </ol>
+        </div>
+        <div>
+          <div class="card">
+            <h3>기대코인 받는 방법</h3>
+            <table>
+              <tr><th>맞힌 말</th><th>받는 코인</th></tr>
+              <tr><td>5개 모두</td><td>기대코인 전부</td></tr>
+              <tr><td>4개</td><td>4통</td></tr>
+              <tr><td>3개</td><td>2통</td></tr>
+              <tr><td>2개</td><td>1통</td></tr>
+              <tr><td>1개 또는 모두 틀림</td><td>없음</td></tr>
+            </table>
+            <div class="note">5개 → 4개 → 3개 → 2개 순서로 지급해요. 기대코인이 모자라면 남은 팀은 받을 수 없어요. 같은 개수를 맞힌 팀이 여러 팀이면 똑같이 나누고, 나누고 남은 코인은 기대코인으로 남겨둬요.<br>예) 기대코인이 9통일 때 5개를 모두 맞힌 팀이 둘이면 4통씩 받고 1통이 남아요.</div>
+          </div>
+          <div class="card" style="margin-top:20px">
+            <h3>게임판 읽는 법</h3>
+            <ul class="plain">
+              <li><b>두 눈(●●)</b>: 빨간 주사위와 검은 주사위의 홀짝 조합 (홀짝, 짝짝, 짝홀, 홀홀). 앞이 빨간 주사위예요.</li>
+              <li><b>합(+)</b>: 위 줄은 합의 범위 1~5, 6~8, 9~12 / 아래 줄은 합이 홀수인지 짝수인지</li>
+              <li><b>곱(×)</b>: 위 줄은 곱의 범위 1~9, 10~21, 22~36 / 아래 줄은 곱이 짝수인지 홀수인지</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="setup">
+      <div>
+        <h2>게임 시작하기</h2>
+        <p>친구와는 한 화면을 돌려가며, 혼자라면 컴퓨터와 1대1로 즐길 수 있어요. 다음 화면에서 이름, 색깔, 순서를 정해요.</p>
+      </div>
+      <div class="ctl">
+        <span class="grp"><label for="modeSel">모드</label>
+        <select id="modeSel"><option value="local">친구와 함께</option><option value="cpu">컴퓨터와 1대1</option></select></span>
+        <span class="grp" id="teamBox"><label for="teamCount">팀 수</label>
+        <select id="teamCount"></select></span>
+        <span class="grp hidden" id="levelBox"><label for="levelSel">난이도</label>
+        <select id="levelSel"><option value="easy">쉬움</option><option value="normal" selected>보통</option><option value="hard">어려움</option></select></span>
+        <button class="btn" id="startBtn">게임 시작</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ 팀 설정 화면 ============ -->
+<main id="setup" class="hidden">
+  <div class="wrap">
+    <section class="block">
+      <h2>팀 설정</h2>
+      <p class="lead">팀 이름을 쓰고 색깔을 골라 주세요. 이름을 비워 두면 기본 이름으로 정해져요. 마지막에 게임 순서를 랜덤으로 뽑아요.</p>
+      <div class="tform" id="teamForm"></div>
+      <div class="card orderbox">
+        <h3>게임 순서</h3>
+        <button class="btn" id="orderBtn">🎲 순서 랜덤 정하기</button>
+        <ol class="orderlist" id="orderList" aria-live="polite"></ol>
+        <p class="note" style="margin-bottom:0">1라운드는 1번째 팀부터 말을 놓고, 라운드마다 시작하는 팀이 이 순서대로 돌아가요.</p>
+      </div>
+      <p class="msg err" id="setMsg" aria-live="polite" style="margin-top:12px"></p>
+      <div class="actions"><button class="btn ghost" id="backBtn">← 메인으로</button><button class="btn" id="goBtn" disabled>이 순서로 게임 시작</button></div>
+    </section>
+  </div>
+</main>
+
+<!-- ============ 게임 화면 ============ -->
+<main id="game" class="hidden">
+  <div class="topbar">
+    <div class="wrap">
+      <h2>기대주</h2>
+      <div class="status">
+        <span class="pill">라운드 <b id="stRound">1</b> / 8</span>
+        <span class="pill gold">기대코인 <b id="stPot">0</b>통</span>
+        <button class="btn ghost" id="homeBtn" style="padding:6px 14px;font-size:15px">규칙 보기·나가기</button>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="teams" id="teams"></div>
+    <p class="msg" id="msg" aria-live="polite"></p>
+    <div class="boardbox" id="board"></div>
+    <div class="stage">
+      <div class="rolling" id="rolling">
+        <div class="die big red" id="dRed"></div>
+        <div class="die big black" id="dBlack"></div>
+      </div>
+      <div>
+        <button class="btn" id="rollBtn">베팅 마감하고 주사위 굴리기</button>
+        <button class="btn ghost" id="undoBtn" style="margin-left:8px;padding:10px 16px;font-size:16px">마지막 말 되돌리기</button>
+        <div class="calc" id="calc"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="라운드 결과"><div class="mbox" id="mbox"></div></div>
+
+<script>
+const COLORS=['#e5484d','#3e8ef7','#f2a20c','#2fa77a','#8e4ec6','#e5549f','#00a5b5','#6b7280'];
+const NAMES=['빨강','파랑','노랑','초록','보라','분홍','청록','회색'];
+const MAX_ROUND=8, BET=5, FEE=3, START=18, CAP=2;
+const $=id=>document.getElementById(id);
+const SUM=(a,b)=>a+b, PROD=(a,b)=>a*b;
+const rangeCell=(f,lo,hi)=>({key:lo+'-'+hi,label:lo+'~'+hi,t:(a,b)=>{const v=f(a,b);return v>=lo&&v<=hi}});
+const parCell=(f,odd)=>({key:odd?'odd':'even',label:odd?'홀':'짝',t:(a,b)=>f(a,b)%2===(odd?1:0)});
+const ZONES=[
+  {k:'e',sym:'●●',name:'두 눈',rows:[[
+    {key:'oe',label:'홀짝',t:(a,b)=>a%2===1&&b%2===0},
+    {key:'ee',label:'짝짝',t:(a,b)=>a%2===0&&b%2===0},
+    {key:'eo',label:'짝홀',t:(a,b)=>a%2===0&&b%2===1},
+    {key:'oo',label:'홀홀',t:(a,b)=>a%2===1&&b%2===1}]]},
+  {k:'s',sym:'+',name:'합',rows:[[rangeCell(SUM,1,5),rangeCell(SUM,6,8),rangeCell(SUM,9,12)],[parCell(SUM,true),parCell(SUM,false)]]},
+  {k:'p',sym:'×',name:'곱',rows:[[rangeCell(PROD,1,9),rangeCell(PROD,10,21),rangeCell(PROD,22,36)],[parCell(PROD,false),parCell(PROD,true)]]}
+];
+const ALL=ZONES.flatMap(z=>z.rows.flat().map(c=>({id:z.k+':'+c.key,zone:z,c})));
+let G=null, rolling=false;
+
+/* 주사위 눈 */
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function face(el,n){el.innerHTML='';for(let i=0;i<9;i++){const p=document.createElement('i');if(PIPS[n].includes(i))p.className='on';el.appendChild(p)}}
+document.querySelectorAll('.die[data-face]').forEach(d=>face(d,+d.dataset.face));
+face($('dRed'),4);face($('dBlack'),1);
+
+/* 확률(36가지 중) */
+function count(c){let n=0;for(let a=1;a<=6;a++)for(let b=1;b<=6;b++)if(c.t(a,b))n++;return n}
+
+/* 시작 화면 */
+for(let n=2;n<=4;n++){const o=document.createElement('option');o.value=n;o.textContent=n+'팀';if(n===4)o.selected=true;$('teamCount').appendChild(o)}
+let MODE='local',LEVEL='normal';
+$('modeSel').onchange=()=>{const c=$('modeSel').value==='cpu';$('teamBox').classList.toggle('hidden',c);$('levelBox').classList.toggle('hidden',!c)};
+$('startBtn').onclick=()=>{MODE=$('modeSel').value;LEVEL=$('levelSel').value;MODE==='cpu'?openSetup(2,true):openSetup(+$('teamCount').value,false)};
+$('homeBtn').onclick=()=>{if(G&&!G.over&&!confirm('진행 중인 게임이 사라져요. 나갈까요?'))return;show('home')};
+$('undoBtn').onclick=undo;
+
+function startGame(list){
+  G={teams:list.map(c=>({name:c.name,color:c.color,ai:!!c.ai,coins:START,bets:[],out:false,hits:0,gain:0})),
+     round:1,pot:0,cur:0,phase:'bet',win:new Set(),over:false,hist:[],level:LEVEL,aiBusy:false};
+  show('game');
+  beginRound();
+}
+const active=()=>G.teams.filter(t=>!t.out);
+function say(t,err){const m=$('msg');m.textContent=t;m.className='msg'+(err?' err':'')}
+function turnMsg(){const t=G.teams[G.cur];say(t.ai?`${t.name}가 어디에 걸지 고민 중이에요…`:`${t.name} 차례예요. 칸을 눌러 말 1개를 놓으세요. (${t.bets.length}/${BET})`)}
+
+function beginRound(){
+  G.teams.forEach(t=>{if(!t.out&&t.coins<FEE)t.out=true;t.bets=[];t.hits=0;t.gain=0});
+  G.win=new Set();G.phase='bet';G.hist=[];
+  if(active().length<=1&&G.round>1)return finish();
+  const n=G.teams.length;
+  for(let i=0;i<n;i++){const j=(G.round-1+i)%n;if(!G.teams[j].out){G.cur=j;break}}
+  $('calc').innerHTML='';
+  turnMsg();render();
+}
+function nextTurn(){
+  const n=G.teams.length;
+  for(let i=1;i<=n;i++){const j=(G.cur+i)%n,t=G.teams[j];if(!t.out&&t.bets.length<BET){G.cur=j;return}}
+}
+
+/* 렌더 */
+function render(){
+  $('stRound').textContent=Math.min(G.round,MAX_ROUND);$('stPot').textContent=G.pot;
+  const box=$('teams');box.innerHTML='';
+  G.teams.forEach((t,i)=>{
+    const b=document.createElement('div');
+    b.className='team'+(i===G.cur&&G.phase==='bet'&&!t.out?' sel':'')+(t.out?' out':'');
+    b.style.setProperty('--c',t.color);
+    const st=t.out?'탈락':(G.phase==='bet'?`말 ${t.bets.length}/${BET}`:`맞힌 말 ${t.hits}개 · +${t.gain}통`);
+    b.innerHTML=`<span class="chip"></span><span><span class="nm">${t.ai?'🤖 ':''}${t.name}${i===G.cur&&G.phase==='bet'&&!t.out?' · 차례':''}</span><small>통 코인 ${t.coins}통 · ${st}</small></span>`;
+    box.appendChild(b);
+  });
+  renderBoard();
+  const ready=G.phase==='bet'&&active().every(t=>t.bets.length===BET)&&!rolling&&!G.over;
+  const rb=$('rollBtn');
+  if(G.phase==='bet'){rb.textContent='베팅 마감하고 주사위 굴리기';rb.disabled=!ready}
+  else{rb.textContent=G.over?'게임 끝':'결과 확인 중…';rb.disabled=true}
+  $('undoBtn').classList.toggle('hidden',G.phase!=='bet');
+  $('undoBtn').disabled=rolling||G.aiBusy||!G.hist.some(h=>!G.teams[h.i].ai);
+  const ct=G.teams[G.cur];
+  if(G.phase==='bet'&&!rolling&&!G.over&&!G.aiBusy&&ct&&ct.ai&&!ct.out&&ct.bets.length<BET)aiMove();
+}
+
+function placed(id){return G.teams.filter(t=>t.bets.includes(id))}
+function renderBoard(){
+  const bd=$('board');bd.innerHTML='';
+  ZONES.forEach(z=>{
+    const row=document.createElement('div');row.className='zone';
+    row.innerHTML=`<div class="zsym"><div><b>${z.sym}</b><span>${z.name}</span></div></div>`;
+    const rows=document.createElement('div');rows.className='rowsbox';
+    z.rows.forEach((r,ri)=>{
+      const cells=document.createElement('div');cells.className='cells';
+      r.forEach(c=>cells.appendChild(cellEl(z,c,ri===1)));
+      rows.appendChild(cells);
+    });
+    row.appendChild(rows);bd.appendChild(row);
+  });
+}
+function cellEl(z,c,par){
+  const id=z.k+':'+c.key, on=placed(id);
+  const b=document.createElement('button');
+  b.className='cell'+(par?' par':'')+(G.win.has(id)?' win':'')+(on.length>=CAP?' full':'');
+  b.setAttribute('aria-label',`${z.name} ${c.label}, 말 ${on.length}/${CAP}`);
+  b.innerHTML=`<span class="n">${c.label}</span><span class="dots"></span>`;
+  const dots=b.querySelector('.dots');
+  for(let i=0;i<CAP;i++){const u=document.createElement('u');if(on[i]){u.style.setProperty('--c',on[i].color);u.title=on[i].name}else u.className='e';dots.appendChild(u)}
+  b.onclick=()=>place(id);
+  return b;
+}
+
+function doPlace(id){
+  if(G.phase!=='bet'||rolling||G.over)return;
+  const t=G.teams[G.cur];
+  if(t.bets.length>=BET)return;
+  if(t.bets.includes(id)){say('같은 팀은 같은 칸에 말을 두 번 놓을 수 없어요.',true);return}
+  if(placed(id).length>=CAP){say(`이 칸에는 이미 말이 ${CAP}개 놓여 있어요. 다른 칸을 골라 주세요.`,true);return}
+  t.bets.push(id);G.hist.push({i:G.cur,id});
+  nextTurn();
+  if(active().every(x=>x.bets.length===BET))say('모든 팀이 베팅을 마쳤어요. 주사위를 굴려 보세요!');
+  else turnMsg();
+  render();
+}
+function place(id){const t=G.teams[G.cur];if(t&&t.ai)return;doPlace(id)}
+function undo(){
+  if(G.phase!=='bet'||rolling||G.aiBusy)return;
+  if(!G.hist.some(h=>!G.teams[h.i].ai))return;
+  let h;
+  do{h=G.hist.pop();const t=G.teams[h.i];t.bets.splice(t.bets.lastIndexOf(h.id),1)}while(G.teams[h.i].ai);
+  G.cur=h.i;turnMsg();render();
+}
+
+/* 굴리기 */
+$('rollBtn').onclick=()=>{if(G.phase==='bet')roll()};
+function roll(){
+  rolling=true;
+  active().forEach(t=>{t.coins-=FEE;G.pot+=FEE});
+  say(`팀마다 딜러에게 ${FEE}통을 냈어요. 주사위를 굴립니다…`);
+  let n=0;
+  const timer=setInterval(()=>{
+    face($('dRed'),1+Math.floor(Math.random()*6));face($('dBlack'),1+Math.floor(Math.random()*6));
+    if(++n>=12){clearInterval(timer);
+      const r=1+Math.floor(Math.random()*6),k=1+Math.floor(Math.random()*6);
+      face($('dRed'),r);face($('dBlack'),k);
+      settle(r,k)}
+  },70);
+  render();
+}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function settle(r,k){
+  const full=new Set(ALL.filter(x=>x.c.t(r,k)).map(x=>x.id));
+  G.win=new Set();$('calc').innerHTML='';
+  const s=r+k,p=r*k;
+  const pre={e:`빨강 ${r} · 검정 ${k}`,s:`합 ${s}`,p:`곱 ${p}`};
+  await sleep(600);
+  for(const z of ZONES){
+    for(const row of z.rows){
+      const w=row.find(c=>c.t(r,k));
+      G.win.add(z.k+':'+w.key);
+      const pill=document.createElement('span');pill.className='pill';
+      pill.innerHTML=`<b>${pre[z.k]} → ${w.label}</b>`;
+      $('calc').appendChild(pill);
+      renderBoard();
+      await sleep(1000);
+    }
+  }
+  const act=active();
+  act.forEach(t=>{t.hits=t.bets.filter(b=>full.has(b)).length;t.gain=0});
+  [[5,null],[4,4],[3,2],[2,1]].forEach(([h,amt])=>{
+    const grp=act.filter(t=>t.hits===h);
+    if(!grp.length||G.pot<=0)return;
+    let each=amt===null?Math.floor(G.pot/grp.length):amt;
+    if(G.pot<each*grp.length)each=Math.floor(G.pot/grp.length);
+    if(each<=0)return;
+    grp.forEach(t=>{t.coins+=each;t.gain+=each});
+    G.pot-=each*grp.length;
+  });
+  G.phase='result';rolling=false;
+  say(`라운드 ${G.round} 결과가 나왔어요.`);
+  render();
+  const rows=act.map(t=>`<tr><td>${chip(t)} ${t.name}</td><td>${t.hits}개</td><td class="${t.gain?'pos':''}">${t.gain?'+'+t.gain+'통':'없음'}</td><td><b>${t.coins}통</b></td></tr>`).join('');
+  showModal(`<h3>라운드 ${G.round} 결과</h3>
+    <table><tr><th>팀</th><th>맞힌 말</th><th>획득 코인</th><th>남은 코인</th></tr>${rows}</table>
+    <p class="note">남은 기대코인 ${G.pot}통은 다음 라운드로 넘어가요.</p>
+    <p class="mact"><button class="btn" id="mclose">닫기</button></p>`,
+    ()=>{G.round++;G.round>MAX_ROUND?finish():beginRound()});
+}
+const chip=t=>`<span class="chip" style="--c:${t.color};display:inline-block;width:14px;height:14px;border-width:2px;vertical-align:-2px"></span>`;
+
+function showModal(html,onClose){
+  $('mbox').innerHTML=html;
+  const m=$('modal');m.classList.remove('hidden');
+  const b=$('mclose');b.focus();
+  b.onclick=()=>{m.classList.add('hidden');onClose&&onClose()};
+}
+
+function finish(){
+  G.over=true;G.phase='result';
+  const rank=[...G.teams].sort((a,b)=>b.coins-a.coins);
+  const winners=rank.filter(t=>t.coins===rank[0].coins);
+  const rows=rank.map((t,i)=>`<tr><td>${i+1}</td><td>${chip(t)} ${t.name}</td><td>${t.coins}통</td><td>${t.out?'탈락':''}</td></tr>`).join('');
+  say('게임이 끝났어요.');
+  render();
+  showModal(`<h3>우승: ${winners.map(w=>w.name).join(', ')} 🎉</h3>
+    <table><tr><th>순위</th><th>팀</th><th>통 코인</th><th></th></tr>${rows}</table>
+    <p class="mact"><button class="btn" id="mclose">다시 하기</button></p>`,
+    ()=>{show('home')});
+}
+/* ===== 팀 설정 화면 ===== */
+const esc=v=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let CFG=null, ORDER=null;
+const SCREENS=['home','setup','game'];
+function show(id){SCREENS.forEach(x=>$(x).classList.toggle('hidden',x!==id));window.scrollTo(0,0)}
+const tname=c=>c.ai?'컴퓨터':(c.name.trim()||c.label);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+function openSetup(n,cpu){
+  CFG=cpu?[{name:'',color:COLORS[0],label:'플레이어'},{name:'컴퓨터',color:COLORS[1],label:'컴퓨터',ai:true}]
+         :Array.from({length:n},(_,i)=>({name:'',color:COLORS[i],label:`${i+1}팀`}));
+  ORDER=null;
+  $('orderBtn').textContent='🎲 순서 랜덤 정하기';$('orderBtn').disabled=false;$('goBtn').disabled=true;$('setMsg').textContent='';
+  renderForm();renderOrder();show('setup');
+}
+function renderForm(){
+  const f=$('teamForm');f.innerHTML='';
+  CFG.forEach((c,i)=>{
+    const row=document.createElement('div');row.className='trow';
+    row.innerHTML=`<span class="no">${c.label}</span><input type="text" maxlength="8" placeholder="${c.label}" value="${esc(c.name)}" aria-label="${c.label} 이름"${c.ai?' disabled':''}>`;
+    row.querySelector('input').oninput=e=>{c.name=e.target.value;renderOrder()};
+    const sw=document.createElement('div');sw.className='sw';sw.setAttribute('role','group');sw.setAttribute('aria-label',`${i+1}번째 팀 색깔`);
+    COLORS.forEach((col,k)=>{
+      const b=document.createElement('button');b.type='button';b.style.setProperty('--c',col);
+      const taken=CFG.some((o,j)=>j!==i&&o.color===col);
+      b.disabled=taken;b.title=NAMES[k]+(taken?' (다른 팀이 선택함)':'');
+      b.setAttribute('aria-label',NAMES[k]);b.setAttribute('aria-pressed',c.color===col);
+      b.onclick=()=>{c.color=col;renderForm();renderOrder()};
+      sw.appendChild(b);
+    });
+    row.appendChild(sw);f.appendChild(row);
+  });
+}
+function renderOrder(shuf){
+  const ol=$('orderList');
+  if(!ORDER){ol.innerHTML='<li class="hint">아직 순서가 정해지지 않았어요.</li>';return}
+  ol.innerHTML=ORDER.map((i,k)=>`<li class="${shuf?'shuf':''}"><b>${k+1}</b><span class="chip" style="--c:${CFG[i].color};width:20px;height:20px"></span>${esc(tname(CFG[i],i))}</li>`).join('');
+}
+$('orderBtn').onclick=async()=>{
+  const n=CFG.length;$('orderBtn').disabled=true;$('goBtn').disabled=true;$('setMsg').textContent='';
+  for(let i=0;i<10;i++){ORDER=shuffle([...Array(n).keys()]);renderOrder(true);await sleep(110)}
+  ORDER=shuffle([...Array(n).keys()]);renderOrder();
+  $('orderBtn').textContent='🎲 다시 뽑기';$('orderBtn').disabled=false;$('goBtn').disabled=false;
+};
+$('backBtn').onclick=()=>show('home');
+$('goBtn').onclick=()=>{
+  const names=CFG.map(tname);
+  if(new Set(names).size!==names.length){$('setMsg').textContent='팀 이름이 겹쳐요. 서로 다른 이름을 써 주세요.';return}
+  startGame(ORDER.map(i=>({name:esc(names[i]),color:CFG[i].color,ai:!!CFG[i].ai})));
+};
+/* ===== 컴퓨터 상대 ===== */
+function aiPick(){
+  const t=G.teams[G.cur];
+  const opts=ALL.filter(x=>!t.bets.includes(x.id)&&placed(x.id).length<CAP).map(x=>({id:x.id,p:count(x.c)/36}));
+  if(G.level==='hard'){
+    const m=Math.max(...opts.map(o=>o.p));
+    const best=opts.filter(o=>o.p>=m-1e-9);
+    return best[Math.floor(Math.random()*best.length)].id;
+  }
+  const pow=G.level==='easy'?0:3;
+  const w=opts.map(o=>Math.pow(o.p,pow));
+  let r=Math.random()*w.reduce((a,b)=>a+b,0);
+  for(let i=0;i<opts.length;i++){r-=w[i];if(r<=0)return opts[i].id}
+  return opts[opts.length-1].id;
+}
+async function aiMove(){
+  const g=G;g.aiBusy=true;
+  turnMsg();$('undoBtn').disabled=true;
+  await sleep(700+Math.random()*600);
+  g.aiBusy=false;
+  if(G!==g)return;
+  const t=g.teams[g.cur];
+  if(g.phase!=='bet'||rolling||g.over||!t.ai||t.bets.length>=BET)return;
+  doPlace(aiPick());
+}
+</script>
+</body>
+</html>
