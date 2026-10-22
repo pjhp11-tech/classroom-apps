@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>대푯값 문장 레이스</title>
+<style>
+:root{--bg:#f7f6f2;--fg:#1f2430;--card:#fff;--line:#d9d6cc;--mut:#6b7280;--a:#2563eb;--b:#dc2626;--ok:#15803d;--no:#b91c1c;--ac:#7c3aed;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171c;--fg:#eceef3;--card:#1f232b;--line:#394050;--mut:#9aa3b2;--a:#60a5fa;--b:#f87171;--ok:#4ade80;--no:#f87171;--ac:#a78bfa;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15171c;--fg:#eceef3;--card:#1f232b;--line:#394050;--mut:#9aa3b2;--a:#60a5fa;--b:#f87171;--ok:#4ade80;--no:#f87171;--ac:#a78bfa;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Pretendard","Noto Sans KR",system-ui,sans-serif}
+.w{max-width:1200px;margin:0 auto;padding:8px 12px}
+h1{font-size:20px;margin:0}h2{font-size:18px;margin:0 0 8px}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+button,select,input{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+button{cursor:pointer}button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button.on{background:var(--fg);color:var(--bg)}
+#tm{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sc{display:flex;gap:8px;margin-bottom:8px}.sc>div{flex:1;text-align:center;border-radius:12px;padding:2px 8px;border:2px solid}
+.sc b{font-size:22px;display:block}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+.sx{overflow-x:auto}
+.cg{display:flex;flex-wrap:wrap;gap:6px}.cd{border:1px solid var(--line);border-radius:8px;padding:4px 8px;display:flex;gap:6px;align-items:center}
+.cd i{font-style:normal;min-width:18px;text-align:center;font-weight:700}
+.ok{color:var(--ok);font-weight:700}.no{color:var(--no);font-weight:700}.m{color:var(--mut);font-size:14px}
+.pv{font-size:20px;font-weight:700;padding:10px;background:var(--bg);border-radius:8px;margin:8px 0;min-height:48px}
+.hide{display:none}
+.two{display:grid;grid-template-columns:3fr 2fr;gap:8px;align-items:start}
+@media (max-width:800px){.two{grid-template-columns:1fr}}
+.arena{position:relative;height:420px;overflow:hidden;border:2px dashed var(--line);border-radius:12px;background:var(--bg)}
+.fc{position:absolute;top:-50px;padding:14px 28px;min-width:130px;text-align:center;border-radius:12px;color:#fff;font-weight:700;font-size:20px;cursor:pointer;white-space:nowrap;user-select:none;touch-action:manipulation;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(500px)}}
+#mt{font-size:22px}
+</style></head><body><div class="w">
+<div class="top"><div><h1>🃏 대푯값 문장 레이스</h1><div class="m">평균 · 중앙값 · 최빈값 카드로 참인 문장을 만들어라!</div></div>
+<div class="row"><b id="rd"></b><span id="tm">10:00</span>
+<button onclick="tg()" id="tb">▶ 시작</button>
+<input id="mn" type="number" min="1" max="60" value="10" style="width:60px" onchange="rst()"><span class="m">분</span></div></div>
+<div class="sc" id="sc"></div>
+<div class="tabs" id="tabs"></div>
+<div id="p0"></div><div id="p2" class="hide"></div><div id="pg" class="hide"><div id="p1"></div><div><div id="p3"></div><div id="lv"></div></div></div><div id="p4" class="hide"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const CN=['햇살국','바다국','산들국','구름국'],SN=['평균','중앙값','최빈값'],PN=['크다','작다'];
+const KW=[{n:'학생 키',u:'cm',b:150,s:3},{n:'하루 수면 시간',u:'시간',b:7,s:1},{n:'한 달 독서량',u:'권',b:5,s:1},{n:'한 달 용돈',u:'천 원',b:30,s:5}];
+const TC=['var(--a)','var(--b)'],TABS=['① 안내','② 카드 낚아채기','③ 자료표 · 문장 제출','④ 결과'];
+let D,T,R=1,rev={},subs=[],show=false,sec=600,run=null,tt=0,cur=0,tab=0,mg={},playing=false;
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gen(){const r=rng(Date.now()%1e6);D=CN.map(()=>KW.map(k=>{const m=k.b+k.s*Math.round(r()*4-2),v=[m,m],u=new Set([m]);
+while(v.length<7){const x=m+k.s*Math.round(r()*10-4);if(!u.has(x)){u.add(x);v.push(x)}}
+return v.sort(()=>r()-.5)}))}
+function nt(n){return{name:n,inv:{c:[0,0,0,0],k:[0,0,0,0],s:[0,0,0],p:[0,0]}}}
+function init(){gen();T=[nt('1모둠'),nt('2모둠')];R=1;rev={};subs=[];mg={};rst();draw()}
+function st(v,s){if(s==0)return v.reduce((a,b)=>a+b)/v.length;if(s==1)return[...v].sort((a,b)=>a-b)[3];const f={};v.forEach(x=>f[x]=(f[x]||0)+1);return+Object.keys(f).sort((a,b)=>f[b]-f[a])[0]}
+const fm=x=>Number.isInteger(x)?x:x.toFixed(1);
+const sent=(a,b,k,s,p)=>`${CN[a]}의 ${KW[k].n} ${SN[s]}은 ${CN[b]}의 ${KW[k].n} ${SN[s]}보다 ${PN[p]}`;
+function clk(){const m=Math.floor(sec/60),s=sec%60;$('#tm').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function tg(){if(run){clearInterval(run);run=null;$('#tb').textContent='▶ 시작'}else{$('#tb').textContent='⏸ 멈춤';run=setInterval(()=>{if(sec>0)sec--;clk();if(sec==0){clearInterval(run);run=null;$('#tb').textContent='▶ 시작';alert('⏰ 시간 종료! 카드 수색을 멈추고 제출하세요.')}},1000)}}
+function rst(){if(run){clearInterval(run);run=null}$('#tb').textContent='▶ 시작';sec=(+$('#mn').value||10)*60;clk()}
+const ALL=[...CN.map((n,i)=>['c',i,n,'#2563eb']),...KW.map((k,i)=>['k',i,k.n,'#16a34a']),...SN.map((n,i)=>['s',i,n,'#d97706']),...PN.map((n,i)=>['p',i,n,'#7c3aed'])];
+const NM={c:CN,k:KW.map(k=>k.n),s:SN,p:PN};
+function ivt(t){const o=[];for(const key in NM)NM[key].forEach((n,i)=>{const c=T[t].inv[key][i];if(c>0)o.push(n+'×'+c)});return o.length?o.join(', '):'아직 없음'}
+function miniDraw(){const dn=mg[R]||{},nx=!dn[0]?0:!dn[1]?1:-1;
+$('#p2').innerHTML=`<div class="card"><h2>🎯 카드 낚아채기</h2><div class="m">1분 동안 위에서 떨어지는 카드를 클릭해 모으세요. 1모둠 → 2모둠 순서로 진행합니다.</div><div class="row" style="margin:8px 0">${T.map((x,t)=>`<button class="${t==nx?'p':''}" ${t==nx&&!playing?'':'disabled'} onclick="mini(${t})">${x.name} 시작${dn[t]?' ✔':''}</button>`).join('')}<b id="mt"></b>${nx<0?'<button class="p" onclick="tab=2;draw()">문장 레이스 시작 ▶</button>':''}</div><div id="arena" class="arena"></div></div>`+T.map((x,t)=>`<div class="card" style="border-color:${TC[t]}"><b style="color:${TC[t]}">${x.name}</b> 보유 카드: <span id="iv${t}">${ivt(t)}</span></div>`).join('')}
+function mini(t){if(playing)return;playing=true;miniDraw();let left=60;const ar=$('#arena'),mt=$('#mt');mt.textContent='⏱ 60초 · '+T[t].name+' 도전!';
+const sp=setInterval(()=>{for(let n=0;n<3;n++){const c=ALL[Math.floor(Math.random()*ALL.length)],e=document.createElement('div');e.className='fc';e.textContent=c[2];e.style.background=c[3];e.style.left=Math.random()*Math.max(10,ar.clientWidth-200)+'px';e.style.animationDuration=(0.7+Math.random()*0.4)+'s';
+e.onpointerdown=()=>{if(e.dataset.d)return;e.dataset.d=1;T[t].inv[c[0]][c[1]]++;e.remove();const s=$('#iv'+t);if(s)s.textContent=ivt(t)};e.onanimationend=()=>e.remove();ar.appendChild(e)}},550);
+const tk=setInterval(()=>{left--;const m=$('#mt');if(m)m.textContent='⏱ '+left+'초 · '+T[t].name+' 도전!';if(left<=0){clearInterval(sp);clearInterval(tk);playing=false;(mg[R]=mg[R]||{})[t]=1;miniDraw()}},1000)}
+function draw(){
+$('#rd').textContent='';
+const tot=T.map((_,t)=>subs.reduce((a,s)=>a+(rev[s.r]&&s.t==t?s.d:0),0));
+$('#sc').innerHTML=T.map((x,t)=>`<div style="border-color:${TC[t]}"><input value="${x.name}" onchange="T[${t}].name=this.value;draw()" style="width:100px;text-align:center"><b style="color:${TC[t]}">${tot[t]}점</b></div>`).join('');
+$('#lv').innerHTML=subs.length?`<div class="card" style="max-height:170px;overflow:auto"><h2>📋 제출된 문장 (실시간)</h2>`+[...subs].reverse().map(s=>`<div><b style="color:${TC[s.t]}">${T[s.t].name}</b> ${sent(s.a,s.b,s.k,s.s,s.p)}. ${rev[s.r]?(s.ok?'<span class="ok">✔ 참</span>':'<span class="no">✘ 거짓</span>'):'<span class="m">⏳ 결과 비공개</span>'}</div>`).join('')+'</div>':'';
+$('#tabs').innerHTML=TABS.map((x,i)=>`<button class="${i==tab?'on':''}" onclick="tab=${i};draw()">${x}</button>`).join('');
+['p0','p2','pg','p4'].forEach((id,i)=>$('#'+id).className=i==tab?(id=='pg'?'two':''):'hide');
+$('#p0').innerHTML=`<div class="card"><h2>🎮 진행 방법 (선생님용)</h2><ol>
+<li><b>미니게임(카드 낚아채기)</b>: <b>② 탭</b>에서 1모둠 → 2모둠 순서로 1분씩, 위에서 떨어지는 카드를 클릭해 모읍니다. 같은 카드를 여러 장 모을 수 있어요.</li>
+<li><b>카드 종류 4가지</b>: 국가 4장 · 비굣값 키워드 4장 · 대푯값(평균/중앙값/최빈값) 3장 · 서술어(크다/작다) 2장</li>
+<li><b>문장 만들기</b>: <i>“A국의 ㅇㅇ 평균은 B국의 ㅇㅇ 평균보다 크다.”</i> 처럼 <b>국가 2장 + 키워드 + 대푯값 + 서술어</b>를 모아 한 문장을 만듭니다. (국가 순서가 바뀌면 다른 문장이에요)</li>
+<li><b>자료 확인</b>: <b>③ 탭</b>에서 각 나라 7명의 자료를 보고 대푯값을 직접 계산해 문장이 참인지 판단합니다.</li>
+<li><b>제출</b>: <b>③ 탭</b>에서 완성한 문장을 제출하면 카드는 사라지고, 제출된 문장은 화면 위쪽 <b>실시간 목록</b>에 바로 올라옵니다. 정답 여부는 <b>라운드가 끝날 때까지 비밀</b>이에요.</li>
+<li><b>점수</b>: 참 +1점 · 거짓 −2점 · 이미 낸 참인 문장과 같으면 0점.</li>
+<li>문장 레이스가 끝나면 <b>④ 결과</b>에서 점수를 공개하고 풀이를 함께 확인합니다.</li></ol></div>`;
+const ex=document.createElement('div');
+$('#p1').innerHTML=`<div class="card sx"><div class="row" style="justify-content:space-between;margin-bottom:6px"><h2 style="margin:0">📊 자료표 <span class="m">(나라별 7명의 자료)</span></h2><span class="row"><label class="m"><input type="checkbox" ${show?'checked':''} onchange="show=this.checked;draw()"> 정답 보기</label><button onclick="if(confirm('자료를 새로 만들면 카드와 제출 기록이 모두 초기화돼요.'))init()">🔄 새 자료</button></span></div><table><tr><th></th>${KW.map(k=>`<th>${k.n}<div class="m">${k.u}</div></th>`).join('')}</tr>${CN.map((c,ci)=>`<tr><td><b>${c}</b></td>${KW.map((k,ki)=>`<td>${D[ci][ki].join(', ')}${show?`<div class="m">평균 ${fm(st(D[ci][ki],0))} · 중앙 ${fm(st(D[ci][ki],1))} · 최빈 ${fm(st(D[ci][ki],2))}</div>`:''}</td>`).join('')}</tr>`).join('')}</table></div>`;
+const cardRow=(t,key,names)=>`<div class="cg">`+names.map((n,i)=>`<div class="cd">${n}<button onclick="inv(${t},'${key}',${i},-1)">−</button><i>${T[t].inv[key][i]}</i><button onclick="inv(${t},'${key}',${i},1)">+</button></div>`).join('')+`</div>`;
+if(!playing)miniDraw();
+const I=T[cur].inv,op=(key,names,ph)=>`<option value="">${ph}</option>`+names.map((n,i)=>I[key][i]>0?`<option value="${i}">${n} (${I[key][i]}장)</option>`:'').join('');
+$('#p3').innerHTML=`<div class="card"><div class="row">${T.map((x,t)=>`<button class="${t==cur?'p':''}" onclick="cur=${t};draw()">${x.name}</button>`).join('')}</div>
+<div class="row" style="margin-top:10px"><select id="sa" onchange="pv()">${op('c',CN,'국가 A')}</select><select id="sk" onchange="pv()">${op('k',KW.map(k=>k.n),'키워드')}</select><select id="ss" onchange="pv()">${op('s',SN,'대푯값')}</select><select id="sb" onchange="pv()">${op('c',CN,'국가 B')}</select><select id="sp" onchange="pv()">${op('p',PN,'서술어')}</select></div>
+<div class="pv" id="pv">카드를 골라 문장을 만들어요.</div>
+<button class="p" onclick="sub()">제출하기</button>
+<div class="m" style="margin-top:8px">이번 라운드 ${T[cur].name} 제출: ${subs.filter(s=>s.t==cur&&s.r==R).length}개 (정답은 비밀!)</div></div>`;
+const rs=[...Object.keys(rev)].length?'':'<div class="card m">아직 공개된 결과가 없어요.</div>';
+$('#p4').innerHTML=`<div class="card row"><button class="p" onclick="reveal()">📣 점수 공개</button></div>`+rs+
+[1].filter(r=>rev[r]).map(r=>`<div class="card sx"><h2>🏆 결과</h2><table><tr><th>모둠</th><th>문장</th><th>자료 비교</th><th>결과</th><th>점수</th></tr>`+
+subs.filter(s=>s.r==r).map(s=>`<tr><td style="color:${TC[s.t]}"><b>${T[s.t].name}</b></td><td>${sent(s.a,s.b,s.k,s.s,s.p)}</td><td>${fm(s.va)} vs ${fm(s.vb)}</td><td class="${s.ok?'ok':'no'}">${s.ok?'참':'거짓'}</td><td>${s.d>0?'+':''}${s.d}</td></tr>`).join('')+`</table></div>`).join('')}
+function inv(t,key,i,d){const a=T[t].inv[key];a[i]=Math.max(0,a[i]+d);draw()}
+function pv(){const g=id=>$('#'+id).value,[a,k,s,b,p]=['sa','sk','ss','sb','sp'].map(g);$('#pv').textContent=[a,k,s,b,p].includes('')?'카드를 골라 문장을 만들어요.':sent(+a,+b,+k,+s,+p)+'.'}
+function sub(){const g=id=>$('#'+id).value,v=['sa','sk','ss','sb','sp'].map(g);if(v.includes(''))return alert('카드를 모두 골라주세요.');
+const[a,k,s,b,p]=v.map(Number);if(a==b)return alert('국가 카드는 서로 다른 두 장이어야 해요.');
+if(rev[R])return alert('이미 점수가 공개된 라운드예요.');
+const I=T[cur].inv;I.c[a]--;I.c[b]--;I.k[k]--;I.s[s]--;I.p[p]--;
+if(I.c[a]<0||I.c[b]<0){I.c[a]++;I.c[b]++;I.k[k]++;I.s[s]++;I.p[p]++;return alert('국가 카드가 부족해요.')}
+subs.push({t:cur,r:R,a,b,k,s,p});draw()}
+function reveal(){const seen=new Set();subs.forEach(x=>{x.va=st(D[x.a][x.k],x.s);x.vb=st(D[x.b][x.k],x.s);x.ok=x.p==0?x.va>x.vb:x.va<x.vb;
+const key=[x.t,x.a,x.b,x.k,x.s,x.p].join('|');if(x.ok&&seen.has(key))x.d=0;else{x.d=x.ok?1:-2;if(x.ok)seen.add(key)}});rev[R]=1;draw()}
+function next(){if(!rev[1])return alert('먼저 전반전 점수를 공개하세요.');R=2;rst();tab=1;draw()}
+init();
+</script></body></html>
