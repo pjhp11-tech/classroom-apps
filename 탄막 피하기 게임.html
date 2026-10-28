@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>닷지 - 탄막 피하기</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0d17; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function () {
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0;
+
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---- 최고기록 (브라우저에 저장) ----
+  var STORAGE_KEY = 'dodge_best_time';
+  var best = 0;
+  try {
+    var saved = parseFloat(localStorage.getItem(STORAGE_KEY));
+    if (!isNaN(saved)) best = saved;
+  } catch (e) {}
+  function saveBest() {
+    try { localStorage.setItem(STORAGE_KEY, String(best)); } catch (e) {}
+  }
+
+  // ---- 상태 ----
+  var state = 'ready'; // ready | playing | over
+  var player = { x: W / 2, y: H / 2, r: 6 };
+  var target = { x: W / 2, y: H / 2 };
+  var bullets = [];
+  var keys = {};
+  var t = 0;
+  var spawnTimer = 0;
+  var burstTimer = 0;
+  var newRecord = false;
+  var overAt = 0;
+  var lastTime = 0;
+
+  function reset() {
+    bullets = [];
+    t = 0;
+    spawnTimer = 0;
+    burstTimer = 5;
+    newRecord = false;
+    player.x = target.x = W / 2;
+    player.y = target.y = H / 2;
+  }
+
+  function startGame() {
+    reset();
+    state = 'playing';
+  }
+
+  // ---- 탄환 생성 ----
+  function spawnBullet() {
+    var edge = Math.floor(Math.random() * 4);
+    var x, y, m = 12;
+    if (edge === 0) { x = Math.random() * W; y = -m; }
+    else if (edge === 1) { x = W + m; y = Math.random() * H; }
+    else if (edge === 2) { x = Math.random() * W; y = H + m; }
+    else { x = -m; y = Math.random() * H; }
+
+    var spread = 160;
+    var tx = player.x + (Math.random() - 0.5) * spread * 2;
+    var ty = player.y + (Math.random() - 0.5) * spread * 2;
+    var ang = Math.atan2(ty - y, tx - x);
+    var speed = Math.min(180 + t * 6, 420) + Math.random() * 70;
+    bullets.push({ x: x, y: y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, r: 4 });
+  }
+
+  function spawnBurst() {
+    var cx, cy, tries = 0;
+    do {
+      cx = W * (0.15 + Math.random() * 0.7);
+      cy = H * (0.15 + Math.random() * 0.7);
+      tries++;
+    } while (Math.hypot(cx - player.x, cy - player.y) < 200 && tries < 20);
+    var n = 28, off = Math.random() * Math.PI * 2;
+    for (var i = 0; i < n; i++) {
+      var a = off + (i / n) * Math.PI * 2;
+      bullets.push({ x: cx, y: cy, vx: Math.cos(a) * 190, vy: Math.sin(a) * 190, r: 4, burst: true });
+    }
+  }
+
+  // ---- 업데이트 ----
+  function update(dt) {
+    // 키보드 이동 (목표 지점을 움직임)
+    var kx = 0, ky = 0;
+    if (keys['arrowleft'] || keys['a']) kx -= 1;
+    if (keys['arrowright'] || keys['d']) kx += 1;
+    if (keys['arrowup'] || keys['w']) ky -= 1;
+    if (keys['arrowdown'] || keys['s']) ky += 1;
+    if (kx || ky) {
+      var len = Math.hypot(kx, ky);
+      target.x += (kx / len) * 380 * dt;
+      target.y += (ky / len) * 380 * dt;
+    }
+    target.x = Math.max(player.r, Math.min(W - player.r, target.x));
+    target.y = Math.max(player.r, Math.min(H - player.r, target.y));
+
+    var k = Math.min(1, dt * 25);
+    player.x += (target.x - player.x) * k;
+    player.y += (target.y - player.y) * k;
+
+    t += dt;
+
+    spawnTimer -= dt;
+    var interval = Math.max(0.05, 0.32 - t * 0.008);
+    var perTick = 1 + Math.floor(t / 15);
+    while (spawnTimer <= 0) {
+      for (var n = 0; n < perTick; n++) spawnBullet();
+      spawnTimer += interval;
+    }
+
+    burstTimer -= dt;
+    if (burstTimer <= 0) {
+      spawnBurst();
+      burstTimer = Math.max(2.5, 6 - t * 0.04);
+    }
+
+    for (var i = bullets.length - 1; i >= 0; i--) {
+      var b = bullets[i];
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      if (b.x < -40 || b.x > W + 40 || b.y < -40 || b.y > H + 40) {
+        bullets.splice(i, 1);
+        continue;
+      }
+      var hitR = b.r + player.r - 2;
+      var dx = b.x - player.x, dy = b.y - player.y;
+      if (dx * dx + dy * dy < hitR * hitR) {
+        gameOver();
+        return;
+      }
+    }
+  }
+
+  function gameOver() {
+    state = 'over';
+    overAt = performance.now();
+    if (t > best) {
+      best = t;
+      newRecord = true;
+      saveBest();
+    }
+  }
+
+  // ---- 그리기 ----
+  function fmt(v) { return v.toFixed(2) + '초'; }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // 배경 격자
+    ctx.fillStyle = '#0b0d17';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var gx = 0; gx < W; gx += 40) { ctx.moveTo(gx, 0); ctx.lineTo(gx, H); }
+    for (var gy = 0; gy < H; gy += 40) { ctx.moveTo(0, gy); ctx.lineTo(W, gy); }
+    ctx.stroke();
+
+    // 탄환
+    for (var i = 0; i < bullets.length; i++) {
+      var b = bullets[i];
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = b.burst ? '#ffb347' : '#ff5a6e';
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.stroke();
+    }
+
+    // 플레이어
+    if (state !== 'over') {
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#5ee0ff';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r + 6, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,90,110,0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // HUD: 왼쪽 위 = 현재 기록, 오른쪽 위 = 최고기록
+    var font = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif';
+    ctx.textBaseline = 'top';
+
+    ctx.textAlign = 'left';
+    ctx.font = '600 20px ' + font;
+    ctx.fillStyle = '#e8ecff';
+    ctx.fillText('현재 ' + fmt(t), 16, 14);
+
+    var beating = state === 'playing' && best > 0 && t > best;
+    var shownBest = Math.max(best, state === 'playing' ? t : 0);
+    ctx.textAlign = 'right';
+    ctx.font = '700 20px ' + font;
+    ctx.fillStyle = (beating || (state === 'over' && newRecord)) ? '#ffd54a' : '#e8ecff';
+    ctx.fillText('최고기록 ' + fmt(shownBest), W - 16, 14);
+
+    // 중앙 메시지
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (state === 'ready') {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 44px ' + font;
+      ctx.fillText('탄막 피하기', W / 2, H / 2 - 70);
+      ctx.font = '400 18px ' + font;
+      ctx.fillStyle = '#aab3d6';
+      ctx.fillText('마우스 / 터치 / 방향키(WASD)로 움직여서 총알을 피하세요', W / 2, H / 2 - 22);
+      ctx.fillStyle = '#5ee0ff';
+      ctx.font = '600 20px ' + font;
+      ctx.fillText('클릭, 터치 또는 스페이스바로 시작', W / 2, H / 2 + 24);
+    } else if (state === 'over') {
+      ctx.fillStyle = '#ff5a6e';
+      ctx.font = '800 44px ' + font;
+      ctx.fillText('게임 오버', W / 2, H / 2 - 60);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '600 24px ' + font;
+      ctx.fillText('기록 ' + fmt(t), W / 2, H / 2 - 10);
+      if (newRecord) {
+        ctx.fillStyle = '#ffd54a';
+        ctx.font = '700 22px ' + font;
+        ctx.fillText('🎉 신기록!', W / 2, H / 2 + 28);
+      }
+      ctx.fillStyle = '#5ee0ff';
+      ctx.font = '600 18px ' + font;
+      ctx.fillText('클릭, 터치 또는 스페이스바로 다시 시작', W / 2, H / 2 + 70);
+    }
+  }
+
+  // ---- 루프 ----
+  function loop(now) {
+    var dt = Math.min(0.05, (now - lastTime) / 1000 || 0);
+    lastTime = now;
+    if (state === 'playing') update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(function (now) { lastTime = now; loop(now); });
+
+  // ---- 입력 ----
+  function setTarget(e) {
+    target.x = e.clientX;
+    target.y = e.clientY;
+  }
+
+  function tryStart() {
+    if (state === 'ready') startGame();
+    else if (state === 'over' && performance.now() - overAt > 500) startGame();
+  }
+
+  canvas.addEventListener('pointermove', function (e) {
+    setTarget(e);
+    if (state !== 'playing') { player.x = target.x; player.y = target.y; }
+  });
+  canvas.addEventListener('pointerdown', function (e) {
+    setTarget(e);
+    if (state !== 'playing') { player.x = target.x; player.y = target.y; }
+    tryStart();
+  });
+
+  window.addEventListener('keydown', function (e) {
+    var key = e.key.toLowerCase();
+    if (key === ' ' || key === 'enter') {
+      e.preventDefault();
+      tryStart();
+      return;
+    }
+    keys[key] = true;
+    if (key.indexOf('arrow') === 0) e.preventDefault();
+  });
+  window.addEventListener('keyup', function (e) {
+    keys[e.key.toLowerCase()] = false;
+  });
+  window.addEventListener('blur', function () { keys = {}; });
+})();
+</script>
+</body>
+</html>
