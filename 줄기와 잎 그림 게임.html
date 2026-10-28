@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>틀린자료 찾기(줄기와 잎 그림)</title>
+<style>
+  :root{
+    --bg:#eef3fb; --card:#ffffff; --ink:#1f2a44; --muted:#6b7794;
+    --primary:#3b6fe0; --primary-d:#2c58bb; --good:#1faa62; --bad:#e0483b;
+    --line:#c9d3e8; --leaf:#f3f6fd; --gold:#f5a623;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    min-height:100vh;
+  }
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:14px 20px; background:var(--card); box-shadow:0 2px 8px rgba(30,50,100,.08);
+    flex-wrap:wrap;
+  }
+  header h1{margin:0; font-size:clamp(18px,3.2vw,26px)}
+  .best{
+    background:#fff6e0; border:2px solid var(--gold); color:#8a5a00;
+    padding:6px 14px; border-radius:999px; font-weight:700; white-space:nowrap;
+  }
+  main{max-width:860px; margin:0 auto; padding:18px 14px 40px}
+  .card{background:var(--card); border-radius:18px; padding:20px; box-shadow:0 4px 16px rgba(30,50,100,.08)}
+  .hidden{display:none !important}
+
+  /* start / result */
+  .center{text-align:center}
+  .center h2{margin:6px 0 12px}
+  .rules{text-align:left; display:inline-block; line-height:1.9; margin:6px 0 18px}
+  .rules b{color:var(--primary-d)}
+  button.big{
+    font:inherit; font-weight:700; font-size:18px; color:#fff; background:var(--primary);
+    border:0; border-radius:14px; padding:12px 34px; cursor:pointer;
+  }
+  button.big:hover{background:var(--primary-d)}
+
+  /* HUD */
+  .hud{display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:14px}
+  .hud div{background:var(--card); border-radius:14px; padding:8px 6px; text-align:center;
+    box-shadow:0 2px 8px rgba(30,50,100,.06)}
+  .hud small{display:block; color:var(--muted); font-size:12px}
+  .hud strong{font-size:22px}
+
+  .prompt{text-align:center; font-weight:700; margin:2px 0 14px; font-size:clamp(15px,2.6vw,18px)}
+  .prompt span{color:var(--bad)}
+
+  /* plot */
+  .plot{max-width:620px; margin:0 auto}
+  .row{display:grid; grid-template-columns:1fr 54px 1fr; align-items:stretch}
+  .row.head div{
+    text-align:center; font-weight:700; color:var(--muted); font-size:14px; padding-bottom:8px;
+  }
+  .leaves{display:flex; flex-wrap:wrap; gap:3px; padding:6px 8px; align-items:center}
+  .leaves.left{justify-content:flex-end}
+  .leaves.right{justify-content:flex-start}
+  .stemcell{
+    display:flex; align-items:center; justify-content:center;
+    border-left:3px solid var(--ink); border-right:3px solid var(--ink);
+  }
+  .row.head .stemcell{border:0}
+  .row:not(.head):first-of-type .stemcell{border-top:0}
+  .cell{
+    font:inherit; font-weight:700; font-size:clamp(16px,3.6vw,22px);
+    min-width:clamp(26px,6vw,36px); height:clamp(34px,7vw,42px);
+    border:2px solid transparent; border-radius:9px; background:var(--leaf);
+    color:var(--ink); cursor:pointer; padding:0 2px;
+    transition:transform .1s, background .15s;
+  }
+  .cell:hover:not(:disabled){background:#dfe8fb; transform:translateY(-2px)}
+  .cell.stem{background:#fff2cf; min-width:42px}
+  .cell.stem:hover:not(:disabled){background:#ffe7a3}
+  .cell.wrong{background:#fde3e0; border-color:var(--bad); color:var(--bad); animation:shake .3s}
+  .cell.right-ans{background:#d9f5e6; border-color:var(--good); color:#0d7a43}
+  .cell:disabled{cursor:default}
+  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .legend{text-align:center; color:var(--muted); font-size:13px; margin-top:12px}
+  .msg{min-height:48px; margin-top:10px; text-align:center; font-weight:700; font-size:16px; line-height:1.5}
+  .msg.good{color:var(--good)} .msg.bad{color:var(--bad)}
+
+  .final{font-size:46px; font-weight:800; color:var(--primary-d); margin:4px 0}
+  table.sum{margin:10px auto 18px; border-collapse:collapse; min-width:260px}
+  table.sum td{padding:6px 14px; border-bottom:1px solid var(--line); text-align:left}
+  table.sum td:last-child{text-align:right; font-weight:700}
+  .newrec{color:#b36b00; font-weight:800; margin-bottom:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍃 틀린자료 찾기(줄기와 잎 그림)</h1>
+  <div class="best" id="best">🏆 최고 점수: 기록 없음</div>
+</header>
+
+<main>
+  <!-- 시작 화면 -->
+  <section class="card center" id="startScreen">
+    <h2>게임 방법</h2>
+    <div class="rules">
+      • 줄기와 잎 그림에서 <b>순서가 맞지 않는</b> 잎 또는 줄기를 <b>클릭</b>하세요.<br>
+      • 줄기는 <b>위에서 아래로 갈수록 커지고</b>,<br>
+      &nbsp;&nbsp;잎은 <b>줄기에서 멀어질수록 커집니다</b>. (양쪽 모두)<br>
+      • 정답 <b>+20점</b>, 오답 <b>-10점</b>, 걸린 시간 <b>1초당 -1점</b><br>
+      • 총 <b>10문제</b> · 틀린 것은 문제마다 <b>딱 하나</b>예요.
+    </div>
+    <button class="big" id="startBtn">게임 시작</button>
+  </section>
+
+  <!-- 게임 화면 -->
+  <section id="gameScreen" class="hidden">
+    <div class="hud">
+      <div><small>문제</small><strong id="hudQ">1 / 10</strong></div>
+    </div>
+    <div class="card">
+      <div class="prompt">순서가 <span>틀린</span> 잎 또는 줄기를 클릭하세요!</div>
+      <div class="plot" id="plot"></div>
+      <div class="legend">예) 줄기 3 | 잎 5 → 35 &nbsp;·&nbsp; 왼쪽 잎은 줄기에서 왼쪽으로, 오른쪽 잎은 오른쪽으로 읽어요.</div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </section>
+
+  <!-- 결과 화면 -->
+  <section class="card center hidden" id="resultScreen">
+    <h2>게임 종료!</h2>
+    <div class="newrec hidden" id="newRec">🎉 최고 점수 갱신!</div>
+    <div>최종 점수</div>
+    <div class="final" id="finalScore">0</div>
+    <table class="sum">
+      <tr><td>정답 (+20점)</td><td id="rCorrect"></td></tr>
+      <tr><td>오답 클릭 (-10점)</td><td id="rWrong"></td></tr>
+      <tr><td>소요 시간 (-1점/초)</td><td id="rTime"></td></tr>
+    </table>
+    <button class="big" id="retryBtn">다시 하기</button>
+  </section>
+</main>
+
+<script>
+(function(){
+  const TOTAL = 10, STEMS = 5, LEAVES_PER_SIDE = 15;
+  const BEST_KEY = 'stemleaf_wrongfind_best';
+  const $ = id => document.getElementById(id);
+
+  let qIndex, correct, wrong, elapsedMs, qStart, timerId, q, locked;
+  let memoryBest = null;
+
+  /* ---------- 최고 점수 ---------- */
+  function loadBest(){
+    try{
+      const v = localStorage.getItem(BEST_KEY);
+      if(v !== null && v !== '' && !isNaN(Number(v))) return Number(v);
+    }catch(e){}
+    return memoryBest;
+  }
+  function saveBest(v){
+    memoryBest = v;
+    try{ localStorage.setItem(BEST_KEY, String(v)); }catch(e){}
+  }
+  function showBest(){
+    const b = loadBest();
+    $('best').textContent = '🏆 최고 점수: ' + (b === null ? '기록 없음' : b + '점');
+  }
+
+  /* ---------- 유틸 ---------- */
+  const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+  function sample(n){
+    const pool = [0,1,2,3,4,5,6,7,8,9];
+    for(let i=pool.length-1;i>0;i--){const j=rnd(0,i);[pool[i],pool[j]]=[pool[j],pool[i]];}
+    return pool.slice(0,n);
+  }
+  // 양 끝 원소 하나를 반대쪽 끝으로 옮겨 "하나만 틀린" 배열을 만든다. 옮겨진 원소의 새 위치를 반환
+  function moveEnd(arr){
+    if(Math.random() < 0.5){ arr.push(arr.shift()); return arr.length-1; }
+    arr.unshift(arr.pop()); return 0;
+  }
+
+  /* ---------- 문제 생성 ---------- */
+  function genQuestion(){
+    // 정답이 줄기에 있을 확률 20%, 잎(왼쪽/오른쪽)에 각 40%
+    const r = Math.random();
+    const type = r < 0.2 ? 'stem' : (r < 0.6 ? 'left' : 'right');
+    for(;;){
+      // 한 쪽에 잎 15개, 줄기 5개(각 줄기에 잎 최소 1개, 최대 7개)
+      const makeCounts = () => {
+        const c = new Array(STEMS).fill(1);
+        let left = LEAVES_PER_SIDE - STEMS;
+        while(left > 0){
+          const i = rnd(0,STEMS-1);
+          if(c[i] < 7){ c[i]++; left--; }
+        }
+        return c;
+      };
+      const cl = makeCounts(), cr = makeCounts();
+      const start = rnd(1,5);
+      const rows = [];
+      for(let i=0;i<STEMS;i++){
+        rows.push({
+          stem: start+i,
+          left: sample(cl[i]).sort((a,b)=>b-a),   // 왼쪽: 줄기에서 멀수록 큼 → 왼→오 내림차순
+          right: sample(cr[i]).sort((a,b)=>a-b)   // 오른쪽: 왼→오 오름차순
+        });
+      }
+      let ans;
+      if(type === 'stem'){
+        const idx = moveEnd(rows);
+        ans = {kind:'stem', row:idx, text:`줄기 ${rows[idx].stem}의 위치가 순서에 맞지 않아요. (줄기는 위에서 아래로 커져야 해요)`};
+        return {rows, ans};
+      }
+      const cand = rows.map((r,i)=>r[type].length>=3 ? i : -1).filter(i=>i>=0);
+      if(!cand.length) continue;
+      const ri = cand[rnd(0,cand.length-1)];
+      const leaf0 = null;
+      const idx = moveEnd(rows[ri][type]);
+      const leaf = rows[ri][type][idx];
+      const side = type === 'left' ? '왼쪽' : '오른쪽';
+      ans = {kind:type, row:ri, idx, text:`${side} 자료, 줄기 ${rows[ri].stem}의 잎 ${leaf}이(가) 순서에 맞지 않아요.`};
+      return {rows, ans};
+    }
+  }
+
+  /* ---------- 그리기 ---------- */
+  function buildPlot(container, rows, interactive){
+    container.innerHTML = '';
+    const head = document.createElement('div');
+    head.className = 'row head';
+    head.innerHTML = '<div>왼쪽 자료 (잎)</div><div class="stemcell">줄기</div><div>오른쪽 자료 (잎)</div>';
+    container.appendChild(head);
+    rows.forEach((r,ri)=>{
+      const row = document.createElement('div');
+      row.className = 'row';
+      const L = document.createElement('div'); L.className='leaves left';
+      const S = document.createElement('div'); S.className='stemcell';
+      const R = document.createElement('div'); R.className='leaves right';
+      r.left.forEach((v,i)=>L.appendChild(cell(v,'left',ri,i)));
+      S.appendChild(cell(r.stem,'stem',ri,0,true));
+      r.right.forEach((v,i)=>R.appendChild(cell(v,'right',ri,i)));
+      row.append(L,S,R);
+      container.appendChild(row);
+    });
+    function cell(v,kind,ri,idx,isStem){
+      const b = document.createElement('button');
+      b.type='button';
+      b.className = 'cell' + (isStem ? ' stem' : '');
+      b.textContent = v;
+      b.dataset.kind = kind; b.dataset.row = ri; b.dataset.idx = idx;
+      if(interactive) b.addEventListener('click', onPick);
+      return b;
+    }
+  }
+
+  /* ---------- 진행 ---------- */
+  function startGame(){
+    qIndex = 0; correct = 0; wrong = 0; elapsedMs = 0; locked = true;
+    $('startScreen').classList.add('hidden');
+    $('resultScreen').classList.add('hidden');
+    $('gameScreen').classList.remove('hidden');
+    clearInterval(timerId);
+    nextQuestion();
+  }
+  function nextQuestion(){
+    qIndex++;
+    if(qIndex > TOTAL){ finish(); return; }
+    q = genQuestion();
+    buildPlot($('plot'), q.rows, true);
+    $('msg').textContent = ''; $('msg').className = 'msg';
+    locked = false;
+    qStart = performance.now();
+    updateHud();
+  }
+  function totalSeconds(){
+    const live = locked ? 0 : performance.now() - qStart;
+    return Math.floor((elapsedMs + live)/1000);
+  }
+  function updateHud(){
+    $('hudQ').textContent = Math.min(qIndex,TOTAL) + ' / ' + TOTAL;
+  }
+
+  function onPick(e){
+    if(locked) return;
+    const btn = e.currentTarget;
+    const kind = btn.dataset.kind, row = +btn.dataset.row, idx = +btn.dataset.idx;
+    const a = q.ans;
+    const isRight = kind === a.kind && row === a.row && (kind === 'stem' || idx === a.idx);
+    if(isRight){
+      elapsedMs += performance.now() - qStart;
+      locked = true;
+      correct++;
+      btn.classList.add('right-ans');
+      document.querySelectorAll('#plot .cell').forEach(c=>c.disabled = true);
+      $('msg').className = 'msg good';
+      $('msg').textContent = '정답! +20점 ✔  ' + a.text;
+      updateHud();
+      setTimeout(nextQuestion, 1500);
+    }else{
+      wrong++;
+      btn.classList.add('wrong');
+      btn.disabled = true;
+      $('msg').className = 'msg bad';
+      $('msg').textContent = '틀렸어요! -10점 ✘  다시 찾아보세요.';
+      updateHud();
+    }
+  }
+
+  function finish(){
+    clearInterval(timerId);
+    const secs = Math.floor(elapsedMs/1000);
+    const finalScore = correct*20 - wrong*10 - secs;
+    const prev = loadBest();
+    const isNew = prev === null || finalScore > prev;
+    if(isNew) saveBest(finalScore);
+    showBest();
+    $('gameScreen').classList.add('hidden');
+    $('resultScreen').classList.remove('hidden');
+    $('finalScore').textContent = finalScore + '점';
+    $('rCorrect').textContent = correct + '문제 (+' + correct*20 + ')';
+    $('rWrong').textContent = wrong + '번 (-' + wrong*10 + ')';
+    $('rTime').textContent = secs + '초 (-' + secs + ')';
+    $('newRec').classList.toggle('hidden', !isNew);
+  }
+
+  /* ---------- 시작 ---------- */
+  $('startBtn').addEventListener('click', startGame);
+  $('retryBtn').addEventListener('click', startGame);
+  showBest();
+})();
+</script>
+</body>
+</html>
