@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>확률 문장 레이스</title>
+<style>
+:root{--bg:#f7f6f2;--fg:#1f2430;--card:#fff;--line:#d9d6cc;--mut:#6b7280;--ok:#15803d;--no:#b91c1c;--ac:#7c3aed;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171c;--fg:#eceef3;--card:#1f232b;--line:#394050;--mut:#9aa3b2;--ok:#4ade80;--no:#f87171;--ac:#a78bfa;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15171c;--fg:#eceef3;--card:#1f232b;--line:#394050;--mut:#9aa3b2;--ok:#4ade80;--no:#f87171;--ac:#a78bfa;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 "Pretendard","Noto Sans KR",system-ui,sans-serif}
+.w{max-width:1200px;margin:0 auto;padding:8px 12px}
+h1{font-size:20px;margin:0}h2{font-size:18px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+button,select,input,textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+button{cursor:pointer}button.p{background:var(--ac);color:#fff;border-color:var(--ac)}button:disabled{opacity:.45;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}.sx{overflow-x:auto}
+.ok{color:var(--ok);font-weight:700}.no{color:var(--no);font-weight:700}.m{color:var(--mut);font-size:14px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:4px 14px;background:var(--bg);font-weight:700}
+button.chip{cursor:pointer;color:var(--fg)}button.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.pv{font-size:20px;font-weight:700;padding:10px;background:var(--bg);border-radius:8px;margin:8px 0;min-height:48px}
+select{font-size:18px;padding:8px}input[type=number]{width:70px;font-size:18px}
+.two{display:grid;grid-template-columns:3fr 2fr;gap:8px;align-items:start}
+@media (max-width:800px){.two{grid-template-columns:1fr}}
+.cd{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.arena{position:relative;height:min(68vh,520px);overflow:hidden;border:2px dashed var(--line);border-radius:12px;background:var(--bg)}
+.fc{position:absolute;top:-50px;padding:14px 28px;min-width:100px;text-align:center;border-radius:12px;color:#fff;font-weight:700;font-size:22px;cursor:pointer;white-space:nowrap;user-select:none;touch-action:manipulation;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(var(--h,500px))}}
+.drum{font-size:90px;display:inline-block;animation:shake .25s infinite}
+@keyframes shake{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+.win{text-align:center;padding:24px 10px;border-radius:16px;background:linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6);color:#fff;margin-bottom:8px;animation:pop .9s cubic-bezier(.2,1.6,.4,1)}
+.wn{font-size:clamp(34px,7vw,64px);font-weight:800;line-height:1.2;text-shadow:0 3px 10px rgba(0,0,0,.35)}
+.trophy{font-size:80px;line-height:1.1;animation:bnc 1.2s ease-in-out infinite}
+@keyframes bnc{50%{transform:translateY(-12px) scale(1.08)}}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.cf{position:fixed;top:-20px;width:10px;height:16px;z-index:99;pointer-events:none;animation:cfall linear forwards}
+@keyframes cfall{to{transform:translateY(110vh) rotate(720deg)}}
+</style></head><body><div class="w">
+<div class="row" style="justify-content:space-between;margin-bottom:6px"><h1>🎲 확률 문장 레이스</h1><span class="m" id="stp"></span></div>
+<div id="app"></div></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const GR=['전체 학생','남학생','여학생'],EX=['있을','없을'];
+const LT=[...'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ',...'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ'];
+const ALL=[...GR.map((n,i)=>['g',i,n,'#2563eb']),...LT.map((n,i)=>['l',i,n,i<14?'#16a34a':'#d97706']),...EX.map((n,i)=>['e',i,n,'#db2777'])];
+const NM={g:GR,l:LT,e:EX};
+const STEP={cls:'① 반 학생 입력',reg:'② 팀 설정',pred:'③ 확률 예상',mini:'④ 미니게임',make:'⑤ 문장 만들기',calc:'⑥ 확률 계산',done:'⑦ 결과'};
+const blankInv=()=>({g:[0,0,0],l:Array(24).fill(0),e:[0,0]});
+let CL=Array.from({length:6},(_,i)=>({name:(i+1)+'반',rs:''}));
+try{const s=localStorage.getItem('probCls');if(s)CL=JSON.parse(s)}catch(e){}
+const saveC=()=>{try{localStorage.setItem('probCls',JSON.stringify(CL))}catch(e){}};
+let G={ph:'cls',T:[],K:1,endAt:0,cur:0,cls:0,R:[]},playing=false,exp=false,wv=true;
+try{const s=localStorage.getItem('prob');if(s)G=JSON.parse(s)}catch(e){}
+G.cls=G.cls||0;G.R=G.R||[];if(G.ph=='roster')G.ph='make';if(G.ph=='reg'&&!G.R.length)G.ph='cls';
+const save=()=>{try{localStorage.setItem('prob',JSON.stringify(G))}catch(e){}};
+const CHO=[...'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'],JUNG=[...'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'],JONG=['',...'ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ'];
+const SP={ㄲ:'ㄱㄱ',ㄸ:'ㄷㄷ',ㅃ:'ㅂㅂ',ㅆ:'ㅅㅅ',ㅉ:'ㅈㅈ',ㄳ:'ㄱㅅ',ㄵ:'ㄴㅈ',ㄶ:'ㄴㅎ',ㄺ:'ㄹㄱ',ㄻ:'ㄹㅁ',ㄼ:'ㄹㅂ',ㄽ:'ㄹㅅ',ㄾ:'ㄹㅌ',ㄿ:'ㄹㅍ',ㅀ:'ㄹㅎ',ㅄ:'ㅂㅅ',ㅐ:'ㅏㅣ',ㅒ:'ㅑㅣ',ㅔ:'ㅓㅣ',ㅖ:'ㅕㅣ',ㅘ:'ㅗㅏ',ㅙ:'ㅗㅏㅣ',ㅚ:'ㅗㅣ',ㅝ:'ㅜㅓ',ㅞ:'ㅜㅓㅣ',ㅟ:'ㅜㅣ',ㅢ:'ㅡㅣ'};
+function jamo(name){const s=new Set();for(const ch of name){const c=ch.charCodeAt(0)-44032;if(c<0||c>11171)continue;[CHO[c/588|0],JUNG[(c%588)/28|0],JONG[c%28]].forEach(j=>[...(SP[j]||j)].forEach(x=>s.add(x)))}return s}
+function calc(s){const g=G.R.filter(r=>s.g==0||(s.g==1?r.sx=='남':r.sx=='여')),A=LT[s.a];
+const hit=g.filter(r=>{const ok=jamo(r.name).has(A);return s.e==0?ok:!ok});return{den:g.length,num:hit.length,hit}}
+function pts(p,c){if(!c.den)return 0;const L=(+p.n)*c.den,Rr=c.num*(+p.d);if(L==Rr)return 5;if(!c.num)return 0;const df=Math.abs(L-Rr);return df*10<=Rr?3:df*10<=3*Rr?2:df*2<=Rr?1:0}
+const stxt=s=>{const r=s.r||[],m=(i,x)=>r[i]?'🎲'+x:x;return `우리 반 ${m(0,GR[s.g])} 중 ${m(1,LT[s.a])}가 ${m(2,EX[s.e])} 확률은?`};
+const ri=n=>Math.floor(Math.random()*n);
+function rnd(v){const r=v.map(x=>x===''),[g,a,e]=v.map(x=>x===''?-1:+x);return{g:g<0?ri(3):g,a:a<0?ri(24):a,e:e<0?ri(2):e,r}}
+const pct=(n,d)=>d?(n/d*100).toFixed(1)+'%':'-';
+function ivt(inv){const o=[];for(const k in NM)NM[k].forEach((n,i)=>{if(inv[k][i]>0)o.push(n+'×'+inv[k][i])});return o.length?o.join(', '):'없음'}
+const pok=p=>p.n!==''&&p.d!==''&&Number.isInteger(+p.n)&&Number.isInteger(+p.d)&&+p.d>=1&&+p.n>=0&&+p.n<=+p.d;
+const nb='<button onclick="reset()">🔄 새 게임</button>';
+function reset(){if(!['cls','reg'].includes(G.ph)&&!confirm('모든 팀과 기록이 지워져요. 새 게임을 시작할까요?'))return;G={ph:'cls',T:[],K:1,endAt:0,cur:0,cls:G.cls||0,R:[]};save();render()}
+function addTeam(){const n=$('#tn').value.trim();if(!n)return;G.T.push({name:n,pred:[],inv:blankInv(),subs:[],md:0});save();render();$('#tn').focus()}
+function delTeam(i){G.T.splice(i,1);save();render()}
+function toTeam(){const q=parseR(CL[G.cls].rs);if(!q.R.length)return alert('학생 명단을 입력해 주세요.');if(q.over)return alert('명단은 40명까지만 입력할 수 있어요.');if(q.bad.length)return alert('형식이 맞지 않는 줄이 있어요: '+q.bad.join(', ')+'번째 줄');G.R=q.R;G.ph='reg';save();render()}
+function backCls(){G.ph='cls';save();render()}
+function begin(){G.K=1;G.T.forEach(t=>t.pred=[{n:'',d:''}]);G.ph='pred';save();render()}
+function setPred(ti,si,k,v){G.T[ti].pred[si][k]=v;save();$('#go').disabled=!G.T.every(t=>t.pred.every(pok))}
+function toMini(){G.ph='mini';save();render()}
+function openMake(){G.ph='make';G.endAt=Date.now()+(+$('#mn').value||10)*60000;G.cur=0;exp=false;save();render()}
+function toCalc(){G.ph='calc';save();render()}
+function parseR(txt){const L=txt.split('\n').map(x=>x.trim()).filter(Boolean),R=[],bad=[];L.forEach((l,i)=>{const t=l.split(/[\s,]+/),g=t.length>1?t.pop():'',n=t.join('');if(n&&(g[0]=='남'||g[0]=='여'))R.push({name:n,sx:g[0]});else bad.push(i+1)});return{R,bad,over:L.length>40}}
+function rprev(){const{R,bad,over}=parseR($('#rs').value),m=R.filter(r=>r.sx=='남').length;$('#rp').innerHTML=`전체 ${R.length}명 (남 ${m}, 여 ${R.length-m})${over?' <span class="no">· 40명을 넘었어요</span>':''}${bad.length?` <span class="no">· 형식 오류 줄: ${bad.join(', ')}</span>`:''}`}
+function showResult(){G.ph='done';wv=false;save();render();setTimeout(()=>{wv=true;render();confetti()},3500)}
+function confetti(){const cs=['#f59e0b','#ec4899','#8b5cf6','#22c55e','#3b82f6','#ef4444'];for(let i=0;i<110;i++){const d=document.createElement('div');d.className='cf';d.style.left=Math.random()*100+'vw';d.style.background=cs[i%6];d.style.animationDuration=(2.5+Math.random()*3)+'s';d.style.animationDelay=Math.random()*1.5+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),8000)}}
+function board(){const SL=G.T.flatMap((t,ti)=>t.subs.map(s=>({s,ti,c:calc(s)}))),sc=G.T.map(t=>SL.map(x=>{let b={p:0,pr:null};t.pred.forEach(p=>{const q=pts(p,x.c);if(!b.pr||q>b.p)b={p:q,pr:p}});return b})),tot=sc.map(r=>r.reduce((a,b)=>a+b.p,0));return{SL,sc,tot}}
+function render(){if(playing)return;$('#stp').textContent=STEP[G.ph];const A=$('#app'),T=G.T,n=T.length;
+if(G.ph=='cls'){const c=CL[G.cls];A.innerHTML=`<div class="card"><h2>🏫 반 선택 · 학생 명단 (최대 40명)</h2><div class="row">${CL.map((x,i)=>{const k=parseR(x.rs).R.length;return `<button class="chip ${i==G.cls?'on':''}" onclick="G.cls=${i};save();render()">${esc(x.name)}${k?' ('+k+'명)':''}</button>`}).join('')}</div><div class="row" style="margin-top:8px">반 이름 <input maxlength="10" value="${esc(c.name)}" oninput="CL[G.cls].name=this.value;saveC()"></div><div class="m" style="margin-top:6px">한 줄에 한 명씩 “이름 성별”로 입력해요. 예) 김민준 남 / 이서연 여</div><textarea id="rs" rows="12" style="width:100%;margin-top:4px;font-size:18px" oninput="CL[G.cls].rs=this.value;saveC();rprev()">${esc(c.rs)}</textarea><div id="rp" class="m"></div><div class="row" style="margin-top:10px"><button class="p" onclick="toTeam()">다음 ▶</button></div></div>`;rprev();return}
+if(G.ph=='reg'){A.innerHTML=`<div class="card"><h2>👥 팀 설정</h2><div class="m">${esc(CL[G.cls].name)} · 학생 ${G.R.length}명</div><div class="row" style="margin-top:8px"><input id="tn" maxlength="12" placeholder="팀 이름" style="font-size:20px" onkeydown="if(event.key=='Enter')addTeam()"><button class="p" onclick="addTeam()">팀 추가</button></div><div class="row" style="margin-top:10px">${T.map((t,i)=>`<span class="chip">${esc(t.name)} <button onclick="delTeam(${i})" style="border:0;padding:0 4px;background:none">✕</button></span>`).join('')||'<span class="m">팀 이름을 입력하고 추가하세요.</span>'}</div><div class="row" style="margin-top:10px"><button onclick="backCls()">◀ 이전</button><button class="p" ${n?'':'disabled'} onclick="begin()">▶ 게임 시작</button></div></div>`;return}
+if(G.ph=='pred'){A.innerHTML=`<div class="card"><h2>② 확률 예상 (분자 / 분모)</h2><div class="m">문장의 확률이 얼마쯤 나올지 미리 예상값을 정해요. 이 값은 모든 팀의 문장과 비교돼서, 가까울수록 점수를 얻어요. 분자는 0 이상, 분모는 1 이상이고 분자가 분모보다 클 수 없어요.</div><table style="margin-top:8px"><tr><th>팀</th>${Array.from({length:G.K},(_,i)=>`<th>예상 확률 (분자 / 분모)</th>`).join('')}</tr>${T.map((t,ti)=>`<tr><td><b>${esc(t.name)}</b></td>${t.pred.map((p,si)=>`<td><input type="number" min="0" value="${p.n}" oninput="setPred(${ti},${si},'n',this.value)"> / <input type="number" min="1" value="${p.d}" oninput="setPred(${ti},${si},'d',this.value)"></td>`).join('')}</tr>`).join('')}</table></div><div class="card row"><button class="p" id="go" ${T.every(t=>t.pred.every(pok))?'':'disabled'} onclick="toMini()">예상 확정 · 미니게임으로 ▶</button>${nb}</div>`;return}
+if(G.ph=='mini'){const dn=T.filter(t=>t.md).length;A.innerHTML=`<div class="card"><h2>③ 단어 낚아채기 (${dn}/${n}팀 완료)</h2><div class="m">각 팀은 1회만 할 수 있어요. 팀 버튼을 눌러 20초 동안 떨어지는 단어를 클릭하세요.</div><div class="row" style="margin-top:8px">${T.map((t,i)=>`<button class="${t.md?'':'p'}" ${t.md?'disabled':''} onclick="startGame(${i})">${esc(t.name)} ${t.md?'✔ 완료':'시작'}</button>`).join('')}</div></div><div class="card">${T.map(t=>`<div><b>${esc(t.name)}</b> 보유: ${ivt(t.inv)}</div>`).join('')}</div><div class="card row">문장 만들기 제한 시간 <input id="mn" type="number" min="1" max="60" value="10">분<button class="p" onclick="openMake()">📝 문장 만들기 시작</button>${nb}</div>`;return}
+if(G.ph=='make'){const t=T[G.cur],si=t.subs.length,over=Date.now()>=G.endAt,I=t.inv,done=false,op=(k,p)=>`<option value="">${p}</option>`+NM[k].map((nm,i)=>I[k][i]>0?`<option value="${i}">${nm} (${I[k][i]}장)</option>`:'').join('');
+A.innerHTML=`<div class="card row" style="justify-content:space-between"><span>⏱ 남은 시간 <span class="cd" id="cd"></span></span><span class="row">${nb}<button class="p" onclick="toCalc()">🧮 확률 계산하기</button></span></div><div class="two"><div class="card"><div class="row">${T.map((x,i)=>`<button class="chip ${i==G.cur?'on':''}" onclick="G.cur=${i};render()">${esc(x.name)} (${x.subs.length}문장)</button>`).join('')}</div><div class="m" style="margin:6px 0">${esc(t.name)} 보유: ${ivt(t.inv)}</div>${done?'<div class="ok">✔ 이 팀은 문장을 모두 만들었어요.</div>':`<div class="m">문장 ${si+1} · 우리 팀 예상값 ${t.pred.map(p=>p.n+'/'+p.d).join(', ')} · 비워 둔 칸은 랜덤으로 채워져요</div><div class="row">우리 반 <select id="sg" onchange="pv()">${op('g','집단')}</select> 중 <select id="sa" onchange="pv()">${op('l','글자')}</select> 가 <select id="se" onchange="pv()">${op('e','있을/없을')}</select></div><div class="pv" id="pv">카드를 골라 문장을 만들어요.</div><button class="p" ${over?'disabled':''} onclick="sub()">${over?'시간 종료':'문장 제출'}</button>`}</div><div><div class="card"><h2>📌 팀별 예상 확률</h2>${T.map(x=>`<div><b>${esc(x.name)}</b> ${x.pred.map(p=>`<span class="chip">${p.n}/${p.d} <span class="m">(${pct(+p.n,+p.d)})</span></span>`).join(' ')}</div>`).join('')}</div><div class="card" style="max-height:45vh;overflow:auto"><h2>📋 제출된 문장</h2>${T.map(x=>x.subs.map((s,i)=>`<div><b>${esc(x.name)}</b> ${stxt(s)}</div>`).join('')).join('')||'<div class="m">아직 제출이 없어요.</div>'}</div></div></div>`;clock();return}
+if(G.ph=='calc'){const B=board();A.innerHTML=`<div class="card"><h2>🧮 확률 계산 결과</h2><div class="m">${esc(CL[G.cls].name)} · 전체 ${G.R.length}명 · 남 ${G.R.filter(r=>r.sx=='남').length} · 여 ${G.R.filter(r=>r.sx=='여').length} · 모든 문장에 대해 각 팀의 예상값(가장 가까운 값)으로 점수를 매겨요. 🎲는 랜덤으로 채워진 칸이에요.</div></div><div class="card sx"><table><tr><th>문장 (만든 팀)</th><th>실제 확률</th>${T.map(x=>`<th>${esc(x.name)}</th>`).join('')}</tr>${B.SL.map((x,i)=>`<tr><td style="text-align:left">${stxt(x.s)}<div class="m">${esc(T[x.ti].name)} 팀 · <details style="display:inline"><summary style="display:inline">해당 학생 ${x.c.num}명</summary>${x.c.hit.map(h=>esc(h.name)).join(', ')||'없음'}</details></div></td><td><b>${x.c.num}/${x.c.den}</b><div class="m">${pct(x.c.num,x.c.den)}</div></td>${T.map((_,j)=>{const q=B.sc[j][i];return `<td><b class="${q.p==5?'ok':''}">${q.p}점</b><div class="m">예상 ${q.pr.n}/${q.pr.d}</div></td>`}).join('')}</tr>`).join('')}<tr><th>합계</th><th></th>${B.tot.map(s=>`<th>${s}점</th>`).join('')}</tr></table></div><div class="card row"><button class="p" onclick="showResult()">🏆 최종 결과 보기</button>${nb}</div>`;return}
+if(!wv){A.innerHTML=`<div class="card" style="text-align:center;padding:70px 10px"><div class="drum">🥁</div><div style="font-size:34px;font-weight:800">우승팀은…</div></div>`;return}
+const B=board(),R=T.map((t,i)=>({t,s:B.tot[i]})).sort((a,b)=>b.s-a.s);let rk=0;const top=R[0].s,ws=R.filter(r=>r.s==top);
+A.innerHTML=`<div class="win"><div class="trophy">🏆</div><div style="font-size:22px">🎉 우승 🎉</div><div class="wn">${ws.map(r=>esc(r.t.name)).join(' · ')}</div><div style="font-size:26px;font-weight:700">${top}점</div></div><div class="card"><h2>최종 순위</h2><table><tr><th>순위</th><th>팀</th><th>점수</th></tr>${R.map((r,i)=>{if(!i||r.s!=R[i-1].s)rk=i+1;return `<tr><td>${rk}</td><td><b>${esc(r.t.name)}</b></td><td><b>${r.s}점</b></td></tr>`}).join('')}</table></div><div class="card">${nb}</div>`}
+function clock(){const e=$('#cd');if(!e||G.ph!='make')return;const l=Math.max(0,Math.ceil((G.endAt-Date.now())/1000));e.textContent=l?String(Math.floor(l/60)).padStart(2,'0')+':'+String(l%60).padStart(2,'0'):'시간 종료';if(!l&&!exp){exp=true;render()}}
+setInterval(clock,500);
+function pv(){const v=['sg','sa','se'].map(id=>$('#'+id).value),q=(i,x)=>v[i]===''?'❓':x;$('#pv').textContent=v.every(x=>x==='')?'카드를 골라 문장을 만들어요. (빈 칸은 랜덤)':`우리 반 ${q(0,GR[v[0]])} 중 ${q(1,LT[v[1]])}가 ${q(2,EX[v[2]])} 확률은?`}
+function sub(){if(Date.now()>=G.endAt)return;const v=['sg','sa','se'].map(id=>$('#'+id).value);
+if(v.every(x=>x===''))return alert('카드를 한 장 이상 골라 주세요.');
+if(v.includes('')&&!confirm('비어 있는 칸은 랜덤으로 채워져요. 제출할까요?'))return;
+const s=rnd(v),t=G.T[G.cur],I=t.inv;if(!s.r[0])I.g[s.g]--;if(!s.r[1])I.l[s.a]--;if(!s.r[2])I.e[s.e]--;t.subs.push(s);save();render()}
+function startGame(i){if(playing||G.T[i].md)return;playing=true;let left=20,n=0,bag=[];const nx=()=>{if(!bag.length)bag=ALL.slice().sort(()=>Math.random()-.5);return bag.pop()};const t=G.T[i],inv=t.inv;
+$('#app').innerHTML=`<div class="card"><h2>🎯 ${esc(t.name)} 단어 낚아채기! (1회만)</h2><div class="row"><b id="mt" class="cd">⏱ 20초</b><b id="cn" class="cd">🃏 0장</b></div><div id="arena" class="arena"></div></div>`;
+const ar=$('#arena');
+const sp=setInterval(()=>{for(let j=0;j<3;j++){const c=nx(),e=document.createElement('div');e.className='fc';e.textContent=c[2];e.style.background=c[3];e.style.left=Math.random()*Math.max(10,ar.clientWidth-170)+'px';e.style.animationDuration=(0.7+Math.random()*0.4)+'s';e.style.setProperty('--h',(ar.clientHeight+60)+'px');
+e.onpointerdown=()=>{if(e.dataset.d)return;e.dataset.d=1;inv[c[0]][c[1]]++;n++;$('#cn').textContent='🃏 '+n+'장';e.remove()};e.onanimationend=()=>e.remove();ar.appendChild(e)}},550);
+const tk=setInterval(()=>{left--;$('#mt').textContent='⏱ '+left+'초';if(left<=0){clearInterval(sp);clearInterval(tk);playing=false;t.md=1;save();render()}},1000)}
+render();
+</script></body></html>
